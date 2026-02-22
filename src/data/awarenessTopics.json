@@ -1,0 +1,47 @@
+[
+  {
+    "id": "at-001",
+    "title": "Q1 Safety Briefing 2026",
+    "category": "Safety",
+    "targetAudience": "All Employees",
+    "dueDate": "2026-03-31",
+    "completion": "78%",
+    "status": "Active"
+  },
+  {
+    "id": "at-002",
+    "title": "Environmental Awareness",
+    "category": "Environment",
+    "targetAudience": "Operations",
+    "dueDate": "2026-04-15",
+    "completion": "45%",
+    "status": "Active"
+  },
+  {
+    "id": "at-003",
+    "title": "Data Protection Update",
+    "category": "Compliance",
+    "targetAudience": "All Employees",
+    "dueDate": "2026-02-28",
+    "completion": "92%",
+    "status": "Completed"
+  },
+  {
+    "id": "at-004",
+    "title": "Emergency Response Drill",
+    "category": "Emergency",
+    "targetAudience": "Site Personnel",
+    "dueDate": "2026-05-01",
+    "completion": "0%",
+    "status": "Scheduled"
+  },
+  {
+    "id": "at-005",
+    "title": "Quality Management Refresher",
+    "category": "Quality",
+    "targetAudience": "Supervisors",
+    "dueDate": "2026-06-30",
+    "completion": "12%",
+    "status": "Active"
+  }
+]

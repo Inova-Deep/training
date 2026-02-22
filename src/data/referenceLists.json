@@ -1,0 +1,44 @@
+{
+  "riskLevels": [
+    { "code": "LOW", "name": "Low Risk", "requiresAssessor": false, "defaultIsGating": false, "sortOrder": 1 },
+    { "code": "MEDIUM", "name": "Medium Risk", "requiresAssessor": false, "defaultIsGating": false, "sortOrder": 2 },
+    { "code": "HIGH_CRITICAL", "name": "High/Critical Risk", "requiresAssessor": true, "defaultIsGating": true, "sortOrder": 3 }
+  ],
+  "trainingTypes": [
+    { "code": "CERT_LICENCE", "name": "Certification / Licence", "requiresExpiry": true },
+    { "code": "OJT_COACHING", "name": "OJT / Coaching", "requiresExpiry": false },
+    { "code": "EXPERIENCE_VALIDATED", "name": "Experience Validated", "requiresExpiry": false },
+    { "code": "INDUCTION", "name": "Induction", "requiresExpiry": false },
+    { "code": "AWARENESS", "name": "Awareness", "requiresExpiry": false }
+  ],
+  "assessmentMethods": [
+    { "code": "RECORD_REVIEW", "name": "Record Review" },
+    { "code": "OBSERVATION", "name": "Observation" },
+    { "code": "TEST", "name": "Test" },
+    { "code": "INTERVIEW", "name": "Interview" },
+    { "code": "MANAGER_SIGNOFF", "name": "Manager Sign-off" }
+  ],
+  "statuses": [
+    { "code": "N_A", "name": "Not Applicable", "isDerived": false },
+    { "code": "REQUIRED", "name": "Required", "isDerived": false },
+    { "code": "IN_PROGRESS", "name": "In Progress", "isDerived": false },
+    { "code": "VALID", "name": "Valid", "isDerived": false },
+    { "code": "EXPIRING", "name": "Expiring", "isDerived": true },
+    { "code": "EXPIRED", "name": "Expired", "isDerived": true }
+  ],
+  "evidenceTypes": [
+    { "code": "CERTIFICATE", "name": "Certificate" },
+    { "code": "RECORD", "name": "Record" },
+    { "code": "OBSERVATION_NOTE", "name": "Observation Note" },
+    { "code": "SIGNOFF", "name": "Sign-off" },
+    { "code": "EXTERNAL_REFERENCE", "name": "External Reference" }
+  ],
+  "responsibleParties": [
+    { "code": "EMPLOYEE", "name": "Employee" },
+    { "code": "LINE_MANAGER", "name": "Line Manager" },
+    { "code": "HR_ADMIN", "name": "HR/Admin" },
+    { "code": "ASSESSOR", "name": "Assessor" },
+    { "code": "QHSE", "name": "QHSE" }
+  ],
+  "expiringThresholdDays": 30
+}

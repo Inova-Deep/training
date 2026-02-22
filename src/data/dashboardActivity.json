@@ -1,0 +1,26 @@
+[
+  {
+    "id": "act-001",
+    "type": "evidence_uploaded",
+    "message": "Certificate uploaded for LOTO competency",
+    "time": "2 hours ago"
+  },
+  {
+    "id": "act-002",
+    "type": "evidence_accepted",
+    "message": "Working at Height evidence accepted by assessor",
+    "time": "4 hours ago"
+  },
+  {
+    "id": "act-003",
+    "type": "assessment_pass",
+    "message": "Confined Space assessment passed",
+    "time": "1 day ago"
+  },
+  {
+    "id": "act-004",
+    "type": "requirements_published",
+    "message": "Role requirements published for Maintenance Supervisor",
+    "time": "2 days ago"
+  }
+]

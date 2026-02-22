@@ -1,0 +1,58 @@
+[
+  {
+    "id": "tmpl-001",
+    "competencyLibraryItemId": "comp-002",
+    "trainingTypeCode": "CERT_LICENCE",
+    "createdReason": "EXPIRED_RENEWAL",
+    "dueDaysFromNow": -5,
+    "description": "LOTO certification has expired and must be renewed before returning to independent work"
+  },
+  {
+    "id": "tmpl-002",
+    "competencyLibraryItemId": "comp-015",
+    "trainingTypeCode": "CERT_LICENCE",
+    "createdReason": "EXPIRING_RENEWAL",
+    "dueDaysFromNow": 12,
+    "description": "First Aid certificate is expiring within 30 days — renewal required"
+  },
+  {
+    "id": "tmpl-003",
+    "competencyLibraryItemId": "comp-008",
+    "trainingTypeCode": "AWARENESS",
+    "createdReason": "NEW_REQUIREMENT",
+    "dueDaysFromNow": 30,
+    "description": "Document control awareness newly added as a role requirement"
+  },
+  {
+    "id": "tmpl-004",
+    "competencyLibraryItemId": "comp-011",
+    "trainingTypeCode": "INDUCTION",
+    "createdReason": "NEW_HIRE",
+    "dueDaysFromNow": 7,
+    "description": "Site HSE induction required for new hire within first week"
+  },
+  {
+    "id": "tmpl-005",
+    "competencyLibraryItemId": "comp-003",
+    "trainingTypeCode": "CERT_LICENCE",
+    "createdReason": "NEW_REQUIREMENT",
+    "dueDaysFromNow": 45,
+    "description": "Working at Height certification required — role requirement newly published"
+  },
+  {
+    "id": "tmpl-006",
+    "competencyLibraryItemId": "comp-004",
+    "trainingTypeCode": "CERT_LICENCE",
+    "createdReason": "EXPIRING_RENEWAL",
+    "dueDaysFromNow": 5,
+    "description": "Confined Space entry authorisation expiring — renewal booking required urgently"
+  },
+  {
+    "id": "tmpl-007",
+    "competencyLibraryItemId": "comp-001",
+    "trainingTypeCode": "AWARENESS",
+    "createdReason": "EXPIRED_RENEWAL",
+    "dueDaysFromNow": -2,
+    "description": "Permit to Work awareness overdue — manager sign-off to be re-confirmed"
+  }
+]
