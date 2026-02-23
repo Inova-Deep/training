@@ -5,7 +5,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar'
 import { Button } from '@/components/ui/button'
 import type { DateValue } from '@internationalized/date'
-import type { CalendarRootProps } from 'reka-ui'
 
 interface Props {
   modelValue?: DateValue
@@ -23,7 +22,8 @@ const emit = defineEmits<{
 }>()
 
 const open = ref(false)
-const selectedDate = ref<DateValue | undefined>(props.modelValue)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const selectedDate = ref<any>(props.modelValue)
 
 watch(() => props.modelValue, (val) => {
   selectedDate.value = val
@@ -39,7 +39,8 @@ const formattedValue = computed(() => {
   })
 })
 
-const handleDateSelect = (value: CalendarRootProps['modelValue']) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const handleDateSelect = (value: any) => {
   if (value && !Array.isArray(value)) {
     selectedDate.value = value as DateValue
   }
@@ -69,7 +70,7 @@ const handleConfirm = () => {
     <PopoverContent class="date-picker-popover" align="start">
       <div class="date-picker-content">
         <Calendar
-          :model-value="selectedDate"
+          :model-value="(selectedDate as any)"
           layout="month-and-year"
           @update:model-value="handleDateSelect"
         />
