@@ -3,8 +3,5 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "3000:80"   # VPS port 3000 → container nginx port 80
-                    # Change left side to 80 if this is the only site on the VPS,
-                    # or keep 3000 and point your reverse proxy at localhost:3000
+    network_mode: host   # shares host network stack (incl. VPN routes)
     restart: unless-stopped
