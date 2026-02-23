@@ -71,6 +71,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isLoading = ref(false)
   const currentPersonaKey = ref<DemoPersonaKey>('hr_admin')
 
+  const isInitializing = ref(true)
   const isAuthenticated = computed(() => !!token.value && !!user.value)
   const userRole = computed(() => user.value?.role || 'EMPLOYEE')
   const isAdmin = computed(() => userRole.value === 'HR_ADMIN')
@@ -148,27 +149,39 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function initializeAuth() {
-    // Demo mode: synchronously mark as authenticated so the app loads instantly
     const persona = DEMO_PERSONAS.hr_admin
-    token.value = 'demo-token'
     currentPersonaKey.value = 'hr_admin'
-    user.value = {
-      id: 'demo-hr-admin',
-      email: DEMO_EMAIL,
-      displayName: persona.displayName,
-      role: persona.role,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+
+    // Restore a previously obtained real token so return visits are instant
+    const storedToken = localStorage.getItem('demo_token')
+    if (storedToken) {
+      token.value = storedToken
+      setToken(storedToken)
+      user.value = {
+        id: 'demo-hr-admin',
+        email: DEMO_EMAIL,
+        displayName: persona.displayName,
+        role: persona.role,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
     }
-    // Fetch a real API token in the background so data calls work
+
+    // Always refresh — gets a real token and updates user info
     authApi.login(DEMO_EMAIL, DEMO_PASSWORD)
       .then(async (response) => {
         token.value = response.token
         setToken(response.token)
+        localStorage.setItem('demo_token', response.token)
         await fetchUserInfo(DEMO_EMAIL)
       })
-      .catch(() => { /* API unavailable — mock session continues */ })
+      .catch(() => {
+        // API unavailable — if we have a stored token keep it, otherwise fail gracefully
+      })
+      .finally(() => {
+        isInitializing.value = false
+      })
   }
 
   initializeAuth()
@@ -178,6 +191,7 @@ export const useAuthStore = defineStore('auth', () => {
     dmlUser,
     token,
     isLoading,
+    isInitializing,
     isAuthenticated,
     userRole,
     isAdmin,
