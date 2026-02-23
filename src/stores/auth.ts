@@ -55,6 +55,11 @@ export const DEMO_PERSONAS: Record<DemoPersonaKey, DemoPersona> = {
   },
 }
 
+// ─── Hardcoded demo credentials ────────────────────────────────────────────────
+
+const DEMO_EMAIL = 'hemish.patel@inova.krd'
+const DEMO_PASSWORD = 'Testing123!'
+
 // ─── Store ─────────────────────────────────────────────────────────────────────
 
 export const useAuthStore = defineStore('auth', () => {
@@ -139,33 +144,31 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function logout() {
-    token.value = null
-    user.value = null
-    dmlUser.value = null
-    localStorage.removeItem('token')
-    setToken('')
-    toast.info('Logged out successfully')
-    router.push('/login')
+    switchPersona('hr_admin')
   }
 
   function initializeAuth() {
-    const storedToken = localStorage.getItem('token')
-    if (storedToken) {
-      token.value = storedToken
-      setToken(storedToken)
-      // Default to hr_admin persona on page reload — same behaviour as before
-      const persona = DEMO_PERSONAS.hr_admin
-      currentPersonaKey.value = 'hr_admin'
-      user.value = {
-        id: 'demo-hr-admin',
-        email: persona.email,
-        displayName: persona.displayName,
-        role: persona.role,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
+    // Demo mode: synchronously mark as authenticated so the app loads instantly
+    const persona = DEMO_PERSONAS.hr_admin
+    token.value = 'demo-token'
+    currentPersonaKey.value = 'hr_admin'
+    user.value = {
+      id: 'demo-hr-admin',
+      email: DEMO_EMAIL,
+      displayName: persona.displayName,
+      role: persona.role,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }
+    // Fetch a real API token in the background so data calls work
+    authApi.login(DEMO_EMAIL, DEMO_PASSWORD)
+      .then(async (response) => {
+        token.value = response.token
+        setToken(response.token)
+        await fetchUserInfo(DEMO_EMAIL)
+      })
+      .catch(() => { /* API unavailable — mock session continues */ })
   }
 
   initializeAuth()
