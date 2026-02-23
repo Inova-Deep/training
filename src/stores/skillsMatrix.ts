@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { toast } from 'vue-sonner'
 import type { Employee } from '@/api/client'
 import competenciesData from '@/data/competencies.json'
 import roleRequirementsData from '@/data/roleRequirements.json'
