@@ -52,7 +52,7 @@ __screenshots__/
 # Agent configurations
 .agent/
 .claude/
-.vscode/
+.vscode
 
 # Misc
 *.pem

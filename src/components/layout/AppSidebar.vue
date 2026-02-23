@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { FunctionalComponent } from 'vue'
 import type { LucideProps } from 'lucide-vue-next'
@@ -43,8 +43,10 @@ import {
   UserCog,
   Settings,
   ChevronUp,
-  Sparkles
+  Sparkles,
+  UserCircle2
 } from 'lucide-vue-next'
+import { useAuthStore } from '@/stores/auth'
 
 interface NavItem {
   title: string
@@ -60,6 +62,7 @@ interface NavGroup {
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 const { isMobile, setOpenMobile } = useSidebar()
 
 const handleNavClick = (to: string) => {
@@ -69,82 +72,129 @@ const handleNavClick = (to: string) => {
   router.push(to)
 }
 
-const navigationGroups: NavGroup[] = [
-  {
-    title: 'Operations',
-    items: [
+// ─── All possible nav items ────────────────────────────────────────────────────
+
+const NAV_MY_COMPETENCIES: NavItem = {
+  title: 'My Competencies',
+  icon: UserCircle2,
+  to: '/my-competencies',
+  tooltip: 'Your personal competence profile — requirements, statuses, expiry dates and required actions'
+}
+
+const NAV_DASHBOARD: NavItem = {
+  title: 'Dashboard',
+  icon: LayoutDashboard,
+  to: '/dashboard',
+  tooltip: 'Organisation view of competence compliance, gating risks, and upcoming expiries'
+}
+
+const NAV_SKILLS_MATRIX: NavItem = {
+  title: 'Skills Matrix',
+  icon: Grid3x3,
+  to: '/skills-matrix',
+  tooltip: 'Org-wide skills matrix with BU/Department/Job Title filters and Excel export'
+}
+
+const NAV_PEOPLE: NavItem = {
+  title: 'People',
+  icon: Users,
+  to: '/people',
+  tooltip: 'Browse/search employees from ERP and view competence records, evidence, and training history'
+}
+
+const NAV_ROLES: NavItem = {
+  title: 'Roles',
+  icon: Briefcase,
+  to: '/roles',
+  tooltip: 'Configure Job Title applicability, role requirements, and gating rules for independent work'
+}
+
+const NAV_COMPETENCY_LIBRARY: NavItem = {
+  title: 'Competency Library',
+  icon: Library,
+  to: '/competency-library',
+  tooltip: 'Maintain the reusable list of competency requirements, categories, risk levels, and default evidence rules'
+}
+
+const NAV_TRAINING_NEEDS: NavItem = {
+  title: 'Training Needs',
+  icon: GraduationCap,
+  to: '/training-needs',
+  tooltip: 'Track and manage training needs across the organisation; ensure gaps are closed and verified'
+}
+
+const NAV_AWARENESS_TOPICS: NavItem = {
+  title: 'Awareness Topics',
+  icon: Megaphone,
+  to: '/awareness-topics',
+  tooltip: 'Acknowledge assigned awareness topics or manage and create topics as admin'
+}
+
+const NAV_REFERENCE_LISTS: NavItem = {
+  title: 'Reference Lists',
+  icon: ListChecks,
+  to: '/admin/reference-lists',
+  tooltip: 'Manage controlled values (risk/status/training types/assessment methods) and key thresholds'
+}
+
+const NAV_ERP_CONNECTION: NavItem = {
+  title: 'ERP Connection',
+  icon: Database,
+  to: '/admin/erp-connection',
+  tooltip: 'Test ERP connectivity, validate credentials, and view integration status for demo environment'
+}
+
+// ─── Role-gated navigation groups ─────────────────────────────────────────────
+
+const navigationGroups = computed<NavGroup[]>(() => {
+  const role = authStore.userRole
+
+  if (role === 'EMPLOYEE') {
+    return [
       {
-        title: 'Dashboard',
-        icon: LayoutDashboard,
-        to: '/dashboard',
-        tooltip: 'Organisation view of competence compliance, gating risks, and upcoming expiries'
+        title: 'My Work',
+        items: [NAV_MY_COMPETENCIES, NAV_TRAINING_NEEDS, NAV_AWARENESS_TOPICS],
       },
-      {
-        title: 'Skills Matrix',
-        icon: Grid3x3,
-        to: '/skills-matrix',
-        tooltip: 'Org-wide skills matrix with BU/Department/Job Title filters and Excel export'
-      },
-      {
-        title: 'People',
-        icon: Users,
-        to: '/people',
-        tooltip: 'Browse/search employees from ERP and view competence records, evidence, and training history'
-      }
-    ]
-  },
-  {
-    title: 'Build & Control',
-    items: [
-      {
-        title: 'Roles',
-        icon: Briefcase,
-        to: '/roles',
-        tooltip: 'Configure Job Title applicability, role requirements, and gating rules for independent work'
-      },
-      {
-        title: 'Competency Library',
-        icon: Library,
-        to: '/competency-library',
-        tooltip: 'Maintain the reusable list of competency requirements, categories, risk levels, and default evidence rules'
-      }
-    ]
-  },
-  {
-    title: 'Training & Awareness',
-    items: [
-      {
-        title: 'Training Needs',
-        icon: GraduationCap,
-        to: '/training-needs',
-        tooltip: 'Track and manage training needs across the organisation; ensure gaps are closed and verified'
-      },
-      {
-        title: 'Awareness Topics',
-        icon: Megaphone,
-        to: '/awareness-topics',
-        tooltip: 'Create and target awareness topics to employees (all staff with a manager) and track acknowledgements'
-      }
-    ]
-  },
-  {
-    title: 'Admin',
-    items: [
-      {
-        title: 'Reference Lists',
-        icon: ListChecks,
-        to: '/admin/reference-lists',
-        tooltip: 'Manage controlled values (risk/status/training types/assessment methods) and key thresholds'
-      },
-      {
-        title: 'ERP Connection',
-        icon: Database,
-        to: '/admin/erp-connection',
-        tooltip: 'Test ERP connectivity, validate credentials, and view integration status for demo environment'
-      }
     ]
   }
-]
+
+  if (role === 'MANAGER') {
+    return [
+      {
+        title: 'Operations',
+        items: [NAV_DASHBOARD, NAV_SKILLS_MATRIX, NAV_PEOPLE],
+      },
+      {
+        title: 'Training & Awareness',
+        items: [NAV_TRAINING_NEEDS],
+      },
+    ]
+  }
+
+  // HR_ADMIN — full access
+  return [
+    {
+      title: 'Operations',
+      items: [NAV_DASHBOARD, NAV_SKILLS_MATRIX, NAV_PEOPLE],
+    },
+    {
+      title: 'Build & Control',
+      items: [NAV_ROLES, NAV_COMPETENCY_LIBRARY],
+    },
+    {
+      title: 'Training & Awareness',
+      items: [NAV_TRAINING_NEEDS, NAV_AWARENESS_TOPICS],
+    },
+    {
+      title: 'Admin',
+      items: [NAV_REFERENCE_LISTS, NAV_ERP_CONNECTION],
+    },
+  ]
+})
+
+const userInitials = computed(() => authStore.activePersona.initials)
+const userName = computed(() => authStore.user?.displayName ?? authStore.activePersona.displayName)
+const userRoleLabel = computed(() => authStore.activePersona.roleLabel)
 
 const isActive = (path: string) => {
   return route.path === path || route.path.startsWith(path + '/')
@@ -224,11 +274,11 @@ const isActive = (path: string) => {
                   class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
                   <Avatar class="avatar-footer">
-                    <AvatarFallback>JD</AvatarFallback>
+                    <AvatarFallback>{{ userInitials }}</AvatarFallback>
                   </Avatar>
                   <div class="user-info">
-                    <span class="user-name">John Doe</span>
-                    <span class="user-role">Administrator</span>
+                    <span class="user-name">{{ userName }}</span>
+                    <span class="user-role">{{ userRoleLabel }}</span>
                   </div>
                   <ChevronUp class="chevron-auto" />
                 </SidebarMenuButton>
@@ -243,7 +293,7 @@ const isActive = (path: string) => {
                   Preferences
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive">
+                <DropdownMenuItem variant="destructive" @click="authStore.logout">
                   Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { MoreHorizontal, Plus, Search, Archive, Edit, Eye, Filter } from 'lucide-vue-next'
+import { MoreHorizontal, Plus, Search, Archive, Edit, Eye } from 'lucide-vue-next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -78,7 +78,7 @@ onMounted(() => {
       <CardTitle class="data-card-title">Library Items</CardTitle>
       <div class="data-card-actions">
         <Button size="sm" @click="openAddForm">
-          <Plus class="icon-xs" style="margin-right: var(--space-xs)" />
+          <Plus class="icon-xs icon-mr" />
           Add Competency
         </Button>
       </div>
@@ -126,7 +126,7 @@ onMounted(() => {
           </TableHeader>
           <TableBody>
             <TableRow v-for="comp in filteredCompetencies" :key="comp.id">
-              <TableCell style="font-family: var(--font-mono); font-size: 0.75rem">
+              <TableCell class="code-cell">
                 {{ comp.code || '-' }}
               </TableCell>
               <TableCell class="table-name-cell">{{ comp.title }}</TableCell>
@@ -147,22 +147,22 @@ onMounted(() => {
               <TableCell class="table-actions-cell">
                 <DropdownMenu>
                   <DropdownMenuTrigger as-child>
-                    <Button variant="ghost" size="icon" class="table-action-btn">
+                    <Button variant="ghost" size="icon" class="table-action-btn" :aria-label="`Actions for ${comp.title}`">
                       <MoreHorizontal class="icon-xs" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem @click="openEditForm(comp)">
-                      <Edit class="icon-xs mr-2" />
+                      <Edit class="icon-xs icon-mr" />
                       Edit Details
                     </DropdownMenuItem>
                     <DropdownMenuItem>
-                      <Eye class="icon-xs mr-2" />
+                      <Eye class="icon-xs icon-mr" />
                       View Assignments
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem class="destructive-action">
-                      <Archive class="icon-xs mr-2" />
+                      <Archive class="icon-xs icon-mr" />
                       Archive Item
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -170,7 +170,7 @@ onMounted(() => {
               </TableCell>
             </TableRow>
             <TableRow v-if="filteredCompetencies.length === 0">
-              <TableCell colspan="7" class="text-center py-8 text-muted-foreground">
+              <TableCell colspan="7" class="empty-state-cell">
                 No competencies found matching your criteria
               </TableCell>
             </TableRow>
@@ -192,6 +192,11 @@ onMounted(() => {
   overflow-x: auto;
 }
 
+.code-cell {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
 .table-name-cell {
   font-weight: 500;
 }
@@ -199,5 +204,11 @@ onMounted(() => {
 .data-card-actions {
   display: flex;
   gap: var(--space-sm);
+}
+
+.empty-state-cell {
+  text-align: center;
+  padding: var(--space-xl);
+  color: var(--text-caption);
 }
 </style>

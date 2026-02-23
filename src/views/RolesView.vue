@@ -111,8 +111,6 @@ function navigateToRole(id: string) {
   <Card class="data-card">
     <CardHeader class="data-card-header">
       <CardTitle class="data-card-title">Job Titles (ERP)</CardTitle>
-      <div class="data-card-actions">
-      </div>
     </CardHeader>
     <CardContent class="data-card-content">
       <div class="toolbar">
@@ -142,55 +140,60 @@ function navigateToRole(id: string) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow v-for="job in jobTitleList" :key="job.id" class="cursor-pointer" @click="navigateToRole(job.id)">
-              <TableCell style="font-family: var(--font-mono); font-size: 0.75rem">
+            <TableRow 
+              v-for="job in jobTitleList" 
+              :key="job.id" 
+              class="clickable-row" 
+              @click="navigateToRole(job.id)"
+            >
+              <TableCell class="code-cell">
                 {{ job.code || '-' }}
               </TableCell>
               <TableCell class="table-name-cell">{{ job.name }}</TableCell>
               <TableCell>
-                <span class="badge" :class="getStatusClass(job.status)">
-                  <CheckCircle2 v-if="job.status === 'INCLUDED'" class="icon-xxs mr-1" />
-                  <AlertCircle v-else-if="job.status === 'AWARENESS_ONLY'" class="icon-xxs mr-1" />
-                  <HelpCircle v-else-if="job.status === 'PENDING'" class="icon-xxs mr-1" />
-                  <span v-else-if="job.status === 'OUT_OF_SCOPE'" class="size-1.5 rounded-full bg-current mr-1.5 ml-0.5 opacity-60"></span>
+                <span class="badge badge-with-icon" :class="getStatusClass(job.status)">
+                  <CheckCircle2 v-if="job.status === 'INCLUDED'" class="icon-xxs" />
+                  <AlertCircle v-else-if="job.status === 'AWARENESS_ONLY'" class="icon-xxs" />
+                  <HelpCircle v-else-if="job.status === 'PENDING'" class="icon-xxs" />
+                  <span v-else-if="job.status === 'OUT_OF_SCOPE'" class="status-dot-neutral"></span>
                   {{ getStatusLabel(job.status) }}
                 </span>
               </TableCell>
               <TableCell>
-                <span v-if="job.isPublished" class="badge badge-success">
-                  <CheckCircle2 class="icon-xxs mr-1" />
+                <span v-if="job.isPublished" class="badge badge-success badge-with-icon">
+                  <CheckCircle2 class="icon-xxs" />
                   Published
                 </span>
-                <span v-else class="badge badge-warning">
-                  <ShieldCheck class="icon-xxs mr-1" />
+                <span v-else class="badge badge-warning badge-with-icon">
+                  <ShieldCheck class="icon-xxs" />
                   Drafting
                 </span>
               </TableCell>
               <TableCell>
-                <span v-if="job.version" class="text-xs font-mono bg-bg-app px-1.5 py-0.5 rounded border border-border">
+                <span v-if="job.version" class="version-badge">
                   v{{ job.version }}
                 </span>
-                <span v-else class="text-text-caption text-xs">-</span>
+                <span v-else class="empty-value">-</span>
               </TableCell>
               <TableCell class="table-actions-cell" @click.stop>
                 <DropdownMenu>
                   <DropdownMenuTrigger as-child>
-                    <Button variant="ghost" size="icon" class="table-action-btn">
+                    <Button variant="ghost" size="icon" class="table-action-btn" :aria-label="`Actions for ${job.name}`">
                       <MoreHorizontal class="icon-xs" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem @click="navigateToRole(job.id)">
-                      <Settings class="icon-xs mr-2" />
+                      <Settings class="icon-xs icon-mr" />
                       Applicability Decision
                     </DropdownMenuItem>
                     <DropdownMenuItem @click="navigateToRole(job.id)">
-                      <FileText class="icon-xs mr-2" />
+                      <FileText class="icon-xs icon-mr" />
                       Role Requirements
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem>
-                      <History class="icon-xs mr-2" />
+                      <History class="icon-xs icon-mr" />
                       History
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -203,3 +206,57 @@ function navigateToRole(id: string) {
     </CardContent>
   </Card>
 </template>
+
+<style scoped>
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.clickable-row {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.clickable-row:hover {
+  background-color: var(--bg-hover);
+}
+
+.code-cell {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.table-name-cell {
+  font-weight: 500;
+}
+
+/* Badge with icon */
+.badge-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-dot-neutral {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background-color: currentColor;
+  opacity: 0.6;
+}
+
+/* Version badge */
+.version-badge {
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  background-color: var(--bg-subtle);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  border: var(--border-subtle);
+}
+
+.empty-value {
+  font-size: 0.75rem;
+  color: var(--text-caption);
+}
+</style>

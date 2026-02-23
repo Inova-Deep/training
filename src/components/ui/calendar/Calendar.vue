@@ -6,9 +6,9 @@ import { getLocalTimeZone, today } from "@internationalized/date"
 import { createReusableTemplate, reactiveOmit, useVModel } from "@vueuse/core"
 import { CalendarRoot, useDateFormatter, useForwardPropsEmits } from "reka-ui"
 import { createYear, createYearRange, toDate } from "reka-ui/date"
-import { computed, toRaw } from "vue"
+import { computed, toRaw, ref, nextTick } from "vue"
 import { cn } from "@/lib/utils"
-import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
+import { ChevronDown } from "lucide-vue-next"
 import { CalendarCell, CalendarCellTrigger, CalendarGrid, CalendarGridBody, CalendarGridHead, CalendarGridRow, CalendarHeadCell, CalendarHeader, CalendarHeading, CalendarNextButton, CalendarPrevButton } from "."
 
 const props = withDefaults(defineProps<CalendarRootProps & { class?: HTMLAttributes["class"], layout?: LayoutTypes, yearRange?: DateValue[] }>(), {
@@ -40,49 +40,74 @@ const [DefineMonthTemplate, ReuseMonthTemplate] = createReusableTemplate<{ date:
 const [DefineYearTemplate, ReuseYearTemplate] = createReusableTemplate<{ date: DateValue }>()
 
 const forwarded = useForwardPropsEmits(delegatedProps, emits)
+
+const monthDropdownOpen = ref(false)
+const yearDropdownOpen = ref(false)
+const yearDropdownEl = ref<HTMLElement | null>(null)
+
+function openYearDropdown() {
+  yearDropdownOpen.value = !yearDropdownOpen.value
+  monthDropdownOpen.value = false
+  if (yearDropdownOpen.value) {
+    nextTick(() => {
+      const active = yearDropdownEl.value?.querySelector('.cal-dd-item--active') as HTMLElement | null
+      active?.scrollIntoView({ block: 'center' })
+    })
+  }
+}
 </script>
 
 <template>
   <DefineMonthTemplate v-slot="{ date }">
-    <div class="**:data-[slot=native-select-icon]:right-1">
-      <div class="relative">
-        <div class="absolute inset-0 flex h-full items-center text-sm pl-2 pointer-events-none">
-          {{ formatter.custom(toDate(date), { month: 'short' }) }}
-        </div>
-        <NativeSelect
-          class="text-xs h-8 pr-6 pl-2 text-transparent relative"
-          @change="(e: Event) => {
-            placeholder = placeholder.set({
-              month: Number((e?.target as any)?.value),
-            })
-          }"
+    <div class="cal-dd-wrap">
+      <button
+        type="button"
+        class="cal-dd-btn"
+        @click.stop="monthDropdownOpen = !monthDropdownOpen; yearDropdownOpen = false"
+      >
+        {{ formatter.custom(toDate(date), { month: 'short' }) }}
+        <ChevronDown class="cal-dd-chevron" />
+      </button>
+      <div v-show="monthDropdownOpen" class="cal-dd-list">
+        <button
+          v-for="month in createYear({ dateObj: date })"
+          :key="month.toString()"
+          type="button"
+          class="cal-dd-item"
+          :class="{ 'cal-dd-item--active': date.month === month.month }"
+          @click.stop="placeholder = placeholder.set({ month: month.month }); monthDropdownOpen = false"
         >
-          <NativeSelectOption v-for="(month) in createYear({ dateObj: date })" :key="month.toString()" :value="month.month" :selected="date.month === month.month">
-            {{ formatter.custom(toDate(month), { month: 'short' }) }}
-          </NativeSelectOption>
-        </NativeSelect>
+          {{ formatter.custom(toDate(month), { month: 'short' }) }}
+        </button>
       </div>
     </div>
   </DefineMonthTemplate>
 
   <DefineYearTemplate v-slot="{ date }">
-    <div class="**:data-[slot=native-select-icon]:right-1">
-      <div class="relative">
-        <div class="absolute inset-0 flex h-full items-center text-sm pl-2 pointer-events-none">
-          {{ formatter.custom(toDate(date), { year: 'numeric' }) }}
-        </div>
-        <NativeSelect
-          class="text-xs h-8 pr-6 pl-2 text-transparent relative"
-          @change="(e: Event) => {
-            placeholder = placeholder.set({
-              year: Number((e?.target as any)?.value),
-            })
-          }"
+    <div class="cal-dd-wrap">
+      <button
+        type="button"
+        class="cal-dd-btn"
+        @click.stop="openYearDropdown"
+      >
+        {{ formatter.custom(toDate(date), { year: 'numeric' }) }}
+        <ChevronDown class="cal-dd-chevron" />
+      </button>
+      <div
+        v-show="yearDropdownOpen"
+        class="cal-dd-list cal-dd-list--year"
+        :ref="(el) => { yearDropdownEl = el as HTMLElement | null }"
+      >
+        <button
+          v-for="year in yearRange"
+          :key="year.toString()"
+          type="button"
+          class="cal-dd-item"
+          :class="{ 'cal-dd-item--active': date.year === year.year }"
+          @click.stop="placeholder = placeholder.set({ year: year.year }); yearDropdownOpen = false"
         >
-          <NativeSelectOption v-for="(year) in yearRange" :key="year.toString()" :value="year.year" :selected="date.year === year.year">
-            {{ formatter.custom(toDate(year), { year: 'numeric' }) }}
-          </NativeSelectOption>
-        </NativeSelect>
+          {{ formatter.custom(toDate(year), { year: 'numeric' }) }}
+        </button>
       </div>
     </div>
   </DefineYearTemplate>
@@ -93,8 +118,9 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
     v-model:placeholder="placeholder"
     data-slot="calendar"
     :class="cn('p-3', props.class)"
+    @click="monthDropdownOpen = false; yearDropdownOpen = false"
   >
-    <CalendarHeader class="pt-0">
+    <CalendarHeader class="pt-0" @click.stop>
       <nav class="flex items-center gap-1 absolute top-0 inset-x-0 justify-between">
         <CalendarPrevButton>
           <slot name="calendar-prev-icon" />
@@ -158,3 +184,85 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
     </div>
   </CalendarRoot>
 </template>
+
+<style scoped>
+.cal-dd-wrap {
+  position: relative;
+}
+
+.cal-dd-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle, oklch(0.88 0.01 255));
+  background: transparent;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-heading);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.cal-dd-btn:hover {
+  background: var(--bg-subtle);
+}
+
+.cal-dd-chevron {
+  width: 11px;
+  height: 11px;
+  opacity: 0.5;
+}
+
+.cal-dd-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 100;
+  background: var(--bg-surface);
+  border: 1px solid oklch(0.88 0.01 255);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  min-width: 88px;
+}
+
+.cal-dd-list--year {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.cal-dd-item {
+  display: block;
+  width: 100%;
+  padding: 5px 10px;
+  text-align: left;
+  border: none;
+  background: transparent;
+  font-size: 0.8125rem;
+  color: var(--text-body);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.1s ease;
+  white-space: nowrap;
+}
+
+.cal-dd-item:hover {
+  background: var(--bg-subtle);
+}
+
+.cal-dd-item--active {
+  background: var(--brand-primary);
+  color: #fff;
+  font-weight: 500;
+}
+
+.cal-dd-item--active:hover {
+  background: var(--brand-primary);
+  opacity: 0.9;
+}
+</style>

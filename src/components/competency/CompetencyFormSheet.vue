@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { Plus, Save, X } from 'lucide-vue-next'
+import { Save } from 'lucide-vue-next'
 import {
   Sheet,
   SheetContent,
@@ -101,7 +101,7 @@ async function handleSave() {
 
 <template>
   <Sheet :open="open" @update:open="emit('update:open', $event)">
-    <SheetContent class="sm:max-w-[540px] flex flex-col p-0 h-full">
+    <SheetContent class="sheet-panel">
       <SheetHeader class="sheet-header">
         <SheetTitle class="sheet-title">
           {{ competency ? 'Edit Competency' : 'Add New Competency' }}
@@ -111,17 +111,17 @@ async function handleSave() {
         </SheetDescription>
       </SheetHeader>
 
-      <div class="sheet-content flex-1 overflow-y-auto">
-        <div class="space-y-6">
-          <div class="grid grid-cols-2 gap-4">
-            <div class="form-group mb-0">
+      <div class="sheet-body">
+        <div class="form-section">
+          <div class="form-grid">
+            <div class="form-field">
               <Label for="code" class="form-label">Code</Label>
-              <Input id="code" v-model="formData.code" placeholder="e.g. PTW-01" class="h-9" />
+              <Input id="code" v-model="formData.code" placeholder="e.g. PTW-01" />
             </div>
-            <div class="form-group mb-0">
+            <div class="form-field">
               <Label for="category" class="form-label">Category</Label>
               <Select v-model="formData.category">
-                <SelectTrigger id="category" class="h-9">
+                <SelectTrigger id="category">
                   <SelectValue placeholder="Select Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -133,26 +133,25 @@ async function handleSave() {
             </div>
           </div>
 
-          <div class="form-group">
+          <div class="form-field form-field-full">
             <Label for="title" class="form-label">Competency Title</Label>
-            <Input id="title" v-model="formData.title" placeholder="Full descriptive title" class="h-9" />
+            <Input id="title" v-model="formData.title" placeholder="Full descriptive title" />
           </div>
 
-          <div class="form-group">
+          <div class="form-field form-field-full">
             <Label for="description" class="form-label">Description</Label>
             <Input 
               id="description" 
               v-model="formData.description" 
               placeholder="Brief summary of requirements..."
-              class="h-9"
             />
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
-            <div class="form-group mb-0">
+          <div class="form-grid">
+            <div class="form-field">
               <Label for="risk" class="form-label">Risk Level</Label>
               <Select v-model="formData.riskLevelCode">
-                <SelectTrigger id="risk" class="h-9">
+                <SelectTrigger id="risk">
                   <SelectValue placeholder="Select Risk" />
                 </SelectTrigger>
                 <SelectContent>
@@ -162,19 +161,21 @@ async function handleSave() {
                 </SelectContent>
               </Select>
             </div>
-            <div class="form-group mb-0">
+            <div class="form-field">
               <Label for="domain" class="form-label">Criticality Domain</Label>
-              <Input id="domain" v-model="formData.criticalityDomain" placeholder="e.g. Safety Critical" class="h-9" />
+              <Input id="domain" v-model="formData.criticalityDomain" placeholder="e.g. Safety Critical" />
             </div>
           </div>
+        </div>
 
-          <div class="section-title mt-8">Training & Assessment Defaults</div>
+        <div class="form-section">
+          <div class="section-title">Training & Assessment Defaults</div>
           
-          <div class="grid grid-cols-2 gap-4">
-            <div class="form-group mb-0">
+          <div class="form-grid">
+            <div class="form-field">
               <Label for="training" class="form-label">Training Type</Label>
               <Select v-model="formData.defaultTrainingTypeCode">
-                <SelectTrigger id="training" class="h-9">
+                <SelectTrigger id="training">
                   <SelectValue placeholder="Select Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -184,10 +185,10 @@ async function handleSave() {
                 </SelectContent>
               </Select>
             </div>
-            <div class="form-group mb-0">
+            <div class="form-field">
               <Label for="method" class="form-label">Assessment Method</Label>
               <Select v-model="formData.defaultAssessmentMethodCode">
-                <SelectTrigger id="method" class="h-9">
+                <SelectTrigger id="method">
                   <SelectValue placeholder="Select Method" />
                 </SelectTrigger>
                 <SelectContent>
@@ -198,34 +199,34 @@ async function handleSave() {
               </Select>
             </div>
           </div>
+        </div>
 
-          <div class="p-4 bg-bg-app rounded-lg border border-border">
-            <div class="flex items-center justify-between mb-4">
-              <div class="space-y-0.5">
-                <Label class="text-sm font-medium">Requires Expiry / Renewal</Label>
-                <p class="text-[0.7rem] text-text-caption">Toggle if this competency is time-limited.</p>
-              </div>
-              <Switch v-model:checked="formData.defaultRequiresExpiry" />
+        <div class="expiry-section">
+          <div class="expiry-header">
+            <div class="expiry-header-text">
+              <Label class="expiry-label">Requires Expiry / Renewal</Label>
+              <p class="expiry-hint">Toggle if this competency is time-limited.</p>
             </div>
-            
-            <div v-if="formData.defaultRequiresExpiry" class="form-group mb-0 mt-4 transition-all">
-              <Label for="validity" class="form-label">Default Validity (Days)</Label>
-              <div class="flex items-center gap-2">
-                <Input id="validity" v-model.number="formData.defaultValidityDays" type="number" class="h-9 w-24" />
-                <span class="text-xs text-text-caption">days from completion</span>
-              </div>
+            <Switch v-model:checked="formData.defaultRequiresExpiry" />
+          </div>
+          
+          <div v-if="formData.defaultRequiresExpiry" class="expiry-validity">
+            <Label for="validity" class="form-label">Default Validity (Days)</Label>
+            <div class="validity-input-group">
+              <Input id="validity" v-model.number="formData.defaultValidityDays" type="number" class="validity-input" />
+              <span class="validity-suffix">days from completion</span>
             </div>
           </div>
         </div>
       </div>
 
-      <SheetFooter class="sheet-footer border-t border-border">
-        <Button variant="outline" size="sm" @click="emit('update:open', false)">
+      <SheetFooter class="sheet-footer">
+        <Button variant="outline" @click="emit('update:open', false)">
           Cancel
         </Button>
-        <Button size="sm" :disabled="libStore.isSaving" @click="handleSave">
-          <Save v-if="!libStore.isSaving" class="icon-xs mr-2" />
-          <span v-else class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        <Button :disabled="libStore.isSaving" @click="handleSave">
+          <Save v-if="!libStore.isSaving" class="icon-xs" />
+          <span v-else class="spinner spinner-sm" />
           {{ competency ? 'Update Competency' : 'Save Competency' }}
         </Button>
       </SheetFooter>
@@ -234,7 +235,97 @@ async function handleSave() {
 </template>
 
 <style scoped>
-.form-description {
-  margin-bottom: var(--space-md);
+.sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.section-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-heading);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-bottom: var(--space-xs);
+  border-bottom: var(--border-subtle);
+}
+
+.expiry-section {
+  background-color: var(--bg-subtle);
+  border: var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+}
+
+.expiry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.expiry-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.expiry-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-heading);
+}
+
+.expiry-hint {
+  font-size: 0.6875rem;
+  color: var(--text-caption);
+  margin: 0;
+}
+
+.expiry-validity {
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: var(--border-subtle);
+}
+
+.validity-input-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.validity-input {
+  width: 100px;
+}
+
+.validity-suffix {
+  font-size: 0.75rem;
+  color: var(--text-caption);
+}
+
+.spinner {
+  display: inline-block;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: var(--radius-full);
+  animation: spin 0.6s linear infinite;
+}
+
+.spinner-sm {
+  width: 14px;
+  height: 14px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, reactive } from 'vue'
 import {
   Search,
   Download,
@@ -50,7 +50,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Switch } from '@/components/ui/switch'
 import StatusChip from '@/components/ui/status-chip/StatusChip.vue'
-import { useSkillsMatrixStore, type EmployeeMatrixRow, type EmployeeCompetenceItem, type CompetencyCategory, type MatrixFilters, type Competency } from '@/stores/skillsMatrix'
+import { useSkillsMatrixStore, getResponsibleParty, type EmployeeMatrixRow, type EmployeeCompetenceItem, type CompetencyCategory, type MatrixFilters, type Competency } from '@/stores/skillsMatrix'
 import { useEmployeesStore } from '@/stores/employees'
 import { useAuthStore } from '@/stores/auth'
 
@@ -128,6 +128,22 @@ function getInitials(firstName: string, lastName: string): string {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
 }
 
+function getRowResponsible(employee: EmployeeMatrixRow): string {
+  if (!employee.isAuthorised && employee.gatingFailed.length > 0) {
+    const item = [...employee.competenceItems.values()].find(
+      i => i.isGating && (i.derivedStatus === 'EXPIRED' || i.derivedStatus === 'REQUIRED' || i.derivedStatus === 'IN_PROGRESS')
+    )
+    if (item) return getResponsibleParty(item)
+  }
+  if (employee.expiredCount > 0) {
+    const item = [...employee.competenceItems.values()].find(i => i.derivedStatus === 'EXPIRED')
+    if (item) return getResponsibleParty(item)
+  }
+  if (employee.expiringCount > 0) return 'Employee'
+  if (employee.requiredCount > 0) return 'Employee'
+  return '—'
+}
+
 function handleRowClick(employee: EmployeeMatrixRow) {
   selectedEmployee.value = employee
   isDrawerOpen.value = true
@@ -140,6 +156,46 @@ function handleCellClick(item: EmployeeCompetenceItem) {
 function closeDrawer() {
   isDrawerOpen.value = false
   selectedEmployee.value = null
+  showingRejectFor.value = null
+  showingNaFor.value = null
+}
+
+// ─── Evidence Review + N/A state ──────────────────────────────────────────────
+
+const showingRejectFor = ref<string | null>(null)
+const showingNaFor = ref<string | null>(null)
+const rejectReasons = reactive<Record<string, string>>({})
+const naJustifications = reactive<Record<string, string>>({})
+
+function handleAccept(item: EmployeeCompetenceItem) {
+  if (!selectedEmployee.value) return
+  store.reviewEvidence(selectedEmployee.value.employeeId, item.competencyId, 'ACCEPT')
+}
+
+function startReject(compId: string) {
+  showingRejectFor.value = compId
+  showingNaFor.value = null
+  if (rejectReasons[compId] === undefined) rejectReasons[compId] = ''
+}
+
+function confirmReject(item: EmployeeCompetenceItem) {
+  if (!selectedEmployee.value) return
+  store.reviewEvidence(selectedEmployee.value.employeeId, item.competencyId, 'REJECT', rejectReasons[item.competencyId])
+  showingRejectFor.value = null
+}
+
+function startNa(compId: string) {
+  showingNaFor.value = compId
+  showingRejectFor.value = null
+  if (naJustifications[compId] === undefined) naJustifications[compId] = ''
+}
+
+function confirmNa(item: EmployeeCompetenceItem) {
+  if (!selectedEmployee.value) return
+  const j = naJustifications[item.competencyId]?.trim()
+  if (!j) return
+  store.markNotApplicable(selectedEmployee.value.employeeId, item.competencyId, j)
+  showingNaFor.value = null
 }
 
 function setViewMode(mode: 'summary' | 'grid') {
@@ -245,6 +301,7 @@ function handleExportExcel() {
     'Expired': emp.expiredCount,
     'Gating Failed': emp.gatingFailed.join(', '),
     'Top Action': emp.topAction,
+    'Responsible': getRowResponsible(emp),
   }))
   
   const headers = Object.keys(data[0] || {})
@@ -548,6 +605,7 @@ onMounted(async () => {
                     </TableHead>
                     <TableHead>Gating Failed</TableHead>
                     <TableHead>Top Action</TableHead>
+                    <TableHead>Responsible</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -618,9 +676,17 @@ onMounted(async () => {
                         </span>
                       </div>
                     </TableCell>
+                    <TableCell>
+                      <span
+                        class="responsible-badge"
+                        :class="getRowResponsible(employee) === 'Manager' ? 'responsible-manager' : getRowResponsible(employee) === 'Employee' ? 'responsible-employee' : ''"
+                      >
+                        {{ getRowResponsible(employee) }}
+                      </span>
+                    </TableCell>
                   </TableRow>
                   <TableRow v-if="filteredEmployees.length === 0">
-                    <TableCell colspan="8" class="empty-cell">
+                    <TableCell colspan="9" class="empty-cell">
                       No employees match the current filters
                     </TableCell>
                   </TableRow>
@@ -885,18 +951,93 @@ onMounted(async () => {
                     :key="comp.id"
                     class="competency-row"
                   >
-                    <div class="competency-info">
-                      <span class="competency-code">{{ comp.code }}</span>
-                      <span class="competency-title">{{ comp.title }}</span>
-                      <span v-if="comp.isGatingDefault" class="badge badge-neutral gating-indicator">
-                        Gating
-                      </span>
+                    <!-- Main row: info + status + action buttons -->
+                    <div class="comp-row-main">
+                      <div class="competency-info">
+                        <span class="competency-code">{{ comp.code }}</span>
+                        <span class="competency-title">{{ comp.title }}</span>
+                        <span v-if="comp.isGatingDefault" class="badge badge-neutral gating-indicator">
+                          Gating
+                        </span>
+                      </div>
+                      <div class="comp-row-right">
+                        <StatusChip
+                          v-if="getEmployeeCompetenceItem(selectedEmployee, comp.id)"
+                          :status="getEmployeeCompetenceItem(selectedEmployee, comp.id)!.derivedStatus"
+                          :expiry-date="getEmployeeCompetenceItem(selectedEmployee, comp.id)!.expiryDate"
+                        />
+                        <span
+                          v-if="getEmployeeCompetenceItem(selectedEmployee, comp.id) && getResponsibleParty(getEmployeeCompetenceItem(selectedEmployee, comp.id)!) !== '—'"
+                          class="responsible-badge"
+                          :class="getResponsibleParty(getEmployeeCompetenceItem(selectedEmployee, comp.id)!) === 'Manager' ? 'responsible-manager' : 'responsible-employee'"
+                        >
+                          {{ getResponsibleParty(getEmployeeCompetenceItem(selectedEmployee, comp.id)!) }}
+                        </span>
+                        <!-- Evidence review: visible to managers when IN_PROGRESS or REQUIRED -->
+                        <template
+                          v-if="isManager &&
+                            getEmployeeCompetenceItem(selectedEmployee, comp.id) &&
+                            (getEmployeeCompetenceItem(selectedEmployee, comp.id)!.derivedStatus === 'IN_PROGRESS' ||
+                             getEmployeeCompetenceItem(selectedEmployee, comp.id)!.derivedStatus === 'REQUIRED')"
+                        >
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            class="review-btn accept-btn"
+                            @click="handleAccept(getEmployeeCompetenceItem(selectedEmployee, comp.id)!)"
+                          >Accept</Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            class="review-btn reject-btn"
+                            @click="startReject(comp.id)"
+                          >Reject</Button>
+                        </template>
+                        <!-- N/A: visible to managers when REQUIRED or EXPIRED -->
+                        <Button
+                          v-if="isManager &&
+                            getEmployeeCompetenceItem(selectedEmployee, comp.id) &&
+                            (getEmployeeCompetenceItem(selectedEmployee, comp.id)!.derivedStatus === 'REQUIRED' ||
+                             getEmployeeCompetenceItem(selectedEmployee, comp.id)!.derivedStatus === 'EXPIRED')"
+                          size="sm"
+                          variant="ghost"
+                          class="review-btn na-btn"
+                          @click="startNa(comp.id)"
+                        >N/A</Button>
+                      </div>
                     </div>
-                    <StatusChip
-                      v-if="getEmployeeCompetenceItem(selectedEmployee, comp.id)"
-                      :status="getEmployeeCompetenceItem(selectedEmployee, comp.id)!.derivedStatus"
-                      :expiry-date="getEmployeeCompetenceItem(selectedEmployee, comp.id)!.expiryDate"
-                    />
+
+                    <!-- Reject inline form -->
+                    <div v-if="showingRejectFor === comp.id" class="inline-review-form">
+                      <Input
+                        v-model="rejectReasons[comp.id]"
+                        placeholder="Reason for rejection…"
+                        class="inline-form-input"
+                        @keyup.enter="confirmReject(getEmployeeCompetenceItem(selectedEmployee, comp.id)!)"
+                      />
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        @click="confirmReject(getEmployeeCompetenceItem(selectedEmployee, comp.id)!)"
+                      >Confirm</Button>
+                      <Button size="sm" variant="ghost" @click="showingRejectFor = null">Cancel</Button>
+                    </div>
+
+                    <!-- N/A inline form -->
+                    <div v-if="showingNaFor === comp.id" class="inline-review-form">
+                      <Input
+                        v-model="naJustifications[comp.id]"
+                        placeholder="Justification for N/A…"
+                        class="inline-form-input"
+                        @keyup.enter="confirmNa(getEmployeeCompetenceItem(selectedEmployee, comp.id)!)"
+                      />
+                      <Button
+                        size="sm"
+                        :disabled="!naJustifications[comp.id]?.trim()"
+                        @click="confirmNa(getEmployeeCompetenceItem(selectedEmployee, comp.id)!)"
+                      >Confirm</Button>
+                      <Button size="sm" variant="ghost" @click="showingNaFor = null">Cancel</Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1570,14 +1711,90 @@ onMounted(async () => {
 
 .competency-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   padding: var(--space-xs) var(--space-sm);
   border-bottom: var(--border-subtle);
 }
 
 .competency-row:last-child {
   border-bottom: none;
+}
+
+.comp-row-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.comp-row-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-shrink: 0;
+}
+
+/* ── Manager action buttons ─────────────────────────────────── */
+.review-btn {
+  height: 22px;
+  font-size: 0.6875rem;
+  padding: 0 var(--space-sm);
+}
+
+.accept-btn {
+  color: var(--brand-success);
+  border-color: var(--brand-success);
+}
+
+.accept-btn:hover {
+  background-color: color-mix(in oklch, var(--brand-success) 10%, transparent);
+}
+
+.reject-btn {
+  color: var(--brand-critical);
+}
+
+.na-btn {
+  color: var(--text-caption);
+}
+
+/* ── Inline forms ────────────────────────────────────────────── */
+.inline-review-form {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+  padding: var(--space-xs) var(--space-xs) 0;
+  border-top: var(--border-subtle);
+}
+
+.inline-form-input {
+  height: 28px;
+  font-size: 0.8125rem;
+  flex: 1;
+}
+
+/* ─── Responsible party badge ──────────────────────────────── */
+.responsible-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.responsible-manager {
+  background-color: oklch(0.38 0.14 266 / 0.1);
+  color: var(--brand-primary);
+}
+
+.responsible-employee {
+  background-color: oklch(0.62 0.14 162 / 0.1);
+  color: var(--brand-success);
 }
 
 .competency-info {

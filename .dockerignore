@@ -1,0 +1,40 @@
+# ── Dependencies ──────────────────────────────────────────────────────────────
+# Reinstalled fresh inside the build stage
+node_modules
+
+# ── Build output ───────────────────────────────────────────────────────────────
+# Generated inside the build stage
+dist
+
+# ── Version control ────────────────────────────────────────────────────────────
+.git
+.gitignore
+
+# ── Environment / secrets ──────────────────────────────────────────────────────
+# Never bake .env files into the image
+.env
+.env.local
+.env.*.local
+
+# ── Editor / OS artefacts ──────────────────────────────────────────────────────
+.vscode
+.idea
+.DS_Store
+
+# ── Docs & design assets ───────────────────────────────────────────────────────
+docs
+
+# ── Logs ───────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+
+# ── TypeScript build cache ─────────────────────────────────────────────────────
+*.tsbuildinfo
+
+# ── Test artefacts ─────────────────────────────────────────────────────────────
+coverage
+
+# ── Agent configs ──────────────────────────────────────────────────────────────
+.claude
+.kilo
+.agent

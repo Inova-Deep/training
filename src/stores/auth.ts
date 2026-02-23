@@ -3,21 +3,75 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { authApi, usersApi, setToken } from '@/api/client'
-import type { AppUser, User } from '@/types'
+import type { AppUser, User, UserRole } from '@/types'
+
+// ─── Demo persona types ────────────────────────────────────────────────────────
+
+export type DemoPersonaKey = 'employee' | 'manager' | 'hr_admin'
+
+export interface DemoPersona {
+  key: DemoPersonaKey
+  displayName: string
+  roleLabel: string
+  role: UserRole
+  email: string
+  initials: string
+  /** Job title used to find this persona's employee row in the Skills Matrix store */
+  linkedJobTitle: string | null
+  /** Route to navigate to when switching to this persona */
+  defaultRoute: string
+}
+
+export const DEMO_PERSONAS: Record<DemoPersonaKey, DemoPersona> = {
+  employee: {
+    key: 'employee',
+    displayName: 'Alex Morgan',
+    roleLabel: 'Employee',
+    role: 'EMPLOYEE',
+    email: 'alex.morgan@demo.com',
+    initials: 'AM',
+    linkedJobTitle: 'Maintenance Technician',
+    defaultRoute: '/training-needs',
+  },
+  manager: {
+    key: 'manager',
+    displayName: 'Sarah Ahmed',
+    roleLabel: 'Manager',
+    role: 'MANAGER',
+    email: 'sarah.ahmed@demo.com',
+    initials: 'SA',
+    linkedJobTitle: 'Maintenance Supervisor',
+    defaultRoute: '/dashboard',
+  },
+  hr_admin: {
+    key: 'hr_admin',
+    displayName: 'Demo Admin',
+    roleLabel: 'HR Admin',
+    role: 'HR_ADMIN',
+    email: 'admin@inova.krd',
+    initials: 'DA',
+    linkedJobTitle: null,
+    defaultRoute: '/dashboard',
+  },
+}
+
+// ─── Store ─────────────────────────────────────────────────────────────────────
 
 export const useAuthStore = defineStore('auth', () => {
   const router = useRouter()
-  
+
   const user = ref<AppUser | null>(null)
   const dmlUser = ref<User | null>(null)
   const token = ref<string | null>(null)
   const isLoading = ref(false)
-  
+  const currentPersonaKey = ref<DemoPersonaKey>('hr_admin')
+
   const isAuthenticated = computed(() => !!token.value && !!user.value)
   const userRole = computed(() => user.value?.role || 'EMPLOYEE')
   const isAdmin = computed(() => userRole.value === 'HR_ADMIN')
   const isManager = computed(() => userRole.value === 'MANAGER' || isAdmin.value)
-  
+  const activePersona = computed(() => DEMO_PERSONAS[currentPersonaKey.value])
+
   async function login(email: string, password: string) {
     isLoading.value = true
     try {
@@ -25,9 +79,9 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = response.token
       setToken(response.token)
       localStorage.setItem('token', response.token)
-      
+
       await fetchUserInfo(email)
-      
+
       toast.success('Welcome back!')
       router.push('/dashboard')
     } catch (error) {
@@ -38,12 +92,12 @@ export const useAuthStore = defineStore('auth', () => {
       isLoading.value = false
     }
   }
-  
+
   async function fetchUserInfo(email: string) {
     try {
       const dmlUserData = await usersApi.getByEmail(email)
       dmlUser.value = dmlUserData
-      
+
       user.value = {
         id: dmlUserData.id,
         email: dmlUserData.email,
@@ -67,7 +121,23 @@ export const useAuthStore = defineStore('auth', () => {
       }
     }
   }
-  
+
+  function switchPersona(key: DemoPersonaKey) {
+    const persona = DEMO_PERSONAS[key]
+    currentPersonaKey.value = key
+    user.value = {
+      id: `demo-${key}`,
+      email: persona.email,
+      displayName: persona.displayName,
+      role: persona.role,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    toast.success(`Viewing as ${persona.displayName} (${persona.roleLabel})`)
+    router.push(persona.defaultRoute)
+  }
+
   function logout() {
     token.value = null
     user.value = null
@@ -77,26 +147,29 @@ export const useAuthStore = defineStore('auth', () => {
     toast.info('Logged out successfully')
     router.push('/login')
   }
-  
+
   function initializeAuth() {
     const storedToken = localStorage.getItem('token')
     if (storedToken) {
       token.value = storedToken
       setToken(storedToken)
+      // Default to hr_admin persona on page reload — same behaviour as before
+      const persona = DEMO_PERSONAS.hr_admin
+      currentPersonaKey.value = 'hr_admin'
       user.value = {
-        id: 'demo-user-id',
-        email: 'admin@inova.krd',
-        displayName: 'Admin User',
-        role: 'HR_ADMIN',
+        id: 'demo-hr-admin',
+        email: persona.email,
+        displayName: persona.displayName,
+        role: persona.role,
         isActive: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
     }
   }
-  
+
   initializeAuth()
-  
+
   return {
     user,
     dmlUser,
@@ -106,8 +179,11 @@ export const useAuthStore = defineStore('auth', () => {
     userRole,
     isAdmin,
     isManager,
+    currentPersonaKey,
+    activePersona,
     login,
     logout,
+    switchPersona,
     initializeAuth,
   }
 })

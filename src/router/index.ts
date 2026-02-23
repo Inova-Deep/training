@@ -18,6 +18,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/my-competencies',
+    name: 'my-competencies',
+    component: () => import('@/views/MyCompetenciesView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/skills-matrix',
     name: 'skills-matrix',
     component: () => import('@/views/SkillsMatrixView.vue'),

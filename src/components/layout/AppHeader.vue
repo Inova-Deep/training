@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import {
   SidebarTrigger
 } from '@/components/ui/sidebar'
@@ -11,24 +11,33 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
-  Search,
   Bell,
   RefreshCw,
-  User,
-  Settings,
   LogOut,
   ChevronDown
 } from 'lucide-vue-next'
+import { useAuthStore, DEMO_PERSONAS, type DemoPersonaKey } from '@/stores/auth'
 
-const searchQuery = ref('')
+const authStore = useAuthStore()
+
 const isSyncing = ref(false)
 const notificationCount = ref(2)
 
 const SYNC_DURATION_MS = 2000
+
+const personas: { key: DemoPersonaKey; label: string }[] = [
+  { key: 'employee', label: 'Employee' },
+  { key: 'manager', label: 'Manager' },
+  { key: 'hr_admin', label: 'HR Admin' },
+]
+
+const userInitials = computed(() => authStore.activePersona.initials)
+const userName = computed(() => authStore.user?.displayName ?? authStore.activePersona.displayName)
+const userEmail = computed(() => authStore.user?.email ?? authStore.activePersona.email)
+const userRoleLabel = computed(() => authStore.activePersona.roleLabel)
 
 const handleSync = async () => {
   isSyncing.value = true
@@ -41,34 +50,46 @@ const handleSync = async () => {
   <header class="app-header">
     <div class="header-left">
       <SidebarTrigger class="header-trigger" />
-      <div class="search-wrapper desktop-only">
-        <Search class="search-icon" />
-        <Input
-          v-model="searchQuery"
-          class="global-search"
-          placeholder="Search anything..."
-          aria-label="Search"
-        />
-      </div>
     </div>
 
     <div class="header-actions">
-      <div 
-        class="sync-status desktop-only" 
+      <!-- ── Demo Persona Switcher ─────────────────────────────── -->
+      <div class="persona-switcher" role="group" aria-label="Switch demo persona">
+        <span class="persona-switcher-label desktop-only">Demo:</span>
+        <div class="persona-pills">
+          <Button
+            v-for="p in personas"
+            :key="p.key"
+            variant="ghost"
+            size="sm"
+            class="persona-pill"
+            :class="{ 'persona-pill-active': authStore.currentPersonaKey === p.key }"
+            :aria-pressed="authStore.currentPersonaKey === p.key"
+            @click="authStore.switchPersona(p.key)"
+          >
+            {{ p.label }}
+          </Button>
+        </div>
+      </div>
+
+      <!-- ── Sync status ──────────────────────────────────────── -->
+      <div
+        class="sync-status desktop-only"
         :class="{ 'sync-status-syncing': isSyncing }"
         @click="handleSync"
         role="button"
         tabindex="0"
         aria-label="Sync status, click to sync"
       >
-        <RefreshCw 
-          class="sync-status-icon" 
-          :class="{ 'sync-status-spin': isSyncing }" 
+        <RefreshCw
+          class="sync-status-icon"
+          :class="{ 'sync-status-spin': isSyncing }"
         />
         <span v-if="!isSyncing">Synced</span>
         <span v-else>Syncing...</span>
       </div>
 
+      <!-- ── Notifications ───────────────────────────────────── -->
       <DropdownMenu>
         <DropdownMenuTrigger as-child>
           <Button variant="ghost" size="icon" class="header-icon-button" aria-label="Notifications">
@@ -104,33 +125,27 @@ const handleSync = async () => {
         </DropdownMenuContent>
       </DropdownMenu>
 
+      <!-- ── User menu ───────────────────────────────────────── -->
       <DropdownMenu>
         <DropdownMenuTrigger as-child>
           <Button variant="ghost" class="user-menu-trigger" aria-label="User menu">
             <Avatar class="user-avatar">
-              <AvatarFallback>JD</AvatarFallback>
+              <AvatarFallback>{{ userInitials }}</AvatarFallback>
             </Avatar>
+            <span class="user-name-label desktop-only">{{ userName }}</span>
             <ChevronDown class="user-chevron" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>
             <div class="user-dropdown-header">
-              <span class="user-dropdown-name">John Doe</span>
-              <span class="user-dropdown-email">john.doe@company.com</span>
+              <span class="user-dropdown-name">{{ userName }}</span>
+              <span class="user-dropdown-role">{{ userRoleLabel }}</span>
+              <span class="user-dropdown-email">{{ userEmail }}</span>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <User class="dropdown-icon" />
-            Profile
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Settings class="dropdown-icon" />
-            Settings
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem class="logout-item">
+          <DropdownMenuItem class="logout-item" @click="authStore.logout">
             <LogOut class="dropdown-icon" />
             Sign out
           </DropdownMenuItem>
@@ -141,6 +156,16 @@ const handleSync = async () => {
 </template>
 
 <style scoped>
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 var(--space-lg);
+  border-bottom: var(--border-subtle);
+  background-color: var(--bg-surface);
+}
+
 .header-left {
   display: flex;
   align-items: center;
@@ -165,42 +190,63 @@ const handleSync = async () => {
   background-color: var(--bg-hover);
 }
 
-.search-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.search-icon {
-  position: absolute;
-  left: var(--space-sm);
-  width: var(--icon-sm, 16px);
-  height: var(--icon-sm, 16px);
-  color: var(--text-caption);
-  pointer-events: none;
-  z-index: 1;
-}
-
-.global-search {
-  padding-left: 2.25rem;
-  width: 280px;
-}
-
 .header-actions {
   display: flex;
   align-items: center;
   gap: var(--space-md);
 }
 
-.header-icon-button {
-  position: relative;
+/* ── Persona switcher ───────────────────────────────────────── */
+.persona-switcher {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
 }
 
-.header-icon {
-  width: var(--icon-md, 20px);
-  height: var(--icon-md, 20px);
+.persona-switcher-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-caption);
+  white-space: nowrap;
 }
 
+.persona-pills {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-subtle);
+  border: var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: 2px;
+  gap: 1px;
+}
+
+.persona-pill {
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-caption);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  line-height: 1.4;
+  height: auto;
+  min-height: unset;
+}
+
+.persona-pill:hover:not(.persona-pill-active) {
+  background-color: var(--bg-hover);
+  color: var(--text-body);
+}
+
+.persona-pill-active {
+  background-color: var(--bg-surface);
+  color: var(--brand-primary);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Sync status ────────────────────────────────────────────── */
 .sync-status {
   display: flex;
   align-items: center;
@@ -236,10 +282,41 @@ const handleSync = async () => {
   to { transform: rotate(360deg); }
 }
 
+/* ── User menu ──────────────────────────────────────────────── */
+.header-icon-button {
+  position: relative;
+}
+
+.header-icon {
+  width: var(--icon-md, 20px);
+  height: var(--icon-md, 20px);
+}
+
+.notification-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  background-color: var(--brand-critical);
+  border-radius: var(--radius-full);
+  border: 2px solid var(--bg-surface);
+}
+
 .user-menu-trigger {
   display: flex;
   align-items: center;
   gap: var(--space-xs);
+}
+
+.user-name-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-body);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .user-chevron {
@@ -266,7 +343,7 @@ const handleSync = async () => {
   height: var(--space-xs);
   background-color: var(--brand-primary);
   border-radius: var(--radius-full);
-  margin-top: var(--notification-dot-offset, 4px);
+  margin-top: 4px;
   flex-shrink: 0;
 }
 
@@ -293,11 +370,18 @@ const handleSync = async () => {
 .user-dropdown-header {
   display: flex;
   flex-direction: column;
+  gap: 1px;
 }
 
 .user-dropdown-name {
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-heading);
+}
+
+.user-dropdown-role {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--brand-primary);
 }
 
 .user-dropdown-email {
@@ -317,7 +401,7 @@ const handleSync = async () => {
   .desktop-only {
     display: none;
   }
-  
+
   .header-left {
     flex: 1;
   }

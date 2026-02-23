@@ -97,7 +97,13 @@ export const useTrainingNeedsStore = defineStore('trainingNeeds', () => {
         trainingNeeds.value[index].status = 'IN_PROGRESS'
         trainingNeeds.value[index].updatedAt = new Date().toISOString()
       }
-      toast.success(`Resolution path '${data.type}' initiated`)
+      const messages: Record<ResolutionType, string> = {
+        UPLOAD:     'Evidence submitted for review',
+        RENEWAL:    'Training scheduled successfully',
+        OJT:        'OJT session scheduled',
+        ASSESSMENT: 'Assessment booked',
+      }
+      toast.success(messages[data.type])
     } catch (e) {
       toast.error('Failed to resolve training need')
     } finally {

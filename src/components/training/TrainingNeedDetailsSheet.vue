@@ -1,21 +1,22 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { 
+import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { 
-  Upload, Calendar, UserCheck, GraduationCap, 
-  FileText, CheckCircle2, AlertTriangle, Clock, Info
+import { DatePicker } from '@/components/ui/date-picker'
+import {
+  Upload, Calendar, UserCheck, GraduationCap,
+  FileText
 } from 'lucide-vue-next'
 import { useTrainingNeedsStore, type ResolutionType, type ResolutionData } from '@/stores/trainingNeeds'
 import { useEmployeesStore } from '@/stores/employees'
 import { useCompetencyLibraryStore } from '@/stores/competencyLibrary'
-import { toast } from 'vue-sonner'
+import type { DateValue } from '@internationalized/date'
 
 const props = defineProps<{
   isOpen: boolean
@@ -46,6 +47,9 @@ const competency = computed(() => {
 })
 
 const selectedPath = ref<ResolutionType>('UPLOAD')
+const issueDate = ref<DateValue>()
+const expiryDate = ref<DateValue>()
+const plannedDate = ref<DateValue>()
 const formData = ref<Partial<ResolutionData>>({
   type: 'UPLOAD',
   notes: ''
@@ -53,24 +57,36 @@ const formData = ref<Partial<ResolutionData>>({
 
 const isSubmitting = ref(false)
 
+const submitLabel = computed(() => {
+  const labels: Record<ResolutionType, string> = {
+    UPLOAD:     'Submit Evidence',
+    RENEWAL:    'Schedule Training',
+    OJT:        'Schedule OJT',
+    ASSESSMENT: 'Book Assessment',
+  }
+  return labels[selectedPath.value]
+})
+
 watch(() => props.isOpen, (val) => {
   if (val) {
     selectedPath.value = 'UPLOAD'
-    formData.value = {
-      type: 'UPLOAD',
-      notes: ''
-    }
+    issueDate.value = undefined
+    expiryDate.value = undefined
+    plannedDate.value = undefined
+    formData.value = { type: 'UPLOAD', notes: '' }
   }
 })
 
 const handleSubmit = async () => {
   if (!props.needId) return
-  
   isSubmitting.value = true
   try {
     await trainingStore.resolveNeed(props.needId, {
       ...formData.value,
-      type: selectedPath.value
+      type: selectedPath.value,
+      issueDate: issueDate.value?.toString(),
+      expiryDate: expiryDate.value?.toString(),
+      plannedDate: plannedDate.value?.toString()
     } as ResolutionData)
     emit('update:isOpen', false)
   } catch (e) {
@@ -83,146 +99,145 @@ const handleSubmit = async () => {
 
 <template>
   <Sheet :open="isOpen" @update:open="emit('update:isOpen', $event)">
-    <SheetContent class="sm:max-w-[540px] flex flex-col h-full p-0">
-      <SheetHeader class="p-6 border-b">
-        <div class="flex items-center gap-2 mb-2">
-          <span class="badge badge-primary text-[10px] uppercase">Gating Requirement</span>
-          <span class="text-xs text-muted-foreground">ID: {{ needId }}</span>
+    <SheetContent class="sheet-panel">
+      <SheetHeader class="sheet-header">
+        <div class="sheet-meta">
+          <span class="badge badge-primary">Gating Requirement</span>
+          <span class="sheet-meta-id">ID: {{ needId }}</span>
         </div>
-        <SheetTitle class="text-xl">Resolve Competence Gap</SheetTitle>
+        <SheetTitle>Resolve Competence Gap</SheetTitle>
         <SheetDescription>
           Choose a resolution path to address this requirement for {{ employee?.firstName }} {{ employee?.lastName }}.
         </SheetDescription>
       </SheetHeader>
 
-      <div class="flex-1 overflow-y-auto p-6 scrollbar-hide">
+      <div class="sheet-body">
         <!-- Context Card -->
-        <div class="context-info mb-8">
-          <div class="flex items-start gap-4">
-            <div class="comp-icon bg-primary/10 text-primary">
+        <div class="context-info">
+          <div class="context-info-inner">
+            <div class="comp-icon">
               <GraduationCap class="icon-md" />
             </div>
-            <div class="flex-1">
-              <h4 class="font-semibold text-foreground">{{ competency?.title }}</h4>
-              <p class="text-sm text-muted-foreground mb-3">{{ competency?.description }}</p>
-              
-              <div class="grid grid-cols-2 gap-y-2">
-                <div class="flex flex-col">
-                  <span class="text-[10px] uppercase text-muted-foreground font-bold">Reason</span>
-                  <span class="text-sm font-medium">{{ currentNeed?.createdReason }}</span>
+            <div class="context-text">
+              <h4 class="context-comp-title">{{ competency?.title }}</h4>
+              <p class="context-comp-desc">{{ competency?.description }}</p>
+              <div class="context-meta-grid">
+                <div class="context-meta-item">
+                  <span class="context-meta-label">Reason</span>
+                  <span class="context-meta-value">{{ currentNeed?.createdReason }}</span>
                 </div>
-                <div class="flex flex-col">
-                  <span class="text-[10px] uppercase text-muted-foreground font-bold">Risk Level</span>
-                  <span class="text-sm font-medium">{{ competency?.riskLevelCode }}</span>
+                <div class="context-meta-item">
+                  <span class="context-meta-label">Risk Level</span>
+                  <span class="context-meta-value">{{ competency?.riskLevelCode }}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="section-title mb-4">Resolution Path</div>
-        
-        <RadioGroup v-model="selectedPath" class="grid grid-cols-2 gap-4 mb-8">
-          <div class="path-container" :class="{ 'active': selectedPath === 'UPLOAD' }">
-            <RadioGroupItem value="UPLOAD" id="path-upload" class="sr-only" />
+        <div class="path-section-label">Resolution Path</div>
+
+        <RadioGroup v-model="selectedPath" class="path-grid">
+          <div class="path-container" :class="{ active: selectedPath === 'UPLOAD' }">
+            <RadioGroupItem value="UPLOAD" id="path-upload" class="sr-only" aria-label="Upload certificate" />
             <Label for="path-upload" class="path-label">
-              <Upload class="icon-sm mb-2" />
-              <span class="font-medium">Upload Cert</span>
-              <span class="text-[10px] text-muted-foreground text-center">Already have evidence</span>
+              <Upload class="icon-sm" />
+              <span class="path-label-title">Upload Cert</span>
+              <span class="path-label-desc">Already have evidence</span>
             </Label>
           </div>
-          
-          <div class="path-container" :class="{ 'active': selectedPath === 'RENEWAL' }">
-            <RadioGroupItem value="RENEWAL" id="path-renewal" class="sr-only" />
+
+          <div class="path-container" :class="{ active: selectedPath === 'RENEWAL' }">
+            <RadioGroupItem value="RENEWAL" id="path-renewal" class="sr-only" aria-label="Book training" />
             <Label for="path-renewal" class="path-label">
-              <Calendar class="icon-sm mb-2" />
-              <span class="font-medium">Book Training</span>
-              <span class="text-[10px] text-muted-foreground text-center">Attend external course</span>
+              <Calendar class="icon-sm" />
+              <span class="path-label-title">Book Training</span>
+              <span class="path-label-desc">Attend external course</span>
             </Label>
           </div>
 
-          <div class="path-container" :class="{ 'active': selectedPath === 'OJT' }">
-            <RadioGroupItem value="OJT" id="path-ojt" class="sr-only" />
+          <div class="path-container" :class="{ active: selectedPath === 'OJT' }">
+            <RadioGroupItem value="OJT" id="path-ojt" class="sr-only" aria-label="OJT coaching" />
             <Label for="path-ojt" class="path-label">
-              <GraduationCap class="icon-sm mb-2" />
-              <span class="font-medium">OJT / Coaching</span>
-              <span class="text-[10px] text-muted-foreground text-center">Internal knowledge transfer</span>
+              <GraduationCap class="icon-sm" />
+              <span class="path-label-title">OJT / Coaching</span>
+              <span class="path-label-desc">Internal knowledge transfer</span>
             </Label>
           </div>
 
-          <div class="path-container" :class="{ 'active': selectedPath === 'ASSESSMENT' }">
-            <RadioGroupItem value="ASSESSMENT" id="path-assessment" class="sr-only" />
+          <div class="path-container" :class="{ active: selectedPath === 'ASSESSMENT' }">
+            <RadioGroupItem value="ASSESSMENT" id="path-assessment" class="sr-only" aria-label="Assessment only" />
             <Label for="path-assessment" class="path-label">
-              <UserCheck class="icon-sm mb-2" />
-              <span class="font-medium">Assessment Only</span>
-              <span class="text-[10px] text-muted-foreground text-center">Verify without training</span>
+              <UserCheck class="icon-sm" />
+              <span class="path-label-title">Assessment Only</span>
+              <span class="path-label-desc">Verify without training</span>
             </Label>
           </div>
         </RadioGroup>
 
         <!-- Dynamic Form Fields -->
-        <div class="resolution-form space-y-4 pt-4 border-t">
-          <div v-if="selectedPath === 'UPLOAD'" class="space-y-4">
-            <div class="file-dropzone mb-4">
-              <FileText class="icon-lg text-muted-foreground mb-2" />
-              <p class="text-sm font-medium">Click to upload or drag & drop</p>
-              <p class="text-[10px] text-muted-foreground">PDF, PNG, JPG (max 10MB)</p>
-              <input type="file" class="hidden" />
+        <div class="resolution-form">
+
+          <div v-if="selectedPath === 'UPLOAD'">
+            <div class="file-dropzone">
+              <FileText class="icon-lg" />
+              <p class="dropzone-title">Click to upload or drag &amp; drop</p>
+              <p class="dropzone-hint">PDF, PNG, JPG (max 10MB)</p>
             </div>
-            
-            <div class="grid grid-cols-2 gap-4">
-              <div class="space-y-2">
-                <Label>Issue Date</Label>
-                <Input type="date" v-model="formData.issueDate" />
+            <div class="form-grid">
+              <div class="form-field">
+                <Label for="issue-date">Issue Date</Label>
+                <DatePicker id="issue-date" v-model="issueDate" placeholder="Select issue date" />
               </div>
-              <div class="space-y-2">
-                <Label>Expiry Date</Label>
-                <Input type="date" v-model="formData.expiryDate" />
+              <div class="form-field">
+                <Label for="expiry-date">Expiry Date</Label>
+                <DatePicker id="expiry-date" v-model="expiryDate" placeholder="Select expiry date" />
               </div>
             </div>
           </div>
 
-          <div v-if="selectedPath === 'RENEWAL'" class="space-y-4">
-            <div class="space-y-2">
-              <Label>External Provider Name</Label>
-              <Input placeholder="e.g. Red Cross, OPITO" v-model="formData.providerName" />
+          <div v-if="selectedPath === 'RENEWAL'" class="form-grid">
+            <div class="form-field form-field-full">
+              <Label for="provider-name">External Provider Name</Label>
+              <Input id="provider-name" placeholder="e.g. Red Cross, OPITO" v-model="formData.providerName" />
             </div>
-            <div class="space-y-2">
-              <Label>Planned Date</Label>
-              <Input type="date" v-model="formData.plannedDate" />
-            </div>
-          </div>
-
-          <div v-if="selectedPath === 'OJT'" class="space-y-4">
-            <div class="space-y-2">
-              <Label>Designated Trainer / Coach</Label>
-              <Input placeholder="Search employee..." v-model="formData.trainerName" />
+            <div class="form-field form-field-full">
+              <Label for="planned-date">Planned Date</Label>
+              <DatePicker id="planned-date" v-model="plannedDate" placeholder="Select planned date" />
             </div>
           </div>
 
-          <div v-if="selectedPath === 'ASSESSMENT'" class="space-y-4">
-            <div class="space-y-2">
-              <Label>Preferred Assessor</Label>
-              <Input placeholder="Search assessor..." v-model="formData.assessorName" />
+          <div v-if="selectedPath === 'OJT'" class="form-grid">
+            <div class="form-field form-field-full">
+              <Label for="trainer-name">Designated Trainer / Coach</Label>
+              <Input id="trainer-name" placeholder="Search employee..." v-model="formData.trainerName" />
             </div>
           </div>
 
-          <div class="space-y-2 pt-2">
-            <Label>Notes / Comments</Label>
-            <textarea 
-              placeholder="Provide additional context for this resolution..." 
-              class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          <div v-if="selectedPath === 'ASSESSMENT'" class="form-grid">
+            <div class="form-field form-field-full">
+              <Label for="assessor-name">Preferred Assessor</Label>
+              <Input id="assessor-name" placeholder="Search assessor..." v-model="formData.assessorName" />
+            </div>
+          </div>
+
+          <div class="form-field resolution-notes">
+            <Label for="resolution-notes">Notes / Comments</Label>
+            <Textarea
+              id="resolution-notes"
+              placeholder="Provide additional context for this resolution..."
+              :rows="3"
               v-model="formData.notes"
-            ></textarea>
+            />
           </div>
+
         </div>
       </div>
 
-      <SheetFooter class="p-6 border-t bg-muted/30">
-        <Button variant="ghost" @click="emit('update:isOpen', false)">Cancel</Button>
+      <SheetFooter class="sheet-footer">
+        <Button variant="outline" @click="emit('update:isOpen', false)">Cancel</Button>
         <Button :disabled="isSubmitting" @click="handleSubmit">
-          <span v-if="isSubmitting">Submitting...</span>
-          <span v-else>Confirm Resolution</span>
+          {{ isSubmitting ? 'Submitting…' : submitLabel }}
         </Button>
       </SheetFooter>
     </SheetContent>
@@ -230,78 +245,195 @@ const handleSubmit = async () => {
 </template>
 
 <style scoped>
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-
+/* ── Context card ─────────────────────────────────────────── */
 .context-info {
-  background-color: var(--muted-light);
-  border: 1px solid var(--border-color);
+  background-color: var(--bg-subtle);
+  border: var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.context-info-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
 }
 
 .comp-icon {
   width: 48px;
   height: 48px;
   border-radius: var(--radius-md);
+  background-color: oklch(0.38 0.14 266 / 0.1);
+  color: var(--brand-primary);
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
-.section-title {
-  text-transform: uppercase;
-  font-size: 10px;
+.context-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.context-comp-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-heading);
+  margin: 0 0 var(--space-xs) 0;
+}
+
+.context-comp-desc {
+  font-size: 0.8125rem;
+  color: var(--text-body);
+  margin: 0 0 var(--space-sm) 0;
+  line-height: 1.5;
+}
+
+.context-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xs);
+}
+
+.context-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.context-meta-label {
+  font-size: 0.625rem;
   font-weight: 700;
-  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-caption);
+}
+
+.context-meta-value {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-body);
+}
+
+/* ── Sheet meta row ───────────────────────────────────────── */
+.sheet-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xs);
+}
+
+.sheet-meta-id {
+  font-size: 0.75rem;
+  color: var(--text-caption);
+}
+
+/* ── Resolution path grid ─────────────────────────────────── */
+.path-section-label {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
   letter-spacing: 0.1em;
+  color: var(--text-caption);
+  margin-bottom: var(--space-sm);
+}
+
+.path-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
 }
 
 .path-container {
-  border: 1px solid var(--border-color);
+  border: var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: var(--space-md);
-  transition: all 0.2s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
   cursor: pointer;
-  background-color: white;
+  background-color: var(--bg-surface);
 }
 
 .path-container:hover {
-  border-color: var(--primary-light);
-  background-color: var(--primary-light);
+  border-color: var(--brand-primary);
+  background-color: oklch(0.38 0.14 266 / 0.05);
 }
 
 .path-container.active {
-  border-color: var(--primary);
-  background-color: var(--primary-light);
-  box-shadow: 0 0 0 1px var(--primary);
+  border-color: var(--brand-primary);
+  background-color: oklch(0.38 0.14 266 / 0.08);
+  box-shadow: 0 0 0 1px var(--brand-primary);
 }
 
 .path-label {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: var(--space-xs);
   cursor: pointer;
   width: 100%;
+  color: var(--text-body);
 }
 
+.path-label-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.path-label-desc {
+  font-size: 0.6875rem;
+  color: var(--text-caption);
+  text-align: center;
+}
+
+/* ── Resolution form ──────────────────────────────────────── */
+.resolution-form {
+  border-top: var(--border-subtle);
+  padding-top: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.resolution-notes {
+  padding-top: var(--space-xs);
+}
+
+/* ── File dropzone ────────────────────────────────────────── */
 .file-dropzone {
-  border: 2px dashed var(--border-color);
+  border: 2px dashed oklch(0.82 0.015 255);
   border-radius: var(--radius-lg);
   padding: var(--space-xl);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: var(--muted-light);
-  transition: all 0.2s ease;
+  gap: var(--space-xs);
+  background-color: var(--bg-subtle);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
   cursor: pointer;
+  color: var(--text-caption);
+  margin-bottom: var(--space-md);
 }
 
 .file-dropzone:hover {
-  border-color: var(--primary);
-  background-color: white;
+  border-color: var(--brand-primary);
+  background-color: var(--bg-surface);
+}
+
+.dropzone-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-body);
+  margin: 0;
+}
+
+.dropzone-hint {
+  font-size: 0.75rem;
+  color: var(--text-caption);
+  margin: 0;
 }
 </style>

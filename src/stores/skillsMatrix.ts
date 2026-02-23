@@ -278,6 +278,73 @@ function buildMatrixRow(employee: Employee): EmployeeMatrixRow {
   }
 }
 
+// ─── Row stats recompute (after in-place mutations) ──────────────────────────
+
+function recomputeRowStats(row: EmployeeMatrixRow) {
+  let validCount = 0
+  let expiringCount = 0
+  let expiredCount = 0
+  let requiredCount = 0
+  const gatingFailed: string[] = []
+
+  for (const item of row.competenceItems.values()) {
+    switch (item.derivedStatus) {
+      case 'VALID':       validCount++; break
+      case 'EXPIRING':    expiringCount++; break
+      case 'EXPIRED':     expiredCount++; break
+      case 'REQUIRED':
+      case 'IN_PROGRESS': requiredCount++; break
+    }
+    if (
+      item.isGating &&
+      (item.derivedStatus === 'EXPIRED' ||
+       item.derivedStatus === 'REQUIRED' ||
+       item.derivedStatus === 'IN_PROGRESS')
+    ) {
+      const comp = COMPETENCIES.find(c => c.id === item.competencyId)
+      if (comp) gatingFailed.push(comp.code)
+    }
+  }
+
+  row.validCount = validCount
+  row.expiringCount = expiringCount
+  row.expiredCount = expiredCount
+  row.requiredCount = requiredCount
+  row.gatingFailed.splice(0, row.gatingFailed.length, ...gatingFailed)
+  row.isAuthorised = gatingFailed.length === 0
+
+  // Recompute topAction
+  if (gatingFailed.length > 0) {
+    row.topAction = `Renew ${gatingFailed[0]}`
+  } else if (expiredCount > 0) {
+    const item = [...row.competenceItems.values()].find(i => i.derivedStatus === 'EXPIRED')
+    const comp = item ? COMPETENCIES.find(c => c.id === item.competencyId) : null
+    row.topAction = comp ? `Renew ${comp.code}` : 'Renew certification'
+  } else if (expiringCount > 0) {
+    const item = [...row.competenceItems.values()].find(i => i.derivedStatus === 'EXPIRING')
+    const comp = item ? COMPETENCIES.find(c => c.id === item.competencyId) : null
+    row.topAction = comp ? `Schedule ${comp.code}` : 'Schedule renewal'
+  } else if (requiredCount > 0) {
+    const item = [...row.competenceItems.values()].find(i => i.status === 'REQUIRED')
+    const comp = item ? COMPETENCIES.find(c => c.id === item.competencyId) : null
+    row.topAction = comp ? `Complete ${comp.code}` : 'Complete training'
+  } else {
+    row.topAction = 'All requirements met'
+  }
+}
+
+// ─── Responsible party helper ─────────────────────────────────────────────────
+
+export function getResponsibleParty(item: EmployeeCompetenceItem): string {
+  switch (item.derivedStatus) {
+    case 'REQUIRED':    return 'Employee'
+    case 'IN_PROGRESS': return 'Manager'
+    case 'EXPIRED':     return item.isGating ? 'Manager' : 'Employee'
+    case 'EXPIRING':    return 'Employee'
+    default:            return '—'
+  }
+}
+
 // ─── Column persistence ───────────────────────────────────────────────────────
 
 function getStoredColumns(): string[] {
@@ -535,6 +602,41 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
     return competencies.value.find(c => c.id === id)
   }
 
+  function reviewEvidence(
+    employeeId: string,
+    competencyId: string,
+    outcome: 'ACCEPT' | 'REJECT',
+    reason?: string
+  ) {
+    const row = mockEmployeeRows.value.find(r => r.employeeId === employeeId)
+    if (!row) return
+    const item = row.competenceItems.get(competencyId)
+    if (!item) return
+
+    if (outcome === 'ACCEPT') {
+      item.status = 'VALID'
+      item.derivedStatus = 'VALID'
+      toast.success('Evidence accepted — competence marked Valid')
+    } else {
+      item.status = 'REQUIRED'
+      item.derivedStatus = 'REQUIRED'
+      toast.info(reason ? `Evidence rejected: ${reason}` : 'Evidence rejected')
+    }
+    recomputeRowStats(row)
+  }
+
+  function markNotApplicable(employeeId: string, competencyId: string, justification: string) {
+    const row = mockEmployeeRows.value.find(r => r.employeeId === employeeId)
+    if (!row) return
+    const item = row.competenceItems.get(competencyId)
+    if (!item) return
+
+    item.status = 'N_A'
+    item.derivedStatus = 'N_A'
+    recomputeRowStats(row)
+    toast.success(`Marked N/A — ${justification}`)
+  }
+
   return {
     competencies,
     mockEmployeeRows,
@@ -558,5 +660,7 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
     resetColumns,
     getEmployeeById,
     getCompetencyById,
+    reviewEvidence,
+    markNotApplicable,
   }
 })

@@ -20,7 +20,11 @@ import {
   UserCircle2,
   Briefcase,
   GraduationCap,
-  BookOpen
+  BookOpen,
+  Bell,
+  Award,
+  ShieldCheck,
+  SwitchCamera
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -44,17 +48,49 @@ const personas = [
   {
     title: 'For Employees',
     quote: 'I finally have clarity on what I need and when it expires.',
-    features: ['Personal dashboard', 'Certificate uploads', 'Expiry reminders']
+    features: ['Personal competency dashboard', 'Awareness topic acknowledgement', 'Expiry reminders & status overview']
   },
   {
     title: 'For Managers',
     quote: 'I can see exactly who needs attention and take action immediately.',
-    features: ['Team overview', 'Skills matrix', 'Action queue']
+    features: ['Evidence review — accept or reject', 'N/A exceptions with justification', 'Responsible party per training action']
   },
   {
-    title: 'For Compliance',
+    title: 'For Compliance / HR',
     quote: 'When auditors ask, we have everything ready in seconds.',
-    features: ['Org-wide visibility', 'Audit trails', 'Instant reports']
+    features: ['Role requirement editing (risk, gating, type)', 'Full skills matrix with CSV export', 'Training need resolution workflows']
+  }
+]
+
+const interactiveCapabilities = [
+  {
+    role: 'Employee',
+    icon: UserCircle2,
+    color: 'cap-employee',
+    items: [
+      { icon: Award, text: 'My Competencies — personal status, expiry alerts, gating badge' },
+      { icon: Bell, text: 'Awareness Topics — acknowledge assigned topics, track pending count' },
+    ]
+  },
+  {
+    role: 'Manager',
+    icon: ShieldCheck,
+    color: 'cap-manager',
+    items: [
+      { icon: Table2, text: 'Skills Matrix — review evidence, accept/reject with reason' },
+      { icon: Check, text: 'Mark N/A with justification, see Responsible Party per item' },
+      { icon: GraduationCap, text: 'Training Needs — resolve via Upload, Book Training, OJT, or Assessment' },
+    ]
+  },
+  {
+    role: 'HR Admin',
+    icon: SwitchCamera,
+    color: 'cap-admin',
+    items: [
+      { icon: Briefcase, text: 'Role Detail — edit requirement risk level, gating, training & assessment type' },
+      { icon: FileCheck, text: 'Skills Matrix summary — Responsible column auto-computed per row' },
+      { icon: Users, text: 'Switch personas with the role switcher to explore all views' },
+    ]
   }
 ]
 
@@ -67,10 +103,12 @@ const outcomes = [
 
 const demoFeatures = [
   { name: 'Dashboard', desc: 'Real-time compliance health overview', path: '/dashboard', icon: LayoutDashboard },
-  { name: 'Skills Matrix', desc: 'Every employee, every requirement', path: '/skills-matrix', icon: Table2 },
+  { name: 'Skills Matrix', desc: 'Evidence review, N/A exceptions, responsible party', path: '/skills-matrix', icon: Table2 },
+  { name: 'My Competencies', desc: 'Personal status, expiry alerts and gating badge', path: '/my-competencies', icon: Award },
+  { name: 'Training Needs', desc: 'Resolve via Upload, Training, OJT or Assessment', path: '/training-needs', icon: GraduationCap },
+  { name: 'Roles', desc: 'Edit requirements — risk, gating, training type', path: '/roles', icon: Briefcase },
+  { name: 'Awareness Topics', desc: 'Acknowledge topics as Employee, manage as Admin', path: '/awareness-topics', icon: Bell },
   { name: 'People', desc: 'Individual records and evidence', path: '/people', icon: UserCircle2 },
-  { name: 'Roles', desc: 'Define once, apply to many', path: '/roles', icon: Briefcase },
-  { name: 'Training Needs', desc: 'Action queue with due dates', path: '/training-needs', icon: GraduationCap },
   { name: 'Competency Library', desc: 'Manage requirements and evidence', path: '/competency-library', icon: BookOpen }
 ]
 
@@ -219,6 +257,33 @@ const handleStartDemo = () => {
               </ul>
             </CardContent>
           </Card>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Interactive Capabilities -->
+    <section class="guide-section">
+      <div class="guide-section-label">Try It Yourself</div>
+      <h2 class="guide-section-title">What's Interactive in This Demo</h2>
+      <p class="guide-section-intro">Switch personas using the role switcher in the top bar to unlock each experience.</p>
+
+      <div class="guide-caps-grid">
+        <div
+          v-for="cap in interactiveCapabilities"
+          :key="cap.role"
+          class="guide-cap-card"
+          :class="cap.color"
+        >
+          <div class="guide-cap-header">
+            <component :is="cap.icon" class="guide-cap-role-icon" aria-hidden="true" />
+            <span class="guide-cap-role">{{ cap.role }}</span>
+          </div>
+          <ul class="guide-cap-list" role="list">
+            <li v-for="item in cap.items" :key="item.text">
+              <component :is="item.icon" class="guide-cap-item-icon" aria-hidden="true" />
+              <span>{{ item.text }}</span>
+            </li>
+          </ul>
         </div>
       </div>
     </section>
@@ -629,10 +694,91 @@ const handleStartDemo = () => {
   line-height: 1.4;
 }
 
+/* ─── Capabilities section ─────────────────────────────── */
+.guide-caps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+}
+
+.guide-cap-card {
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  border: 1px solid transparent;
+}
+
+.cap-employee {
+  background: oklch(0.62 0.14 162 / 0.06);
+  border-color: oklch(0.62 0.14 162 / 0.2);
+}
+
+.cap-manager {
+  background: oklch(0.38 0.14 266 / 0.06);
+  border-color: oklch(0.38 0.14 266 / 0.2);
+}
+
+.cap-admin {
+  background: oklch(0.72 0.15 58 / 0.06);
+  border-color: oklch(0.72 0.15 58 / 0.2);
+}
+
+.guide-cap-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.guide-cap-role-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.cap-employee .guide-cap-role-icon { color: var(--brand-success); }
+.cap-manager .guide-cap-role-icon  { color: var(--brand-primary); }
+.cap-admin .guide-cap-role-icon    { color: var(--brand-warning); }
+
+.guide-cap-role {
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.cap-employee .guide-cap-role { color: var(--brand-success); }
+.cap-manager .guide-cap-role  { color: var(--brand-primary); }
+.cap-admin .guide-cap-role    { color: var(--brand-warning); }
+
+.guide-cap-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.guide-cap-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  font-size: 0.8125rem;
+  color: var(--text-body);
+  line-height: 1.4;
+}
+
+.guide-cap-item-icon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--text-caption);
+}
+
 /* ─── Demo Features ────────────────────────────────────── */
 .guide-demo-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--space-md);
 }
 
@@ -722,7 +868,8 @@ const handleStartDemo = () => {
   }
 
   .guide-demo-grid,
-  .guide-personas-grid {
+  .guide-personas-grid,
+  .guide-caps-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 
@@ -735,7 +882,8 @@ const handleStartDemo = () => {
   .guide-challenges-grid,
   .guide-personas-grid,
   .guide-demo-grid,
-  .guide-outcomes-grid {
+  .guide-outcomes-grid,
+  .guide-caps-grid {
     grid-template-columns: 1fr;
   }
 
