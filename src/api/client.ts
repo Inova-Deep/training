@@ -1,4 +1,4 @@
-const API_BASE = 'https://dmlapi.inova.krd/api/v1'
+const API_BASE = '/api/v1'
 
 let authToken: string | null = null
 
@@ -62,7 +62,6 @@ export async function apiFetch<T>(
   
   if (response.status === 401) {
     clearToken()
-    window.location.href = '/login'
     throw new Error('Unauthorized')
   }
   
