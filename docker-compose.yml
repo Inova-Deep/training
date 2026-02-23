@@ -3,5 +3,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    network_mode: host   # shares host network stack (incl. VPN routes)
+    ports:
+      - "3000:80"
     restart: unless-stopped
