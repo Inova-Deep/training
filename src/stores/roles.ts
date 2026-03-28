@@ -5,14 +5,18 @@ import { rolesApi } from '@/api'
 import type { RoleApplicabilityDecision, RoleRequirementSet, RoleRequirement } from '@/types'
 import roleApplicabilityData from '@/data/roleApplicability.json'
 import roleRequirementsData from '@/data/roleRequirements.json'
+import { normalizeRoleName } from '@/lib/demoDomain'
 
-type RoleRequirementsJson = Record<string, {
-  setId: string
-  status: string
-  publishedAt: string
-  gatingCompetencyIds: string[]
-  requirements: RoleRequirement[]
-}>
+type RoleRequirementsJson = Record<
+  string,
+  {
+    setId: string
+    status: string
+    publishedAt: string
+    gatingCompetencyIds: string[]
+    requirements: RoleRequirement[]
+  }
+>
 
 const requirementsJson = roleRequirementsData as unknown as RoleRequirementsJson
 
@@ -30,12 +34,14 @@ function buildRequirementSets(): RoleRequirementSet[] {
 
 function buildRequirements(): RoleRequirement[] {
   return Object.entries(requirementsJson).flatMap(([jobTitleId, v]) =>
-    v.requirements.map(r => ({ ...r, roleRequirementSetId: v.setId }))
+    v.requirements.map((r) => ({ ...r, roleRequirementSetId: v.setId })),
   )
 }
 
 export const useRolesStore = defineStore('roles', () => {
-  const roles = ref<RoleApplicabilityDecision[]>(roleApplicabilityData as RoleApplicabilityDecision[])
+  const roles = ref<RoleApplicabilityDecision[]>(
+    roleApplicabilityData as RoleApplicabilityDecision[],
+  )
   const currentRole = ref<RoleApplicabilityDecision | null>(null)
   const roleRequirements = ref<RoleRequirement[]>(buildRequirements())
   const requirementSets = ref<RoleRequirementSet[]>(buildRequirementSets())
@@ -51,20 +57,18 @@ export const useRolesStore = defineStore('roles', () => {
   const searchQuery = ref('')
 
   const roleByJobTitle = computed(() => {
-    return (jobTitleId: string) => roles.value.find(r => r.erpJobTitleId === jobTitleId)
+    return (jobTitleId: string) => roles.value.find((r) => r.erpJobTitleId === jobTitleId)
   })
 
-  const activeRoles = computed(() =>
-    roles.value.filter(r => r.result === 'INCLUDED')
-  )
+  const activeRoles = computed(() => roles.value.filter((r) => r.result === 'INCLUDED'))
 
   const rolesByApplicability = computed(() => {
     return (result: 'INCLUDED' | 'AWARENESS_ONLY' | 'OUT_OF_SCOPE') =>
-      roles.value.filter(r => r.result === result)
+      roles.value.filter((r) => r.result === result)
   })
 
   const requirementsForSet = computed(() => {
-    return (setId: string) => roleRequirements.value.filter(r => r.roleRequirementSetId === setId)
+    return (setId: string) => roleRequirements.value.filter((r) => r.roleRequirementSetId === setId)
   })
 
   const hasRoles = computed(() => roles.value.length > 0)
@@ -72,28 +76,24 @@ export const useRolesStore = defineStore('roles', () => {
   const filteredRoles = computed(() => {
     if (!searchQuery.value) return [...roles.value]
     const query = searchQuery.value.toLowerCase()
-    return roles.value.filter(r =>
-      r.erpJobTitleId.toLowerCase().includes(query) ||
-      r.notes?.toLowerCase().includes(query)
+    return roles.value.filter(
+      (r) =>
+        r.erpJobTitleId.toLowerCase().includes(query) || r.notes?.toLowerCase().includes(query),
     )
   })
 
   /** Returns the gating competency IDs for a given job title name (substring match) */
   function getGatingIds(jobTitleName: string): string[] {
-    const key = Object.keys(requirementsJson).find(k =>
-      jobTitleName.toLowerCase().includes(k.toLowerCase())
-    )
+    const key = normalizeRoleName(jobTitleName)
     return key ? (requirementsJson[key]?.gatingCompetencyIds ?? []) : []
   }
 
-  /** Returns requirements for a given job title name (substring match) */
+  /** Returns requirements for a given job title name (exact canonical match) */
   function getRequirementsForJobTitle(jobTitleName: string): RoleRequirement[] {
-    const key = Object.keys(requirementsJson).find(k =>
-      jobTitleName.toLowerCase().includes(k.toLowerCase())
-    )
+    const key = normalizeRoleName(jobTitleName)
     if (!key) return []
     const entry = requirementsJson[key]
-    return entry ? entry.requirements.map(r => ({ ...r, roleRequirementSetId: entry.setId })) : []
+    return entry ? entry.requirements.map((r) => ({ ...r, roleRequirementSetId: entry.setId })) : []
   }
 
   async function fetchRoles() {
@@ -112,7 +112,8 @@ export const useRolesStore = defineStore('roles', () => {
   }
 
   async function fetchRole(jobTitleId: string) {
-    currentRole.value = roles.value.find(r => r.erpJobTitleId === jobTitleId) ?? null
+    const roleName = normalizeRoleName(jobTitleId)
+    currentRole.value = roles.value.find((r) => r.erpJobTitleId === roleName) ?? null
   }
 
   async function fetchRoleRequirements(setId: string) {
@@ -138,7 +139,11 @@ export const useRolesStore = defineStore('roles', () => {
     isSaving.value = true
     error.value = null
     try {
-      const newRole = { ...data, id: `dec-${Date.now()}`, createdAt: new Date().toISOString() } as RoleApplicabilityDecision
+      const newRole = {
+        ...data,
+        id: `dec-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+      } as RoleApplicabilityDecision
       roles.value.push(newRole)
       toast.success('Role created successfully')
       return newRole
@@ -155,7 +160,7 @@ export const useRolesStore = defineStore('roles', () => {
     isSaving.value = true
     error.value = null
     try {
-      const index = roles.value.findIndex(r => r.erpJobTitleId === jobTitleId)
+      const index = roles.value.findIndex((r) => r.erpJobTitleId === jobTitleId)
       if (index !== -1) {
         roles.value[index] = { ...roles.value[index]!, ...data }
         if (currentRole.value?.erpJobTitleId === jobTitleId) {
@@ -173,10 +178,17 @@ export const useRolesStore = defineStore('roles', () => {
     }
   }
 
-  async function addRequirement(setId: string, data: Omit<RoleRequirement, 'id' | 'roleRequirementSetId'>) {
+  async function addRequirement(
+    setId: string,
+    data: Omit<RoleRequirement, 'id' | 'roleRequirementSetId'>,
+  ) {
     isSaving.value = true
     try {
-      const req = { ...data, id: `req-${Date.now()}`, roleRequirementSetId: setId } as RoleRequirement
+      const req = {
+        ...data,
+        id: `req-${Date.now()}`,
+        roleRequirementSetId: setId,
+      } as RoleRequirement
       roleRequirements.value.push(req)
       toast.success('Requirement added successfully')
       return req
@@ -188,10 +200,14 @@ export const useRolesStore = defineStore('roles', () => {
     }
   }
 
-  async function updateRequirement(_setId: string, requirementId: string, data: Partial<RoleRequirement>) {
+  async function updateRequirement(
+    _setId: string,
+    requirementId: string,
+    data: Partial<RoleRequirement>,
+  ) {
     isSaving.value = true
     try {
-      const index = roleRequirements.value.findIndex(r => r.id === requirementId)
+      const index = roleRequirements.value.findIndex((r) => r.id === requirementId)
       if (index !== -1) {
         roleRequirements.value[index] = { ...roleRequirements.value[index]!, ...data }
       }
@@ -208,7 +224,7 @@ export const useRolesStore = defineStore('roles', () => {
   async function removeRequirement(_setId: string, requirementId: string) {
     isLoading.value = true
     try {
-      roleRequirements.value = roleRequirements.value.filter(r => r.id !== requirementId)
+      roleRequirements.value = roleRequirements.value.filter((r) => r.id !== requirementId)
       toast.success('Requirement removed successfully')
     } catch (e) {
       toast.error('Failed to remove requirement')
@@ -222,10 +238,18 @@ export const useRolesStore = defineStore('roles', () => {
     searchQuery.value = query
   }
 
-  function setFilters(_filters: Record<string, unknown>) { /* no-op for demo */ }
-  function clearFilters() { searchQuery.value = '' }
-  function setPage(page: number) { pagination.value.page = page }
-  function clearCurrentRole() { currentRole.value = null }
+  function setFilters(_filters: Record<string, unknown>) {
+    /* no-op for demo */
+  }
+  function clearFilters() {
+    searchQuery.value = ''
+  }
+  function setPage(page: number) {
+    pagination.value.page = page
+  }
+  function clearCurrentRole() {
+    currentRole.value = null
+  }
 
   function $reset() {
     roles.value = roleApplicabilityData as RoleApplicabilityDecision[]

@@ -4,7 +4,19 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Presentation, ArrowLeft, Check, X, AlertTriangle, Users, Briefcase, Shield, Clock, FileCheck, TrendingUp } from 'lucide-vue-next'
+import {
+  Presentation,
+  ArrowLeft,
+  Check,
+  X,
+  AlertTriangle,
+  Users,
+  Briefcase,
+  Shield,
+  Clock,
+  FileCheck,
+  TrendingUp,
+} from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -12,40 +24,113 @@ const router = useRouter()
 const problems = [
   { text: 'Spreadsheets everywhere', desc: 'Competence tracking scattered across multiple files' },
   { text: 'Audit anxiety', desc: 'No clear proof of who was trained, when, and by whom' },
-  { text: 'Expired certifications', desc: 'Discovering too late that critical qualifications have lapsed' },
+  {
+    text: 'Expired certifications',
+    desc: 'Discovering too late that critical qualifications have lapsed',
+  },
   { text: 'Unclear responsibilities', desc: 'Who needs what training? Who is responsible?' },
   { text: 'Safety risks', desc: 'Employees working independently without proper authorization' },
-  { text: 'Manual follow-ups', desc: 'Endless emails chasing training completions' }
+  { text: 'Manual follow-ups', desc: 'Endless emails chasing training completions' },
 ]
 
 const solutions = [
   { text: 'Defines', desc: 'what competence each job role requires' },
-  { text: 'Tracks', desc: 'each employee\'s status against those requirements' },
+  { text: 'Tracks', desc: "each employee's status against those requirements" },
   { text: 'Alerts', desc: 'you before certifications expire' },
   { text: 'Manages', desc: 'training actions until gaps are closed' },
-  { text: 'Proves', desc: 'compliance with complete audit trails' }
+  { text: 'Proves', desc: 'compliance with complete audit trails' },
 ]
 
 const steps = [
-  { num: 1, title: 'Define What Each Role Needs', desc: 'Configure required competencies once per role. The system applies them automatically to everyone in that role.' },
-  { num: 2, title: 'See Status at a Glance', desc: 'Color-coded dashboard shows Valid, Expiring, and Expired items instantly.' },
-  { num: 3, title: 'Automatic Alerts', desc: 'The system proactively notifies you of expiring certifications and required actions.' },
-  { num: 4, title: 'Manage Training', desc: 'Training needs are created automatically and tracked until completion.' },
-  { num: 5, title: 'Upload Evidence', desc: 'Employees upload certificates; managers review and approve.' },
-  { num: 6, title: 'Audit-Ready Reports', desc: 'One-click exports and complete audit trails for compliance.' }
+  {
+    num: 1,
+    title: 'Define What Each Role Needs',
+    desc: 'Configure required competencies once per role. The system applies them automatically to everyone in that role.',
+  },
+  {
+    num: 2,
+    title: 'See Status at a Glance',
+    desc: 'Color-coded dashboard shows Valid, Expiring, and Expired items instantly.',
+  },
+  {
+    num: 3,
+    title: 'Automatic Alerts',
+    desc: 'The system proactively notifies you of expiring certifications and required actions.',
+  },
+  {
+    num: 4,
+    title: 'Manage Training',
+    desc: 'Training needs are created automatically and tracked until completion.',
+  },
+  {
+    num: 5,
+    title: 'Upload Evidence',
+    desc: 'Employees upload certificates; managers review and approve.',
+  },
+  {
+    num: 6,
+    title: 'Audit-Ready Reports',
+    desc: 'One-click exports and complete audit trails for compliance.',
+  },
 ]
 
 const personas = [
-  { icon: Users, title: 'For Employees', quote: 'I can see exactly what training I need, upload my certificates, and know when my qualifications expire.', features: ['My competence requirements', 'My training tasks', 'My authorization status'] },
-  { icon: Briefcase, title: 'For Managers', quote: 'I immediately see who on my team needs attention. I can filter by expiring or missing items and take action.', features: ['Team dashboard', 'Skills matrix', 'Training needs queue'] },
-  { icon: Shield, title: 'For HR & Compliance', quote: 'We finally have one source of truth. When auditors ask for proof, we can generate reports instantly.', features: ['Org-wide overview', 'Competency library', 'Complete audit trail'] }
+  {
+    icon: Users,
+    title: 'For Employees',
+    quote:
+      'I can see exactly what training I need, upload my certificates, and know when my qualifications expire.',
+    features: ['My competence requirements', 'My training tasks', 'My authorization status'],
+  },
+  {
+    icon: Briefcase,
+    title: 'For Managers',
+    quote:
+      'I immediately see who on my team needs attention. I can filter by expiring or missing items and take action.',
+    features: ['Team dashboard', 'Skills matrix', 'Training needs queue'],
+  },
+  {
+    icon: Shield,
+    title: 'For HR & Compliance',
+    quote:
+      'We finally have one source of truth. When auditors ask for proof, we can generate reports instantly.',
+    features: ['Org-wide overview', 'Competency library', 'Complete audit trail'],
+  },
 ]
 
 const benefits = [
-  { icon: Clock, title: 'Save Time', items: ['No more manual spreadsheet updates', 'Automatic expiry notifications', 'One-click reporting'] },
-  { icon: AlertTriangle, title: 'Reduce Risk', items: ['Never miss an expired certification', 'Clear authorization status', 'Safety-critical requirements flagged'] },
-  { icon: FileCheck, title: 'Pass Audits', items: ['Complete audit trail', 'Timestamped evidence', 'Exportable reports'] },
-  { icon: TrendingUp, title: 'Scale Easily', items: ['Works for 10 or 10,000 employees', 'Role-based requirements apply automatically', 'Consistent process organization-wide'] }
+  {
+    icon: Clock,
+    title: 'Save Time',
+    items: [
+      'No more manual spreadsheet updates',
+      'Automatic expiry notifications',
+      'One-click reporting',
+    ],
+  },
+  {
+    icon: AlertTriangle,
+    title: 'Reduce Risk',
+    items: [
+      'Never miss an expired certification',
+      'Clear authorization status',
+      'Safety-critical requirements flagged',
+    ],
+  },
+  {
+    icon: FileCheck,
+    title: 'Pass Audits',
+    items: ['Complete audit trail', 'Timestamped evidence', 'Exportable reports'],
+  },
+  {
+    icon: TrendingUp,
+    title: 'Scale Easily',
+    items: [
+      'Works for 10 or 10,000 employees',
+      'Role-based requirements apply automatically',
+      'Consistent process organization-wide',
+    ],
+  },
 ]
 
 const demoFeatures = [
@@ -54,7 +139,7 @@ const demoFeatures = [
   'Training Needs - Action queue with due dates',
   'Evidence Management - Upload, review, approve',
   'Role Configuration - Define once, apply to many',
-  'Audit Reports - Export-ready documentation'
+  'Audit Reports - Export-ready documentation',
 ]
 
 const activeSection = ref(0)
@@ -79,10 +164,21 @@ const scrollToSection = (index: number) => {
       <Separator />
       <div class="sales-pitch-nav-items">
         <Button
-          v-for="(section, index) in ['Problem', 'Solution', 'Workflow', 'Users', 'Safety', 'Benefits', 'Demo']"
+          v-for="(section, index) in [
+            'Problem',
+            'Solution',
+            'Workflow',
+            'Users',
+            'Safety',
+            'Benefits',
+            'Demo',
+          ]"
           :key="index"
           variant="ghost"
-          :class="['sales-pitch-nav-btn', { 'sales-pitch-nav-btn-active': activeSection === index }]"
+          :class="[
+            'sales-pitch-nav-btn',
+            { 'sales-pitch-nav-btn-active': activeSection === index },
+          ]"
           @click="scrollToSection(index)"
         >
           {{ section }}
@@ -107,8 +203,10 @@ const scrollToSection = (index: number) => {
         <!-- Problem Section -->
         <section id="section-0" class="sales-pitch-section">
           <h2 class="sales-pitch-section-title">The Problem We Solve</h2>
-          <p class="sales-pitch-section-intro">Is your organization struggling with these challenges?</p>
-          
+          <p class="sales-pitch-section-intro">
+            Is your organization struggling with these challenges?
+          </p>
+
           <div class="sales-pitch-problems">
             <Card v-for="problem in problems" :key="problem.text" class="sales-pitch-problem-card">
               <CardContent>
@@ -122,7 +220,7 @@ const scrollToSection = (index: number) => {
               </CardContent>
             </Card>
           </div>
-          
+
           <div class="sales-pitch-highlight">
             <p>If any of this sounds familiar, we have the solution.</p>
           </div>
@@ -131,10 +229,16 @@ const scrollToSection = (index: number) => {
         <!-- Solution Section -->
         <section id="section-1" class="sales-pitch-section">
           <h2 class="sales-pitch-section-title">What Our System Does</h2>
-          <p class="sales-pitch-section-intro">We replace spreadsheet chaos with a single, organized platform that:</p>
-          
+          <p class="sales-pitch-section-intro">
+            We replace spreadsheet chaos with a single, organized platform that:
+          </p>
+
           <div class="sales-pitch-solutions">
-            <div v-for="(solution, index) in solutions" :key="solution.text" class="sales-pitch-solution-item">
+            <div
+              v-for="(solution, index) in solutions"
+              :key="solution.text"
+              class="sales-pitch-solution-item"
+            >
               <div class="sales-pitch-solution-num">{{ index + 1 }}</div>
               <div class="sales-pitch-solution-text">
                 <strong>{{ solution.text }}</strong> {{ solution.desc }}
@@ -146,7 +250,7 @@ const scrollToSection = (index: number) => {
         <!-- Workflow Section -->
         <section id="section-2" class="sales-pitch-section">
           <h2 class="sales-pitch-section-title">How It Works: A Simple Workflow</h2>
-          
+
           <div class="sales-pitch-steps">
             <Card v-for="step in steps" :key="step.num" class="sales-pitch-step-card">
               <CardHeader>
@@ -165,7 +269,7 @@ const scrollToSection = (index: number) => {
         <!-- Users Section -->
         <section id="section-3" class="sales-pitch-section">
           <h2 class="sales-pitch-section-title">Who Uses It & How</h2>
-          
+
           <div class="sales-pitch-personas">
             <Card v-for="persona in personas" :key="persona.title" class="sales-pitch-persona-card">
               <CardHeader>
@@ -193,11 +297,13 @@ const scrollToSection = (index: number) => {
         <section id="section-4" class="sales-pitch-section">
           <h2 class="sales-pitch-section-title">Safety-Critical Features</h2>
           <h3 class="sales-pitch-section-subtitle">Independent Work Authorization</h3>
-          
+
           <Card class="sales-pitch-auth-card">
             <CardHeader>
               <CardTitle>Authorization Status</CardTitle>
-              <CardDescription>The system automatically determines who can work independently</CardDescription>
+              <CardDescription
+                >The system automatically determines who can work independently</CardDescription
+              >
             </CardHeader>
             <CardContent>
               <div class="sales-pitch-auth-example">
@@ -228,19 +334,21 @@ const scrollToSection = (index: number) => {
                   </div>
                 </div>
               </div>
-              
+
               <Separator />
-              
+
               <div class="sales-pitch-auth-expired">
                 <div class="sales-pitch-auth-header">
                   <span>If ANY gating requirement expires:</span>
                   <span class="badge badge-critical">NOT AUTHORIZED</span>
                 </div>
-                <p class="sales-pitch-auth-action">Action Required: Complete recertification before independent work</p>
+                <p class="sales-pitch-auth-action">
+                  Action Required: Complete recertification before independent work
+                </p>
               </div>
             </CardContent>
           </Card>
-          
+
           <div class="sales-pitch-highlight">
             <p>This protects your people and your organization.</p>
           </div>
@@ -249,7 +357,7 @@ const scrollToSection = (index: number) => {
         <!-- Benefits Section -->
         <section id="section-5" class="sales-pitch-section">
           <h2 class="sales-pitch-section-title">Key Benefits</h2>
-          
+
           <div class="sales-pitch-benefits">
             <Card v-for="benefit in benefits" :key="benefit.title" class="sales-pitch-benefit-card">
               <CardHeader>
@@ -273,7 +381,7 @@ const scrollToSection = (index: number) => {
         <!-- Demo Section -->
         <section id="section-6" class="sales-pitch-section">
           <h2 class="sales-pitch-section-title">What You'll See in the Demo</h2>
-          
+
           <Card class="sales-pitch-demo-card">
             <CardContent>
               <ul class="sales-pitch-demo-list">
@@ -284,14 +392,15 @@ const scrollToSection = (index: number) => {
               </ul>
             </CardContent>
           </Card>
-          
+
           <div class="sales-pitch-cta">
             <h3>Ready to See It in Action?</h3>
-            <p>Request a personalized demo where we'll walk through the complete workflow, answer your questions, and discuss integration with your existing systems.</p>
+            <p>
+              Request a personalized demo where we'll walk through the complete workflow, answer
+              your questions, and discuss integration with your existing systems.
+            </p>
             <div class="sales-pitch-cta-actions">
-              <Button size="lg" @click="router.push('/dashboard')">
-                Explore the Demo
-              </Button>
+              <Button size="lg" @click="router.push('/dashboard')"> Explore the Demo </Button>
               <Button variant="outline" size="lg" @click="router.push('/skills-matrix')">
                 View Skills Matrix
               </Button>
@@ -773,7 +882,7 @@ const scrollToSection = (index: number) => {
   .sales-pitch-personas {
     grid-template-columns: 1fr;
   }
-  
+
   .sales-pitch-benefits {
     grid-template-columns: 1fr;
   }
@@ -783,23 +892,23 @@ const scrollToSection = (index: number) => {
   .sales-pitch-nav {
     display: none;
   }
-  
+
   .sales-pitch-inner {
     padding: var(--space-lg);
   }
-  
+
   .sales-pitch-problems {
     grid-template-columns: 1fr;
   }
-  
+
   .sales-pitch-steps {
     grid-template-columns: 1fr;
   }
-  
+
   .sales-pitch-title {
     font-size: 1.5rem;
   }
-  
+
   .sales-pitch-cta-actions {
     flex-direction: column;
   }

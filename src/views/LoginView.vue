@@ -5,7 +5,14 @@ import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from '@/components/ui/card'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -35,20 +42,20 @@ async function handleLogin() {
         <form @submit.prevent="handleLogin">
           <div class="form-field">
             <Label for="email">Email</Label>
-            <Input 
-              id="email" 
-              v-model="email" 
-              type="email" 
+            <Input
+              id="email"
+              v-model="email"
+              type="email"
               placeholder="Enter your email"
               required
             />
           </div>
           <div class="form-field">
             <Label for="password">Password</Label>
-            <Input 
-              id="password" 
-              v-model="password" 
-              type="password" 
+            <Input
+              id="password"
+              v-model="password"
+              type="password"
               placeholder="Enter your password"
               required
             />

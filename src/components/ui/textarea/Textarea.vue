@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from "vue"
-import { useVModel } from "@vueuse/core"
-import { cn } from "@/lib/utils"
+import type { HTMLAttributes } from 'vue'
+import { useVModel } from '@vueuse/core'
+import { cn } from '@/lib/utils'
 
 const props = defineProps<{
   defaultValue?: string
   modelValue?: string
-  class?: HTMLAttributes["class"]
+  class?: HTMLAttributes['class']
   placeholder?: string
   rows?: number
   disabled?: boolean
 }>()
 
 const emits = defineEmits<{
-  (e: "update:modelValue", payload: string): void
+  (e: 'update:modelValue', payload: string): void
 }>()
 
-const modelValue = useVModel(props, "modelValue", emits, {
+const modelValue = useVModel(props, 'modelValue', emits, {
   passive: true,
   defaultValue: props.defaultValue,
 })
@@ -29,10 +29,12 @@ const modelValue = useVModel(props, "modelValue", emits, {
     :placeholder="placeholder"
     :rows="rows ?? 3"
     :disabled="disabled"
-    :class="cn(
-      'placeholder:text-muted-foreground border-input w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none resize-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
-      'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
-      props.class,
-    )"
+    :class="
+      cn(
+        'placeholder:text-muted-foreground border-input w-full min-w-0 rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none resize-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
+        'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
+        props.class,
+      )
+    "
   />
 </template>

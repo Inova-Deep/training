@@ -76,18 +76,27 @@ export const useTrainingNeedsStore = defineStore('trainingNeeds', () => {
 
   // Computed filtered list applying all 4 active filters
   const filteredNeeds = computed(() => {
-    return trainingNeeds.value.filter(n => {
-      const deptMatch = !filters.department || (n as TrainingNeed & { department?: string }).department === filters.department
-      const priorityMatch = !filters.priority || filters.priority === 'all' || n.priority === filters.priority
-      const statusMatch = !filters.status || filters.status === 'all' || (n.workflowStatus ?? n.status) === filters.status
-      const sourceMatch = !filters.sourceType || filters.sourceType === 'all' || n.sourceType === filters.sourceType
-      const searchMatch = !filters.search || (() => {
-        const q = filters.search.toLowerCase()
-        return (
-          (n.sourceReference ?? '').toLowerCase().includes(q) ||
-          (n.sourceType ?? '').toLowerCase().includes(q)
-        )
-      })()
+    return trainingNeeds.value.filter((n) => {
+      const deptMatch =
+        !filters.department ||
+        (n as TrainingNeed & { department?: string }).department === filters.department
+      const priorityMatch =
+        !filters.priority || filters.priority === 'all' || n.priority === filters.priority
+      const statusMatch =
+        !filters.status ||
+        filters.status === 'all' ||
+        (n.workflowStatus ?? n.status) === filters.status
+      const sourceMatch =
+        !filters.sourceType || filters.sourceType === 'all' || n.sourceType === filters.sourceType
+      const searchMatch =
+        !filters.search ||
+        (() => {
+          const q = filters.search.toLowerCase()
+          return (
+            (n.sourceReference ?? '').toLowerCase().includes(q) ||
+            (n.sourceType ?? '').toLowerCase().includes(q)
+          )
+        })()
       return deptMatch && priorityMatch && statusMatch && sourceMatch && searchMatch
     })
   })
@@ -106,8 +115,8 @@ export const useTrainingNeedsStore = defineStore('trainingNeeds', () => {
       const workflowStatuses: TrainingNeedWorkflowStatus[] = [
         'IDENTIFIED',
         'IDENTIFIED',
-        'APPROVED',       // tmpl-003: forklift near-miss NCR-2026-047
-        'IN_PROGRESS',    // tmpl-004: abrasive wheel IR-2026-012
+        'APPROVED', // tmpl-003: forklift near-miss NCR-2026-047
+        'IN_PROGRESS', // tmpl-004: abrasive wheel IR-2026-012
         'IDENTIFIED',
         'APPROVED',
         'IDENTIFIED',
@@ -121,8 +130,8 @@ export const useTrainingNeedsStore = defineStore('trainingNeeds', () => {
       const interventionTypes: (ResolutionType | undefined)[] = [
         undefined,
         undefined,
-        'SUPERVISOR_OBSERVATION',  // NCR-2026-047 forklift near-miss
-        'CERTIFICATION_RENEWAL',   // IR-2026-012 abrasive wheel
+        'SUPERVISOR_OBSERVATION', // NCR-2026-047 forklift near-miss
+        'CERTIFICATION_RENEWAL', // IR-2026-012 abrasive wheel
         undefined,
         undefined,
         undefined,
@@ -135,8 +144,8 @@ export const useTrainingNeedsStore = defineStore('trainingNeeds', () => {
       const priorities: Array<TrainingNeed['priority']> = [
         'HIGH',
         'MEDIUM',
-        'CRITICAL',  // NCR forklift
-        'CRITICAL',  // incident abrasive wheel
+        'CRITICAL', // NCR forklift
+        'CRITICAL', // incident abrasive wheel
         'MEDIUM',
         'HIGH',
         'MEDIUM',
@@ -187,7 +196,7 @@ export const useTrainingNeedsStore = defineStore('trainingNeeds', () => {
   const resolveNeed = async (id: string, data: ResolutionData) => {
     isLoading.value = true
     try {
-      const index = trainingNeeds.value.findIndex(tn => tn.id === id)
+      const index = trainingNeeds.value.findIndex((tn) => tn.id === id)
       if (index !== -1 && trainingNeeds.value[index]) {
         trainingNeeds.value[index].workflowStatus = 'IN_PROGRESS'
         trainingNeeds.value[index].status = 'IN_PROGRESS'
@@ -196,13 +205,13 @@ export const useTrainingNeedsStore = defineStore('trainingNeeds', () => {
         trainingNeeds.value[index].updatedAt = new Date().toISOString()
       }
       const messages: Record<ResolutionType, string> = {
-        COACHING_OJT:           'Coaching / OJT session scheduled',
-        TOOLBOX_TALK:           'Toolbox talk scheduled',
-        EXTERNAL_COURSE:        'External course booked',
-        INTERNAL_BRIEFING:      'Internal briefing scheduled',
-        PROCEDURE_READ_ACK:     'Read & acknowledge task issued',
+        COACHING_OJT: 'Coaching / OJT session scheduled',
+        TOOLBOX_TALK: 'Toolbox talk scheduled',
+        EXTERNAL_COURSE: 'External course booked',
+        INTERNAL_BRIEFING: 'Internal briefing scheduled',
+        PROCEDURE_READ_ACK: 'Read & acknowledge task issued',
         SUPERVISOR_OBSERVATION: 'Supervisor observation scheduled',
-        CERTIFICATION_RENEWAL:  'Certification renewal booked',
+        CERTIFICATION_RENEWAL: 'Certification renewal booked',
       }
       toast.success(messages[data.type])
     } catch (e) {
@@ -214,7 +223,7 @@ export const useTrainingNeedsStore = defineStore('trainingNeeds', () => {
 
   const updateStatus = async (id: string, status: TrainingNeed['status']) => {
     try {
-      const index = trainingNeeds.value.findIndex(tn => tn.id === id)
+      const index = trainingNeeds.value.findIndex((tn) => tn.id === id)
       if (index !== -1 && trainingNeeds.value[index]) {
         trainingNeeds.value[index].status = status
         trainingNeeds.value[index].updatedAt = new Date().toISOString()

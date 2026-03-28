@@ -4,6 +4,7 @@ import { toast } from 'vue-sonner'
 import type { Employee } from '@/api/client'
 import competenciesData from '@/data/competencies.json'
 import roleRequirementsData from '@/data/roleRequirements.json'
+import { normalizeBusinessUnitName, normalizeRoleName } from '@/lib/demoDomain'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -25,7 +26,14 @@ export type CompetencyCategory =
   | 'Plant & Machinery'
   | 'Business / Systems'
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH_CRITICAL'
-export type CompetenceStatus = 'VALID' | 'REQUIRED' | 'IN_PROGRESS' | 'N_A' | 'UNDER_SUPERVISION' | 'PARTIALLY_MET' | 'REASSESSMENT_DUE'
+export type CompetenceStatus =
+  | 'VALID'
+  | 'REQUIRED'
+  | 'IN_PROGRESS'
+  | 'N_A'
+  | 'UNDER_SUPERVISION'
+  | 'PARTIALLY_MET'
+  | 'REASSESSMENT_DUE'
 export type DerivedStatus = CompetenceStatus | 'EXPIRING' | 'EXPIRED'
 
 export interface Competency {
@@ -103,30 +111,35 @@ export interface MatrixSorting {
 
 // ─── Competency data from JSON ─────────────────────────────────────────────────
 
-type RoleRequirementsJson = Record<string, {
-  setId: string
-  gatingCompetencyIds: string[]
-  requirements: Array<{ competencyLibraryItemId: string; isGating: boolean; mandatory: boolean }>
-}>
+type RoleRequirementsJson = Record<
+  string,
+  {
+    setId: string
+    gatingCompetencyIds: string[]
+    requirements: Array<{ competencyLibraryItemId: string; isGating: boolean; mandatory: boolean }>
+  }
+>
 
 const requirementsJson = roleRequirementsData as RoleRequirementsJson
 
 export { requirementsJson }
 
 // Map JSON competency items to the Competency interface used by the matrix
-const COMPETENCIES: Competency[] = (competenciesData as Array<{
-  id: string
-  code: string
-  title: string
-  category: string
-  riskLevelCode: string
-  criticalityDomain?: string
-  defaultTrainingTypeCode: string
-  defaultAssessmentMethodCode: string
-  defaultRequiresExpiry: boolean
-  defaultValidityDays?: number
-  competencyType?: string
-}>).map(c => ({
+const COMPETENCIES: Competency[] = (
+  competenciesData as Array<{
+    id: string
+    code: string
+    title: string
+    category: string
+    riskLevelCode: string
+    criticalityDomain?: string
+    defaultTrainingTypeCode: string
+    defaultAssessmentMethodCode: string
+    defaultRequiresExpiry: boolean
+    defaultValidityDays?: number
+    competencyType?: string
+  }>
+).map((c) => ({
   id: c.id,
   code: c.code,
   title: c.title,
@@ -145,7 +158,7 @@ const COMPETENCIES: Competency[] = (competenciesData as Array<{
 function hashString(str: string): number {
   let hash = 0
   for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i)
+    hash = (hash << 5) - hash + str.charCodeAt(i)
     hash |= 0
   }
   return Math.abs(hash)
@@ -160,41 +173,43 @@ function seededRand(employeeId: string, competencyId: string): number {
 
 /** Find the gating competency IDs for a job title by name keyword match */
 function getGatingIdsForJobTitle(jobTitleName: string): string[] {
-  const key = Object.keys(requirementsJson).find(k =>
-    jobTitleName.toLowerCase().includes(k.toLowerCase())
-  )
+  const key = normalizeRoleName(jobTitleName)
   return key ? (requirementsJson[key]?.gatingCompetencyIds ?? []) : []
 }
 
 /** Compute supervision status for a row (priority order per spec) */
 function computeSupervisionStatus(
   competenceItems: Map<string, EmployeeCompetenceItem>,
-  gatingIds: string[]
+  gatingIds: string[],
 ): SupervisionStatus {
   const items = Array.from(competenceItems.values())
-  const gatingItems = items.filter(i => gatingIds.includes(i.competencyId))
-  const nonGatingItems = items.filter(i => !gatingIds.includes(i.competencyId))
+  const gatingItems = items.filter((i) => gatingIds.includes(i.competencyId))
+  const nonGatingItems = items.filter((i) => !gatingIds.includes(i.competencyId))
 
   // Find mandatory (HIGH_CRITICAL) gating items
-  const mandatoryGatingIds = COMPETENCIES
-    .filter(c => c.riskLevel === 'HIGH_CRITICAL' && gatingIds.includes(c.id))
-    .map(c => c.id)
-  const mandatoryGatingItems = items.filter(i => mandatoryGatingIds.includes(i.competencyId))
+  const mandatoryGatingIds = COMPETENCIES.filter(
+    (c) => c.riskLevel === 'HIGH_CRITICAL' && gatingIds.includes(c.id),
+  ).map((c) => c.id)
+  const mandatoryGatingItems = items.filter((i) => mandatoryGatingIds.includes(i.competencyId))
 
   // 1. Any mandatory gating EXPIRED or REQUIRED → NON_COMPLIANT_MANDATORY
-  if (mandatoryGatingItems.some(i => i.derivedStatus === 'EXPIRED' || i.derivedStatus === 'REQUIRED')) {
+  if (
+    mandatoryGatingItems.some(
+      (i) => i.derivedStatus === 'EXPIRED' || i.derivedStatus === 'REQUIRED',
+    )
+  ) {
     return 'NON_COMPLIANT_MANDATORY'
   }
   // 2. Any (non-mandatory) gating EXPIRED or REQUIRED → REASSESSMENT_REQUIRED
-  if (gatingItems.some(i => i.derivedStatus === 'EXPIRED' || i.derivedStatus === 'REQUIRED')) {
+  if (gatingItems.some((i) => i.derivedStatus === 'EXPIRED' || i.derivedStatus === 'REQUIRED')) {
     return 'REASSESSMENT_REQUIRED'
   }
   // 3. Any gating UNDER_SUPERVISION → SUPERVISED_ONLY
-  if (gatingItems.some(i => i.derivedStatus === 'UNDER_SUPERVISION')) {
+  if (gatingItems.some((i) => i.derivedStatus === 'UNDER_SUPERVISION')) {
     return 'SUPERVISED_ONLY'
   }
   // 4. Any non-gating UNDER_SUPERVISION → RESTRICTED_SCOPE
-  if (nonGatingItems.some(i => i.derivedStatus === 'UNDER_SUPERVISION')) {
+  if (nonGatingItems.some((i) => i.derivedStatus === 'UNDER_SUPERVISION')) {
     return 'RESTRICTED_SCOPE'
   }
   // 5. Otherwise → FIT_FOR_INDEPENDENT_WORK
@@ -202,7 +217,7 @@ function computeSupervisionStatus(
 }
 
 function buildMatrixRow(employee: Employee): EmployeeMatrixRow {
-  const jobTitleName = employee.jobTitle?.name ?? ''
+  const jobTitleName = normalizeRoleName(employee.jobTitle?.name)
   const gatingForRole = getGatingIdsForJobTitle(jobTitleName)
   const today = new Date()
 
@@ -226,9 +241,10 @@ function buildMatrixRow(employee: Employee): EmployeeMatrixRow {
 
     // First Aid (comp-015) only for QHSE/Safety roles
     const isFirstAid = comp.id === 'comp-015'
-    const isQhseRole = jobTitleName.toLowerCase().includes('qhse') ||
-                       jobTitleName.toLowerCase().includes('hse') ||
-                       jobTitleName.toLowerCase().includes('safety')
+    const isQhseRole =
+      jobTitleName.toLowerCase().includes('qhse') ||
+      jobTitleName.toLowerCase().includes('hse') ||
+      jobTitleName.toLowerCase().includes('safety')
 
     if (isFirstAid && !isQhseRole) {
       status = 'N_A'
@@ -236,13 +252,19 @@ function buildMatrixRow(employee: Employee): EmployeeMatrixRow {
     } else if (rand < 0.45) {
       // VALID (45%)
       status = 'VALID'
-      lastCompletedAt = new Date(today.getTime() - hashString(employee.id + comp.id + 'lc') % (180 * 86400000)).toISOString().split('T')[0]
+      lastCompletedAt = new Date(
+        today.getTime() - (hashString(employee.id + comp.id + 'lc') % (180 * 86400000)),
+      )
+        .toISOString()
+        .split('T')[0]
       evidenceRef = `EV-${employee.employeeNo}-${comp.code}`
 
       if (comp.requiresExpiry) {
         const validityDays = comp.defaultValidityDays ?? 365
         const remainingDays = hashString(employee.id + comp.id + 'rd') % validityDays
-        expiryDate = new Date(today.getTime() + remainingDays * 86400000).toISOString().split('T')[0]
+        expiryDate = new Date(today.getTime() + remainingDays * 86400000)
+          .toISOString()
+          .split('T')[0]
 
         if (remainingDays <= 30) {
           derivedStatus = 'EXPIRING'
@@ -259,12 +281,20 @@ function buildMatrixRow(employee: Employee): EmployeeMatrixRow {
       // UNDER_SUPERVISION (10%)
       status = 'UNDER_SUPERVISION'
       derivedStatus = 'UNDER_SUPERVISION'
-      lastCompletedAt = new Date(today.getTime() - hashString(employee.id + comp.id + 'lc') % (60 * 86400000)).toISOString().split('T')[0]
+      lastCompletedAt = new Date(
+        today.getTime() - (hashString(employee.id + comp.id + 'lc') % (60 * 86400000)),
+      )
+        .toISOString()
+        .split('T')[0]
       supervisedCount++
     } else if (rand < 0.67) {
       // EXPIRED (for expiry-required) or VALID (for non-expiry) (12%)
       status = 'VALID'
-      lastCompletedAt = new Date(today.getTime() - hashString(employee.id + comp.id + 'lc') % (180 * 86400000)).toISOString().split('T')[0]
+      lastCompletedAt = new Date(
+        today.getTime() - (hashString(employee.id + comp.id + 'lc') % (180 * 86400000)),
+      )
+        .toISOString()
+        .split('T')[0]
       evidenceRef = `EV-${employee.employeeNo}-${comp.code}`
 
       if (comp.requiresExpiry) {
@@ -276,7 +306,7 @@ function buildMatrixRow(employee: Employee): EmployeeMatrixRow {
         derivedStatus = 'VALID'
         validCount++
       }
-    } else if (rand < 0.80) {
+    } else if (rand < 0.8) {
       // IN_PROGRESS (13%)
       status = 'IN_PROGRESS'
       derivedStatus = 'IN_PROGRESS'
@@ -288,7 +318,13 @@ function buildMatrixRow(employee: Employee): EmployeeMatrixRow {
       requiredCount++
     }
 
-    if (isGating && (derivedStatus === 'EXPIRED' || derivedStatus === 'REQUIRED' || derivedStatus === 'IN_PROGRESS' || derivedStatus === 'UNDER_SUPERVISION')) {
+    if (
+      isGating &&
+      (derivedStatus === 'EXPIRED' ||
+        derivedStatus === 'REQUIRED' ||
+        derivedStatus === 'IN_PROGRESS' ||
+        derivedStatus === 'UNDER_SUPERVISION')
+    ) {
       gatingFailed.push(comp.code)
     }
 
@@ -309,27 +345,35 @@ function buildMatrixRow(employee: Employee): EmployeeMatrixRow {
   if (gatingFailed.length > 0) {
     topAction = `Renew ${gatingFailed[0]}`
   } else if (expiredCount > 0) {
-    const expiredItem = Array.from(competenceItems.values()).find(item => item.derivedStatus === 'EXPIRED')
+    const expiredItem = Array.from(competenceItems.values()).find(
+      (item) => item.derivedStatus === 'EXPIRED',
+    )
     if (expiredItem) {
-      const comp = COMPETENCIES.find(c => c.id === expiredItem.competencyId)
+      const comp = COMPETENCIES.find((c) => c.id === expiredItem.competencyId)
       topAction = `Renew ${comp?.code ?? 'certification'}`
     }
   } else if (expiringCount > 0) {
-    const expiringItem = Array.from(competenceItems.values()).find(item => item.derivedStatus === 'EXPIRING')
+    const expiringItem = Array.from(competenceItems.values()).find(
+      (item) => item.derivedStatus === 'EXPIRING',
+    )
     if (expiringItem) {
-      const comp = COMPETENCIES.find(c => c.id === expiringItem.competencyId)
+      const comp = COMPETENCIES.find((c) => c.id === expiringItem.competencyId)
       topAction = `Schedule ${comp?.code ?? 'renewal'}`
     }
   } else if (requiredCount > 0) {
-    const requiredItem = Array.from(competenceItems.values()).find(item => item.status === 'REQUIRED')
+    const requiredItem = Array.from(competenceItems.values()).find(
+      (item) => item.status === 'REQUIRED',
+    )
     if (requiredItem) {
-      const comp = COMPETENCIES.find(c => c.id === requiredItem.competencyId)
+      const comp = COMPETENCIES.find((c) => c.id === requiredItem.competencyId)
       topAction = `Complete ${comp?.code ?? 'training'}`
     }
   }
 
   const managerName = employee.manager
-    ? (employee.manager.displayName ?? (`${employee.manager.firstName ?? ''} ${employee.manager.lastName ?? ''}`.trim() || undefined))
+    ? (employee.manager.displayName ??
+      (`${employee.manager.firstName ?? ''} ${employee.manager.lastName ?? ''}`.trim() ||
+        undefined))
     : undefined
 
   // Determine supervision status (priority order)
@@ -343,7 +387,7 @@ function buildMatrixRow(employee: Employee): EmployeeMatrixRow {
     displayName: employee.displayName ?? `${employee.firstName} ${employee.lastName}`,
     jobTitle: jobTitleName,
     department: employee.department?.name ?? '',
-    businessUnit: employee.businessUnit?.name ?? '',
+    businessUnit: normalizeBusinessUnitName(employee.businessUnit?.name),
     managerName,
     isAuthorised: gatingFailed.length === 0,
     requiredCount,
@@ -368,26 +412,36 @@ function recomputeRowStats(row: EmployeeMatrixRow) {
   let supervisedCount = 0
   const gatingFailed: string[] = []
   const gatingIds = Array.from(row.competenceItems.values())
-    .filter(i => i.isGating)
-    .map(i => i.competencyId)
+    .filter((i) => i.isGating)
+    .map((i) => i.competencyId)
 
   for (const item of row.competenceItems.values()) {
     switch (item.derivedStatus) {
-      case 'VALID':             validCount++; break
-      case 'EXPIRING':          expiringCount++; break
-      case 'EXPIRED':           expiredCount++; break
+      case 'VALID':
+        validCount++
+        break
+      case 'EXPIRING':
+        expiringCount++
+        break
+      case 'EXPIRED':
+        expiredCount++
+        break
       case 'REQUIRED':
-      case 'IN_PROGRESS':       requiredCount++; break
-      case 'UNDER_SUPERVISION': supervisedCount++; break
+      case 'IN_PROGRESS':
+        requiredCount++
+        break
+      case 'UNDER_SUPERVISION':
+        supervisedCount++
+        break
     }
     if (
       item.isGating &&
       (item.derivedStatus === 'EXPIRED' ||
-       item.derivedStatus === 'REQUIRED' ||
-       item.derivedStatus === 'IN_PROGRESS' ||
-       item.derivedStatus === 'UNDER_SUPERVISION')
+        item.derivedStatus === 'REQUIRED' ||
+        item.derivedStatus === 'IN_PROGRESS' ||
+        item.derivedStatus === 'UNDER_SUPERVISION')
     ) {
-      const comp = COMPETENCIES.find(c => c.id === item.competencyId)
+      const comp = COMPETENCIES.find((c) => c.id === item.competencyId)
       if (comp) gatingFailed.push(comp.code)
     }
   }
@@ -405,16 +459,16 @@ function recomputeRowStats(row: EmployeeMatrixRow) {
   if (gatingFailed.length > 0) {
     row.topAction = `Renew ${gatingFailed[0]}`
   } else if (expiredCount > 0) {
-    const item = [...row.competenceItems.values()].find(i => i.derivedStatus === 'EXPIRED')
-    const comp = item ? COMPETENCIES.find(c => c.id === item.competencyId) : null
+    const item = [...row.competenceItems.values()].find((i) => i.derivedStatus === 'EXPIRED')
+    const comp = item ? COMPETENCIES.find((c) => c.id === item.competencyId) : null
     row.topAction = comp ? `Renew ${comp.code}` : 'Renew certification'
   } else if (expiringCount > 0) {
-    const item = [...row.competenceItems.values()].find(i => i.derivedStatus === 'EXPIRING')
-    const comp = item ? COMPETENCIES.find(c => c.id === item.competencyId) : null
+    const item = [...row.competenceItems.values()].find((i) => i.derivedStatus === 'EXPIRING')
+    const comp = item ? COMPETENCIES.find((c) => c.id === item.competencyId) : null
     row.topAction = comp ? `Schedule ${comp.code}` : 'Schedule renewal'
   } else if (requiredCount > 0) {
-    const item = [...row.competenceItems.values()].find(i => i.status === 'REQUIRED')
-    const comp = item ? COMPETENCIES.find(c => c.id === item.competencyId) : null
+    const item = [...row.competenceItems.values()].find((i) => i.status === 'REQUIRED')
+    const comp = item ? COMPETENCIES.find((c) => c.id === item.competencyId) : null
     row.topAction = comp ? `Complete ${comp.code}` : 'Complete training'
   } else {
     row.topAction = 'All requirements met'
@@ -425,24 +479,30 @@ function recomputeRowStats(row: EmployeeMatrixRow) {
 
 export function getResponsibleParty(item: EmployeeCompetenceItem): string {
   switch (item.derivedStatus) {
-    case 'REQUIRED':          return 'Employee'
-    case 'IN_PROGRESS':       return 'Manager'
-    case 'EXPIRED':           return item.isGating ? 'Manager' : 'Employee'
-    case 'EXPIRING':          return 'Employee'
-    case 'UNDER_SUPERVISION': return 'Line Manager'
-    default:                  return '—'
+    case 'REQUIRED':
+      return 'Employee'
+    case 'IN_PROGRESS':
+      return 'Manager'
+    case 'EXPIRED':
+      return item.isGating ? 'Manager' : 'Employee'
+    case 'EXPIRING':
+      return 'Employee'
+    case 'UNDER_SUPERVISION':
+      return 'Line Manager'
+    default:
+      return '—'
   }
 }
 
 // ─── Column persistence ───────────────────────────────────────────────────────
 
 function getStoredColumns(): string[] {
-  if (typeof window === 'undefined') return COMPETENCIES.map(c => c.id)
+  if (typeof window === 'undefined') return COMPETENCIES.map((c) => c.id)
   try {
     const stored = localStorage.getItem('skillsMatrix_visibleColumns')
     if (stored) return JSON.parse(stored)
   } catch {}
-  return COMPETENCIES.map(c => c.id)
+  return COMPETENCIES.map((c) => c.id)
 }
 
 function setStoredColumns(columns: string[]) {
@@ -515,40 +575,42 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
     if (filters.value.search) {
       const query = filters.value.search.toLowerCase()
       result = result.filter(
-        e =>
+        (e) =>
           e.displayName.toLowerCase().includes(query) ||
           e.employeeNo.toLowerCase().includes(query) ||
           e.jobTitle.toLowerCase().includes(query) ||
-          e.department.toLowerCase().includes(query)
+          e.department.toLowerCase().includes(query),
       )
     }
 
     if (filters.value.jobTitle) {
-      result = result.filter(e => e.jobTitle === filters.value.jobTitle)
+      result = result.filter((e) => e.jobTitle === filters.value.jobTitle)
     }
 
     if (filters.value.department) {
-      result = result.filter(e => e.department === filters.value.department)
+      result = result.filter((e) => e.department === filters.value.department)
     }
 
     if (filters.value.businessUnit) {
-      result = result.filter(e => e.businessUnit === filters.value.businessUnit)
+      result = result.filter((e) => e.businessUnit === filters.value.businessUnit)
     }
 
     if (filters.value.gatingOnly) {
-      result = result.filter(e => e.gatingFailed.length > 0 || !e.isAuthorised)
+      result = result.filter((e) => e.gatingFailed.length > 0 || !e.isAuthorised)
     }
 
     if (filters.value.issuesOnly) {
-      result = result.filter(e => e.expiredCount > 0 || e.expiringCount > 0 || e.requiredCount > 0)
+      result = result.filter(
+        (e) => e.expiredCount > 0 || e.expiringCount > 0 || e.requiredCount > 0,
+      )
     }
 
     if (filters.value.supervisionOnly) {
-      result = result.filter(e => e.supervisionStatus === 'SUPERVISED_ONLY')
+      result = result.filter((e) => e.supervisionStatus === 'SUPERVISED_ONLY')
     }
 
     if (filters.value.status) {
-      result = result.filter(e => {
+      result = result.filter((e) => {
         for (const item of e.competenceItems.values()) {
           if (item.derivedStatus === filters.value.status) return true
         }
@@ -557,8 +619,10 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
     }
 
     if (filters.value.risk) {
-      const compIds = COMPETENCIES.filter(c => c.riskLevel === filters.value.risk).map(c => c.id)
-      result = result.filter(e => {
+      const compIds = COMPETENCIES.filter((c) => c.riskLevel === filters.value.risk).map(
+        (c) => c.id,
+      )
+      result = result.filter((e) => {
         for (const compId of compIds) {
           if (e.competenceItems.has(compId)) return true
         }
@@ -567,8 +631,10 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
     }
 
     if (filters.value.category) {
-      const compIds = COMPETENCIES.filter(c => c.category === filters.value.category).map(c => c.id)
-      result = result.filter(e => {
+      const compIds = COMPETENCIES.filter((c) => c.category === filters.value.category).map(
+        (c) => c.id,
+      )
+      result = result.filter((e) => {
         for (const compId of compIds) {
           if (e.competenceItems.has(compId)) return true
         }
@@ -581,26 +647,58 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
       let bVal: string | number | boolean = ''
 
       switch (sorting.value.field) {
-        case 'displayName': aVal = a.displayName; bVal = b.displayName; break
-        case 'employeeNo': aVal = a.employeeNo; bVal = b.employeeNo; break
-        case 'jobTitle': aVal = a.jobTitle; bVal = b.jobTitle; break
-        case 'department': aVal = a.department; bVal = b.department; break
-        case 'businessUnit': aVal = a.businessUnit; bVal = b.businessUnit; break
-        case 'isAuthorised': aVal = a.isAuthorised; bVal = b.isAuthorised; break
-        case 'expiredCount': aVal = a.expiredCount; bVal = b.expiredCount; break
-        case 'expiringCount': aVal = a.expiringCount; bVal = b.expiringCount; break
-        case 'requiredCount': aVal = a.requiredCount; bVal = b.requiredCount; break
-        default: aVal = a.displayName; bVal = b.displayName
+        case 'displayName':
+          aVal = a.displayName
+          bVal = b.displayName
+          break
+        case 'employeeNo':
+          aVal = a.employeeNo
+          bVal = b.employeeNo
+          break
+        case 'jobTitle':
+          aVal = a.jobTitle
+          bVal = b.jobTitle
+          break
+        case 'department':
+          aVal = a.department
+          bVal = b.department
+          break
+        case 'businessUnit':
+          aVal = a.businessUnit
+          bVal = b.businessUnit
+          break
+        case 'isAuthorised':
+          aVal = a.isAuthorised
+          bVal = b.isAuthorised
+          break
+        case 'expiredCount':
+          aVal = a.expiredCount
+          bVal = b.expiredCount
+          break
+        case 'expiringCount':
+          aVal = a.expiringCount
+          bVal = b.expiringCount
+          break
+        case 'requiredCount':
+          aVal = a.requiredCount
+          bVal = b.requiredCount
+          break
+        default:
+          aVal = a.displayName
+          bVal = b.displayName
       }
 
       if (typeof aVal === 'string' && typeof bVal === 'string') {
-        return sorting.value.direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal)
+        return sorting.value.direction === 'asc'
+          ? aVal.localeCompare(bVal)
+          : bVal.localeCompare(aVal)
       }
       if (typeof aVal === 'number' && typeof bVal === 'number') {
         return sorting.value.direction === 'asc' ? aVal - bVal : bVal - aVal
       }
       if (typeof aVal === 'boolean' && typeof bVal === 'boolean') {
-        const aN = aVal ? 1 : 0; const bN = bVal ? 1 : 0
+        const aN = aVal ? 1 : 0
+        const bN = bVal ? 1 : 0
         return sorting.value.direction === 'asc' ? aN - bN : bN - aN
       }
       return 0
@@ -621,18 +719,26 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
 
   const summaryStats = computed(() => {
     const total = mockEmployeeRows.value.length
-    const authorised = mockEmployeeRows.value.filter(e => e.isAuthorised).length
+    const authorised = mockEmployeeRows.value.filter((e) => e.isAuthorised).length
     const notAuthorised = total - authorised
     const withIssues = mockEmployeeRows.value.filter(
-      e => e.expiredCount > 0 || e.expiringCount > 0 || e.requiredCount > 0
+      (e) => e.expiredCount > 0 || e.expiringCount > 0 || e.requiredCount > 0,
     ).length
     const totalExpired = mockEmployeeRows.value.reduce((sum, e) => sum + e.expiredCount, 0)
     const totalExpiring = mockEmployeeRows.value.reduce((sum, e) => sum + e.expiringCount, 0)
     const totalRequired = mockEmployeeRows.value.reduce((sum, e) => sum + e.requiredCount, 0)
-    const totalSupervised = mockEmployeeRows.value.filter(e => e.supervisionStatus === 'SUPERVISED_ONLY').length
-    const totalRestricted = mockEmployeeRows.value.filter(e => e.supervisionStatus === 'RESTRICTED_SCOPE').length
-    const totalReassessmentRequired = mockEmployeeRows.value.filter(e => e.supervisionStatus === 'REASSESSMENT_REQUIRED').length
-    const totalNonCompliant = mockEmployeeRows.value.filter(e => e.supervisionStatus === 'NON_COMPLIANT_MANDATORY').length
+    const totalSupervised = mockEmployeeRows.value.filter(
+      (e) => e.supervisionStatus === 'SUPERVISED_ONLY',
+    ).length
+    const totalRestricted = mockEmployeeRows.value.filter(
+      (e) => e.supervisionStatus === 'RESTRICTED_SCOPE',
+    ).length
+    const totalReassessmentRequired = mockEmployeeRows.value.filter(
+      (e) => e.supervisionStatus === 'REASSESSMENT_REQUIRED',
+    ).length
+    const totalNonCompliant = mockEmployeeRows.value.filter(
+      (e) => e.supervisionStatus === 'NON_COMPLIANT_MANDATORY',
+    ).length
 
     return {
       totalEmployees: total,
@@ -662,61 +768,63 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
 
   /** IDs of competencies considered safety-critical or HIGH_CRITICAL risk */
   const criticalActivityIds = computed(() =>
-    COMPETENCIES
-      .filter(c => c.riskLevel === 'HIGH_CRITICAL' || c.isGatingDefault)
-      .map(c => c.id)
+    COMPETENCIES.filter((c) => c.riskLevel === 'HIGH_CRITICAL' || c.isGatingDefault).map(
+      (c) => c.id,
+    ),
   )
 
   /**
    * Vacancy rows — one per role requirement set that has NO employees assigned.
    * The row shape is a minimal EmployeeMatrixRow-like object with isVacancy marker.
    */
-  const vacancyRows = computed((): (EmployeeMatrixRow & { isVacancy: true; estStart?: string })[] => {
-    const assignedTitles = new Set(mockEmployeeRows.value.map(r => r.jobTitle))
+  const vacancyRows = computed(
+    (): (EmployeeMatrixRow & { isVacancy: true; estStart?: string })[] => {
+      const assignedTitles = new Set(mockEmployeeRows.value.map((r) => r.jobTitle))
 
-    return Object.entries(requirementsJson)
-      .filter(([title, reqSet]) => !assignedTitles.has(title) && reqSet != null)
-      .map(([title, reqSet]) => {
-        const rs = reqSet!
-        const competenceItems = new Map<string, EmployeeCompetenceItem>()
-        const reqCompIds = new Set(rs.requirements.map(r => r.competencyLibraryItemId))
-        const gatingIds = new Set(rs.gatingCompetencyIds)
+      return Object.entries(requirementsJson)
+        .filter(([title, reqSet]) => !assignedTitles.has(title) && reqSet != null)
+        .map(([title, reqSet]) => {
+          const rs = reqSet!
+          const competenceItems = new Map<string, EmployeeCompetenceItem>()
+          const reqCompIds = new Set(rs.requirements.map((r) => r.competencyLibraryItemId))
+          const gatingIds = new Set(rs.gatingCompetencyIds)
 
-        COMPETENCIES.forEach(comp => {
-          const isRequired = reqCompIds.has(comp.id)
-          competenceItems.set(comp.id, {
-            employeeId: `vacancy-${title}`,
-            competencyId: comp.id,
-            status: isRequired ? 'REQUIRED' : 'N_A',
-            derivedStatus: isRequired ? 'REQUIRED' : 'N_A',
-            isGating: gatingIds.has(comp.id),
+          COMPETENCIES.forEach((comp) => {
+            const isRequired = reqCompIds.has(comp.id)
+            competenceItems.set(comp.id, {
+              employeeId: `vacancy-${title}`,
+              competencyId: comp.id,
+              status: isRequired ? 'REQUIRED' : 'N_A',
+              derivedStatus: isRequired ? 'REQUIRED' : 'N_A',
+              isGating: gatingIds.has(comp.id),
+            })
           })
-        })
 
-        return {
-          isVacancy: true as const,
-          employeeId: `vacancy-${title}`,
-          employeeNo: '—',
-          firstName: 'Vacancy',
-          lastName: `— ${title}`,
-          displayName: `Vacancy — ${title}`,
-          jobTitle: title,
-          department: '—',
-          businessUnit: '—',
-          managerName: undefined,
-          isAuthorised: false,
-          requiredCount: rs.requirements.length,
-          expiringCount: 0,
-          expiredCount: 0,
-          validCount: 0,
-          supervisedCount: 0,
-          supervisionStatus: 'NON_COMPLIANT_MANDATORY' as const,
-          gatingFailed: rs.gatingCompetencyIds,
-          topAction: 'Unfilled',
-          competenceItems,
-        }
-      })
-  })
+          return {
+            isVacancy: true as const,
+            employeeId: `vacancy-${title}`,
+            employeeNo: '—',
+            firstName: 'Vacancy',
+            lastName: `— ${title}`,
+            displayName: `Vacancy — ${title}`,
+            jobTitle: title,
+            department: '—',
+            businessUnit: '—',
+            managerName: undefined,
+            isAuthorised: false,
+            requiredCount: rs.requirements.length,
+            expiringCount: 0,
+            expiredCount: 0,
+            validCount: 0,
+            supervisedCount: 0,
+            supervisionStatus: 'NON_COMPLIANT_MANDATORY' as const,
+            gatingFailed: rs.gatingCompetencyIds,
+            topAction: 'Unfilled',
+            competenceItems,
+          }
+        })
+    },
+  )
 
   function toggleCategory(category: CompetencyCategory) {
     const index = expandedCategories.value.indexOf(category)
@@ -771,25 +879,25 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
   }
 
   function resetColumns() {
-    visibleColumns.value = COMPETENCIES.map(c => c.id)
+    visibleColumns.value = COMPETENCIES.map((c) => c.id)
     setStoredColumns(visibleColumns.value)
   }
 
   function getEmployeeById(id: string): EmployeeMatrixRow | undefined {
-    return mockEmployeeRows.value.find(e => e.employeeId === id)
+    return mockEmployeeRows.value.find((e) => e.employeeId === id)
   }
 
   function getCompetencyById(id: string): Competency | undefined {
-    return competencies.value.find(c => c.id === id)
+    return competencies.value.find((c) => c.id === id)
   }
 
   function reviewEvidence(
     employeeId: string,
     competencyId: string,
     outcome: 'ACCEPT' | 'REJECT',
-    reason?: string
+    reason?: string,
   ) {
-    const row = mockEmployeeRows.value.find(r => r.employeeId === employeeId)
+    const row = mockEmployeeRows.value.find((r) => r.employeeId === employeeId)
     if (!row) return
     const item = row.competenceItems.get(competencyId)
     if (!item) return
@@ -807,7 +915,7 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
   }
 
   function markNotApplicable(employeeId: string, competencyId: string, justification: string) {
-    const row = mockEmployeeRows.value.find(r => r.employeeId === employeeId)
+    const row = mockEmployeeRows.value.find((r) => r.employeeId === employeeId)
     if (!row) return
     const item = row.competenceItems.get(competencyId)
     if (!item) return

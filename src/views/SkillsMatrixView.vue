@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, reactive } from 'vue'
+import { storeToRefs } from 'pinia'
 import {
   Search,
   Download,
@@ -9,7 +10,6 @@ import {
   Columns,
   FileSpreadsheet,
   Users,
-  Clock,
   X,
   Eye,
   CircleDot,
@@ -70,6 +70,12 @@ import {
 } from '@/stores/skillsMatrix'
 import { useEmployeesStore } from '@/stores/employees'
 import { useAuthStore } from '@/stores/auth'
+import {
+  DEMO_BUSINESS_UNITS,
+  DEMO_DEPARTMENTS,
+  DEMO_ROLE_NAMES,
+  normalizeRoleName,
+} from '@/lib/demoDomain'
 
 const store = useSkillsMatrixStore()
 const employeesStore = useEmployeesStore()
@@ -89,40 +95,16 @@ const cellDrillEmployee = ref<EmployeeMatrixRow | null>(null)
 const cellDrillComp = ref<Competency | null>(null)
 const cellDrillItem = ref<EmployeeCompetenceItem | null>(null)
 
-const lastRefreshTime = ref(new Date())
 const demoView = ref<string>('')
-const showLegend = ref(true)         // 6.3 collapsible legend
-const showReadiness = ref(true)       // 6.7 collapsible readiness
-const showVacancies = ref(true)       // 6.6 vacancy rows toggle
+const showLegend = ref(true) // 6.3 collapsible legend
+const showReadiness = ref(true) // 6.7 collapsible readiness
 
 // ─── Filter arrays (6.8) ──────────────────────────────────────────────────────
-const JOB_TITLES = [
-  'Maintenance Technician',
-  'Maintenance Supervisor',
-  'QHSE Coordinator',
-  'Operations Manager',
-  'Shift Lead',
-  'Electrical Technician',
-  'Instrumentation Technician',
-  'Additive Manufacturing Technician',
-  'Welding / Fabrication Technician',
-  'Robotics Operator',
-  'Materials Testing Technician',
-]
+const JOB_TITLES = DEMO_ROLE_NAMES
 
-const DEPARTMENTS = [
-  'Maintenance',
-  'Operations',
-  'QHSE',
-  'Engineering',
-  'Additive Manufacturing',
-  'Welding / Fabrication',
-  'Robotics',
-  'Materials Testing',
-  'Quality Assurance',
-]
+const DEPARTMENTS = DEMO_DEPARTMENTS.filter((value) => value !== 'All')
 
-const BUSINESS_UNITS = ['Upstream', 'Midstream', 'Downstream', 'Corporate']
+const BUSINESS_UNITS = DEMO_BUSINESS_UNITS.filter((value) => value !== 'All')
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'All Statuses' },
@@ -170,8 +152,8 @@ const ALL_CATEGORY_ORDER: CompetencyCategory[] = [...CATEGORY_ORDER, ...LEGACY_C
 
 const CATEGORY_OPTIONS: { value: string; label: string }[] = [
   { value: 'all', label: 'All Categories' },
-  ...CATEGORY_ORDER.map(c => ({ value: c, label: c })),
-  ...LEGACY_CATEGORIES.map(c => ({ value: c, label: `${c} (legacy)` })),
+  ...CATEGORY_ORDER.map((c) => ({ value: c, label: c })),
+  ...LEGACY_CATEGORIES.map((c) => ({ value: c, label: `${c} (legacy)` })),
 ]
 
 const DEMO_VIEWS = [
@@ -182,26 +164,27 @@ const DEMO_VIEWS = [
 ]
 
 // ─── Store refs ───────────────────────────────────────────────────────────────
-const filteredEmployees = store.filteredEmployees
-const summaryStats = store.summaryStats
-const competenciesByCategory = store.competenciesByCategory
-const competencies = store.competencies
-const visibleColumns = store.visibleColumns
-const expandedCategories = store.expandedCategories
-const viewMode = store.viewMode
-const filters = store.filters
-const vacancyRows = store.vacancyRows
-const criticalActivityIds = store.criticalActivityIds
+const {
+  filteredEmployees,
+  summaryStats,
+  competenciesByCategory,
+  visibleColumns,
+  expandedCategories,
+  viewMode,
+  filters,
+  criticalActivityIds,
+  groupedByJobTitle,
+} = storeToRefs(store)
 const isAdmin = computed(() => authStore.isAdmin)
 const isManager = computed(() => authStore.isManager)
 
 // ─── Role requirements lookup (6.1 Requirements mode) ─────────────────────────
 /** For a given job title, returns a Map of competencyId → { isGating, mandatory } */
-function getRequirementsForRole(jobTitle: string): Map<string, { isGating: boolean; mandatory: boolean }> {
+function getRequirementsForRole(
+  jobTitle: string,
+): Map<string, { isGating: boolean; mandatory: boolean }> {
   const map = new Map<string, { isGating: boolean; mandatory: boolean }>()
-  const key = Object.keys(requirementsJson).find(k =>
-    jobTitle.toLowerCase().includes(k.toLowerCase()) || k.toLowerCase().includes(jobTitle.toLowerCase())
-  )
+  const key = normalizeRoleName(jobTitle)
   if (!key) return map
   const reqSet = requirementsJson[key]
   if (!reqSet) return map
@@ -243,7 +226,11 @@ function getCellDisplay(
     }
     const req = roleReqs.get(comp.id)
     if (!req) return { mode: 'requirement', label: 'N/A', isGating: false }
-    return { mode: 'requirement', label: req.isGating ? 'Gating' : 'Required', isGating: req.isGating }
+    return {
+      mode: 'requirement',
+      label: req.isGating ? 'Gating' : 'Required',
+      isGating: req.isGating,
+    }
   }
 
   if (mode === 'gap') {
@@ -260,17 +247,19 @@ function getCellDisplay(
 
 // ─── Computed: columns visible after Critical Activities filter ───────────────
 function getVisibleCompetenciesForCategory(category: CompetencyCategory): Competency[] {
-  const categoryComps = store.competenciesByCategory.get(category) || []
+  const categoryComps = competenciesByCategory.value.get(category) || []
   return categoryComps.filter((c: Competency) => {
-    if (!store.visibleColumns.includes(c.id)) return false
-    if (filters.criticalOnly && !criticalActivityIds.includes(c.id)) return false
+    if (!visibleColumns.value.includes(c.id)) return false
+    if (filters.value.criticalOnly && !criticalActivityIds.value.includes(c.id)) return false
     return true
   })
 }
 
 /** All categories that have at least one competency in data (used for grid) */
 const categoriesWithData = computed(() => {
-  return ALL_CATEGORY_ORDER.filter(cat => (store.competenciesByCategory.get(cat) || []).length > 0)
+  return ALL_CATEGORY_ORDER.filter(
+    (cat) => (competenciesByCategory.value.get(cat) || []).length > 0,
+  )
 })
 
 // ─── 6.7 Team readiness per job title ─────────────────────────────────────────
@@ -284,10 +273,13 @@ const teamReadiness = computed(() => {
     readinessPct: number
   }[] = []
 
-  store.groupedByJobTitle.forEach((emps: EmployeeMatrixRow[], title: string) => {
+  groupedByJobTitle.value.forEach((emps: EmployeeMatrixRow[], title: string) => {
     const people = emps.length
-    const authorised = emps.filter(e => e.isAuthorised).length
-    const supervised = emps.filter(e => e.supervisionStatus === 'SUPERVISED_ONLY' || e.supervisionStatus === 'RESTRICTED_SCOPE').length
+    const authorised = emps.filter((e) => e.isAuthorised).length
+    const supervised = emps.filter(
+      (e) =>
+        e.supervisionStatus === 'SUPERVISED_ONLY' || e.supervisionStatus === 'RESTRICTED_SCOPE',
+    ).length
     const notAuthorised = people - authorised
     const readinessPct = people > 0 ? Math.round((authorised / people) * 100) : 0
     rows.push({ jobTitle: title, people, authorised, supervised, notAuthorised, readinessPct })
@@ -297,10 +289,6 @@ const teamReadiness = computed(() => {
 })
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const formattedRefreshTime = computed(() => {
-  return lastRefreshTime.value.toLocaleTimeString()
-})
-
 function getInitials(firstName: string, lastName: string): string {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
 }
@@ -308,12 +296,16 @@ function getInitials(firstName: string, lastName: string): string {
 function getRowResponsible(employee: EmployeeMatrixRow): string {
   if (!employee.isAuthorised && employee.gatingFailed.length > 0) {
     const item = [...employee.competenceItems.values()].find(
-      i => i.isGating && (i.derivedStatus === 'EXPIRED' || i.derivedStatus === 'REQUIRED' || i.derivedStatus === 'IN_PROGRESS')
+      (i) =>
+        i.isGating &&
+        (i.derivedStatus === 'EXPIRED' ||
+          i.derivedStatus === 'REQUIRED' ||
+          i.derivedStatus === 'IN_PROGRESS'),
     )
     if (item) return getResponsibleParty(item)
   }
   if (employee.expiredCount > 0) {
-    const item = [...employee.competenceItems.values()].find(i => i.derivedStatus === 'EXPIRED')
+    const item = [...employee.competenceItems.values()].find((i) => i.derivedStatus === 'EXPIRED')
     if (item) return getResponsibleParty(item)
   }
   if (employee.expiringCount > 0) return 'Employee'
@@ -327,7 +319,11 @@ function handleRowClick(employee: EmployeeMatrixRow) {
 }
 
 // ─── 6.4 Cell drill-down ─────────────────────────────────────────────────────
-function handleCellClick(employee: EmployeeMatrixRow, comp: Competency, item: EmployeeCompetenceItem | undefined) {
+function handleCellClick(
+  employee: EmployeeMatrixRow,
+  comp: Competency,
+  item: EmployeeCompetenceItem | undefined,
+) {
   if (!item) return
   cellDrillEmployee.value = employee
   cellDrillComp.value = comp
@@ -352,7 +348,9 @@ function closeDrawer() {
 // Mock drill-down data generators (6.4)
 function mockAssessorName(employeeId: string): string {
   const names = ['J. Harrison', 'S. Patel', 'R. Okonkwo', 'M. Kowalski', 'A. Nguyen']
-  const idx = Math.abs(employeeId.split('').reduce((h, c) => (h << 5) - h + c.charCodeAt(0), 0)) % names.length
+  const idx =
+    Math.abs(employeeId.split('').reduce((h, c) => (h << 5) - h + c.charCodeAt(0), 0)) %
+    names.length
   return names[idx] ?? 'Unknown'
 }
 
@@ -364,14 +362,19 @@ function mockNextDueDate(item: EmployeeCompetenceItem): string {
   return item.expiryDate ?? '—'
 }
 
-function getCellRequirementInfo(jobTitle: string, compId: string): { isGating: boolean; mandatory: boolean; sourceSetId: string } | null {
-  const key = Object.keys(requirementsJson).find(k =>
-    jobTitle.toLowerCase().includes(k.toLowerCase()) || k.toLowerCase().includes(jobTitle.toLowerCase())
+function getCellRequirementInfo(
+  jobTitle: string,
+  compId: string,
+): { isGating: boolean; mandatory: boolean; sourceSetId: string } | null {
+  const key = Object.keys(requirementsJson).find(
+    (k) =>
+      jobTitle.toLowerCase().includes(k.toLowerCase()) ||
+      k.toLowerCase().includes(jobTitle.toLowerCase()),
   )
   if (!key) return null
   const reqSet = requirementsJson[key]
   if (!reqSet) return null
-  const req = reqSet.requirements.find(r => r.competencyLibraryItemId === compId)
+  const req = reqSet.requirements.find((r) => r.competencyLibraryItemId === compId)
   if (!req) return null
   return { isGating: req.isGating, mandatory: req.mandatory ?? true, sourceSetId: reqSet.setId }
 }
@@ -395,7 +398,12 @@ function startReject(compId: string) {
 
 function confirmReject(item: EmployeeCompetenceItem) {
   if (!selectedEmployee.value) return
-  store.reviewEvidence(selectedEmployee.value.employeeId, item.competencyId, 'REJECT', rejectReasons[item.competencyId])
+  store.reviewEvidence(
+    selectedEmployee.value.employeeId,
+    item.competencyId,
+    'REJECT',
+    rejectReasons[item.competencyId],
+  )
   showingRejectFor.value = null
 }
 
@@ -422,7 +430,7 @@ function toggleCategory(category: CompetencyCategory) {
 }
 
 function isCategoryExpanded(category: CompetencyCategory): boolean {
-  return expandedCategories.includes(category)
+  return expandedCategories.value.includes(category)
 }
 
 function handleFilterChange(key: keyof MatrixFilters, value: string | boolean) {
@@ -512,25 +520,25 @@ function handleDemoViewChange(view: string) {
 }
 
 function handleExportExcel() {
-  const data = store.filteredEmployees.map((emp: EmployeeMatrixRow) => ({
+  const data = filteredEmployees.value.map((emp: EmployeeMatrixRow) => ({
     'Employee No': emp.employeeNo,
-    'Name': emp.displayName,
+    Name: emp.displayName,
     'Job Title': emp.jobTitle,
-    'Department': emp.department,
+    Department: emp.department,
     'Business Unit': emp.businessUnit,
-    'Authorised': emp.isAuthorised ? 'Yes' : 'No',
-    'Required': emp.requiredCount,
-    'Expiring': emp.expiringCount,
-    'Expired': emp.expiredCount,
+    Authorised: emp.isAuthorised ? 'Yes' : 'No',
+    Required: emp.requiredCount,
+    Expiring: emp.expiringCount,
+    Expired: emp.expiredCount,
     'Gating Failed': emp.gatingFailed.join(', '),
     'Top Action': emp.topAction,
-    'Responsible': getRowResponsible(emp),
+    Responsible: getRowResponsible(emp),
   }))
 
   const headers = Object.keys(data[0] || {})
   const csvContent = [
     headers.join(','),
-    ...data.map(row => headers.map(h => `"${row[h as keyof typeof row] || ''}"`).join(','))
+    ...data.map((row) => headers.map((h) => `"${row[h as keyof typeof row] || ''}"`).join(',')),
   ].join('\n')
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
@@ -545,12 +553,11 @@ function getCompetencyById(id: string) {
   return store.getCompetencyById(id)
 }
 
-function getEmployeeCompetenceItem(employee: EmployeeMatrixRow, competencyId: string): EmployeeCompetenceItem | undefined {
+function getEmployeeCompetenceItem(
+  employee: EmployeeMatrixRow,
+  competencyId: string,
+): EmployeeCompetenceItem | undefined {
   return employee.competenceItems.get(competencyId)
-}
-
-function refreshData() {
-  lastRefreshTime.value = new Date()
 }
 
 function readinessColor(pct: number): string {
@@ -562,7 +569,6 @@ function readinessColor(pct: number): string {
 onMounted(async () => {
   await employeesStore.fetchEmployees()
   await store.fetchAndBuildMatrix(employeesStore.filteredEmployees)
-  refreshData()
 })
 </script>
 
@@ -594,21 +600,36 @@ onMounted(async () => {
           <Button
             :variant="viewMode === 'grid' && matrixMode === 'requirements' ? 'default' : 'outline'"
             size="sm"
-            @click="() => { setViewMode('grid'); matrixMode = 'requirements' }"
+            @click="
+              () => {
+                setViewMode('grid')
+                matrixMode = 'requirements'
+              }
+            "
           >
             Requirements
           </Button>
           <Button
             :variant="viewMode === 'grid' && matrixMode === 'current' ? 'default' : 'outline'"
             size="sm"
-            @click="() => { setViewMode('grid'); matrixMode = 'current' }"
+            @click="
+              () => {
+                setViewMode('grid')
+                matrixMode = 'current'
+              }
+            "
           >
             Current
           </Button>
           <Button
             :variant="viewMode === 'grid' && matrixMode === 'gap' ? 'default' : 'outline'"
             size="sm"
-            @click="() => { setViewMode('grid'); matrixMode = 'gap' }"
+            @click="
+              () => {
+                setViewMode('grid')
+                matrixMode = 'gap'
+              }
+            "
           >
             Gap Analysis
           </Button>
@@ -672,24 +693,22 @@ onMounted(async () => {
             </SelectContent>
           </Select>
 
-          <Select
-            :model-value="filters.status || 'all'"
-            @update:model-value="handleStatusChange"
-          >
+          <Select :model-value="filters.status || 'all'" @update:model-value="handleStatusChange">
             <SelectTrigger class="filter-select">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem v-for="status in STATUS_OPTIONS" :key="status.value" :value="status.value">
+              <SelectItem
+                v-for="status in STATUS_OPTIONS"
+                :key="status.value"
+                :value="status.value"
+              >
                 {{ status.label }}
               </SelectItem>
             </SelectContent>
           </Select>
 
-          <Select
-            :model-value="filters.risk || 'all'"
-            @update:model-value="handleRiskChange"
-          >
+          <Select :model-value="filters.risk || 'all'" @update:model-value="handleRiskChange">
             <SelectTrigger class="filter-select narrow">
               <SelectValue placeholder="Risk" />
             </SelectTrigger>
@@ -702,10 +721,7 @@ onMounted(async () => {
 
           <div class="toggle-wrapper">
             <div class="toggle-label">
-              <Switch
-                :checked="filters.gatingOnly"
-                @update:checked="handleGatingToggle"
-              />
+              <Switch :checked="filters.gatingOnly" @update:checked="handleGatingToggle" />
               <span>Gating only</span>
             </div>
           </div>
@@ -724,10 +740,7 @@ onMounted(async () => {
           <!-- 6.5 Critical Activities Only -->
           <div class="toggle-wrapper">
             <div class="toggle-label">
-              <Switch
-                :checked="filters.criticalOnly"
-                @update:checked="handleCriticalToggle"
-              />
+              <Switch :checked="filters.criticalOnly" @update:checked="handleCriticalToggle" />
               <span>Critical Activities Only</span>
             </div>
           </div>
@@ -783,24 +796,30 @@ onMounted(async () => {
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuSeparator />
               </template>
-              <DropdownMenuItem @click="handleResetColumns">
-                Reset to Default
-              </DropdownMenuItem>
+              <DropdownMenuItem @click="handleResetColumns"> Reset to Default </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
           <div class="toggle-wrapper">
             <div class="toggle-label">
-              <Switch
-                :checked="filters.issuesOnly"
-                @update:checked="handleIssuesToggle"
-              />
+              <Switch :checked="filters.issuesOnly" @update:checked="handleIssuesToggle" />
               <span>Issues Only</span>
             </div>
           </div>
 
           <Button
-            v-if="filters.search || filters.businessUnit || filters.department || filters.jobTitle || filters.status || filters.risk || filters.gatingOnly || filters.issuesOnly || filters.supervisionOnly || filters.criticalOnly"
+            v-if="
+              filters.search ||
+              filters.businessUnit ||
+              filters.department ||
+              filters.jobTitle ||
+              filters.status ||
+              filters.risk ||
+              filters.gatingOnly ||
+              filters.issuesOnly ||
+              filters.supervisionOnly ||
+              filters.criticalOnly
+            "
             variant="ghost"
             size="sm"
             @click="handleClearFilters"
@@ -913,7 +932,10 @@ onMounted(async () => {
                   <div class="readiness-bar-wrap">
                     <div
                       class="readiness-bar"
-                      :style="{ width: row.readinessPct + '%', backgroundColor: readinessColor(row.readinessPct) }"
+                      :style="{
+                        width: row.readinessPct + '%',
+                        backgroundColor: readinessColor(row.readinessPct),
+                      }"
                     ></div>
                   </div>
                   <span class="readiness-pct" :style="{ color: readinessColor(row.readinessPct) }">
@@ -983,11 +1005,18 @@ onMounted(async () => {
                     <TableCell>
                       <div class="job-info">
                         <span class="job-title">{{ employee.jobTitle }}</span>
-                        <span class="job-dept">{{ employee.department }} / {{ employee.businessUnit }}</span>
+                        <span class="job-dept"
+                          >{{ employee.department }} / {{ employee.businessUnit }}</span
+                        >
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span :class="['badge', employee.isAuthorised ? 'badge-success' : 'badge-critical']">
+                      <span
+                        :class="[
+                          'badge',
+                          employee.isAuthorised ? 'badge-success' : 'badge-critical',
+                        ]"
+                      >
                         {{ employee.isAuthorised ? 'Authorised' : 'Not Authorised' }}
                       </span>
                     </TableCell>
@@ -1027,10 +1056,7 @@ onMounted(async () => {
                     </TableCell>
                     <TableCell>
                       <div class="action-cell">
-                        <AlertTriangle
-                          v-if="!employee.isAuthorised"
-                          class="action-icon danger"
-                        />
+                        <AlertTriangle v-if="!employee.isAuthorised" class="action-icon danger" />
                         <span :class="{ 'action-urgent': !employee.isAuthorised }">
                           {{ employee.topAction }}
                         </span>
@@ -1039,7 +1065,13 @@ onMounted(async () => {
                     <TableCell>
                       <span
                         class="responsible-badge"
-                        :class="getRowResponsible(employee) === 'Manager' ? 'responsible-manager' : getRowResponsible(employee) === 'Employee' ? 'responsible-employee' : ''"
+                        :class="
+                          getRowResponsible(employee) === 'Manager'
+                            ? 'responsible-manager'
+                            : getRowResponsible(employee) === 'Employee'
+                              ? 'responsible-employee'
+                              : ''
+                        "
                       >
                         {{ getRowResponsible(employee) }}
                       </span>
@@ -1050,7 +1082,9 @@ onMounted(async () => {
                       <div class="matrix-empty-state">
                         <Users class="matrix-empty-icon" />
                         <p class="matrix-empty-title">No employees match the current filters</p>
-                        <p class="matrix-empty-subtitle">Try adjusting department, role, or status filters.</p>
+                        <p class="matrix-empty-subtitle">
+                          Try adjusting department, role, or status filters.
+                        </p>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -1065,18 +1099,23 @@ onMounted(async () => {
                 <TableHeader>
                   <!-- Row 1: frozen columns + category headers -->
                   <TableRow>
-                    <TableHead class="frozen-column employee-header">
-                      Employee
-                    </TableHead>
+                    <TableHead class="frozen-column employee-header"> Employee </TableHead>
                     <TableHead class="frozen-column">Job Title</TableHead>
                     <TableHead class="frozen-column">Dept/BU</TableHead>
                     <TableHead class="frozen-column">Authorisation</TableHead>
                     <!-- 6.2 All categories including empty ones -->
                     <template v-for="category in ALL_CATEGORY_ORDER" :key="category">
                       <TableHead
-                        :colspan="isCategoryExpanded(category) ? Math.max(getVisibleCompetenciesForCategory(category).length, 1) : 1"
+                        :colspan="
+                          isCategoryExpanded(category)
+                            ? Math.max(getVisibleCompetenciesForCategory(category).length, 1)
+                            : 1
+                        "
                         class="category-header"
-                        :class="{ 'category-empty': getVisibleCompetenciesForCategory(category).length === 0 }"
+                        :class="{
+                          'category-empty':
+                            getVisibleCompetenciesForCategory(category).length === 0,
+                        }"
                         @click="toggleCategory(category)"
                       >
                         <div class="category-header-content">
@@ -1143,14 +1182,24 @@ onMounted(async () => {
                     </TableCell>
                     <TableCell class="frozen-column">{{ employee.jobTitle }}</TableCell>
                     <TableCell class="frozen-column">
-                      <span class="dept-bu">{{ employee.department }}/{{ employee.businessUnit }}</span>
+                      <span class="dept-bu"
+                        >{{ employee.department }}/{{ employee.businessUnit }}</span
+                      >
                     </TableCell>
                     <TableCell class="frozen-column">
-                      <span :class="['badge', employee.isAuthorised ? 'badge-success' : 'badge-critical']">
+                      <span
+                        :class="[
+                          'badge',
+                          employee.isAuthorised ? 'badge-success' : 'badge-critical',
+                        ]"
+                      >
                         {{ employee.isAuthorised ? 'Auth' : 'No Auth' }}
                       </span>
                     </TableCell>
-                    <template v-for="category in ALL_CATEGORY_ORDER" :key="`${category}-cells-${employee.employeeId}`">
+                    <template
+                      v-for="category in ALL_CATEGORY_ORDER"
+                      :key="`${category}-cells-${employee.employeeId}`"
+                    >
                       <template v-if="isCategoryExpanded(category)">
                         <template v-if="getVisibleCompetenciesForCategory(category).length > 0">
                           <TableCell
@@ -1158,22 +1207,40 @@ onMounted(async () => {
                             :key="comp.id"
                             class="competency-cell"
                             :class="{ 'cell-clickable': true }"
-                            @click="handleCellClick(employee, comp, getEmployeeCompetenceItem(employee, comp.id))"
+                            @click="
+                              handleCellClick(
+                                employee,
+                                comp,
+                                getEmployeeCompetenceItem(employee, comp.id),
+                              )
+                            "
                           >
                             <!-- Current mode — existing StatusChip behaviour -->
                             <template v-if="matrixMode === 'current'">
                               <StatusChip
                                 v-if="getEmployeeCompetenceItem(employee, comp.id)"
-                                :status="getEmployeeCompetenceItem(employee, comp.id)!.derivedStatus"
-                                :expiry-date="getEmployeeCompetenceItem(employee, comp.id)!.expiryDate"
+                                :status="
+                                  getEmployeeCompetenceItem(employee, comp.id)!.derivedStatus
+                                "
+                                :expiry-date="
+                                  getEmployeeCompetenceItem(employee, comp.id)!.expiryDate
+                                "
                                 compact
                               />
                             </template>
                             <!-- Requirements mode -->
                             <template v-else-if="matrixMode === 'requirements'">
                               <span
-                                v-if="getCellDisplay(employee, comp, 'requirements').mode === 'requirement'"
-                                :class="['req-cell', getCellDisplay(employee, comp, 'requirements').isGating ? 'req-gating' : 'req-required']"
+                                v-if="
+                                  getCellDisplay(employee, comp, 'requirements').mode ===
+                                  'requirement'
+                                "
+                                :class="[
+                                  'req-cell',
+                                  getCellDisplay(employee, comp, 'requirements').isGating
+                                    ? 'req-gating'
+                                    : 'req-required',
+                                ]"
                               >
                                 {{ getCellDisplay(employee, comp, 'requirements').label }}
                               </span>
@@ -1201,7 +1268,9 @@ onMounted(async () => {
                         <TableCell class="competency-cell summary-cell">
                           <div class="category-summary-dots">
                             <div
-                              v-for="item in Array.from(employee.competenceItems.values()).filter(i => getCompetencyById(i.competencyId)?.category === category)"
+                              v-for="item in Array.from(employee.competenceItems.values()).filter(
+                                (i) => getCompetencyById(i.competencyId)?.category === category,
+                              )"
                               :key="item.competencyId"
                               class="summary-dot"
                               :class="`dot-${item.derivedStatus.toLowerCase().replace('_', '-')}`"
@@ -1212,57 +1281,14 @@ onMounted(async () => {
                     </template>
                   </TableRow>
 
-                  <!-- 6.6 Vacancy rows -->
-                  <template v-if="showVacancies">
-                    <TableRow
-                      v-for="vac in vacancyRows"
-                      :key="vac.employeeId"
-                      class="grid-row vacancy-row"
-                    >
-                      <TableCell class="frozen-column employee-cell-grid">
-                        <div class="employee-cell">
-                          <div class="employee-avatar vacancy-avatar">V</div>
-                          <div class="employee-info">
-                            <span class="employee-name vacancy-name">{{ vac.displayName }}</span>
-                            <span class="employee-no">Unfilled</span>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell class="frozen-column">{{ vac.jobTitle }}</TableCell>
-                      <TableCell class="frozen-column">
-                        <span class="dept-bu">—</span>
-                      </TableCell>
-                      <TableCell class="frozen-column">
-                        <span class="badge badge-neutral">Unfilled</span>
-                      </TableCell>
-                      <template v-for="category in ALL_CATEGORY_ORDER" :key="`${category}-vac-${vac.employeeId}`">
-                        <template v-if="isCategoryExpanded(category)">
-                          <template v-if="getVisibleCompetenciesForCategory(category).length > 0">
-                            <TableCell
-                              v-for="comp in getVisibleCompetenciesForCategory(category)"
-                              :key="comp.id"
-                              class="competency-cell"
-                            >
-                              <template v-if="vac.competenceItems.get(comp.id)?.status === 'REQUIRED'">
-                                <span class="req-cell req-required">Req.</span>
-                              </template>
-                            </TableCell>
-                          </template>
-                          <TableCell v-else class="competency-cell category-empty-cell"></TableCell>
-                        </template>
-                        <template v-else>
-                          <TableCell class="competency-cell summary-cell"></TableCell>
-                        </template>
-                      </template>
-                    </TableRow>
-                  </template>
-
-                  <TableRow v-if="filteredEmployees.length === 0 && (!showVacancies || vacancyRows.length === 0)">
+                  <TableRow v-if="filteredEmployees.length === 0">
                     <TableCell colspan="100" class="empty-cell">
                       <div class="matrix-empty-state">
                         <Users class="matrix-empty-icon" />
                         <p class="matrix-empty-title">No employees match the current filters</p>
-                        <p class="matrix-empty-subtitle">Try adjusting department, role, or status filters.</p>
+                        <p class="matrix-empty-subtitle">
+                          Try adjusting department, role, or status filters.
+                        </p>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -1272,22 +1298,6 @@ onMounted(async () => {
           </template>
         </CardContent>
       </Card>
-    </div>
-
-    <div class="bottom-bar">
-      <div class="bottom-toggles">
-        <div class="toggle-label">
-          <Switch :checked="showVacancies" @update:checked="showVacancies = $event" />
-          <span>Show Vacancies</span>
-        </div>
-      </div>
-      <div class="refresh-info">
-        <Clock class="icon-xs" />
-        <span>Last refreshed from ERP: {{ formattedRefreshTime }}</span>
-        <Button variant="ghost" size="sm" @click="refreshData">
-          Refresh
-        </Button>
-      </div>
     </div>
 
     <!-- Employee detail drawer (existing Phase 2 behaviour) -->
@@ -1320,7 +1330,12 @@ onMounted(async () => {
               </div>
               <div class="detail-item">
                 <span class="detail-label">Authorisation</span>
-                <span :class="['badge', selectedEmployee.isAuthorised ? 'badge-success' : 'badge-critical']">
+                <span
+                  :class="[
+                    'badge',
+                    selectedEmployee.isAuthorised ? 'badge-success' : 'badge-critical',
+                  ]"
+                >
                   {{ selectedEmployee.isAuthorised ? 'Authorised' : 'Not Authorised' }}
                 </span>
               </div>
@@ -1392,54 +1407,89 @@ onMounted(async () => {
                       <div class="competency-info">
                         <span class="competency-code">{{ comp.code }}</span>
                         <span class="competency-title">{{ comp.title }}</span>
-                        <span v-if="comp.isGatingDefault" class="badge badge-neutral gating-indicator">
+                        <span
+                          v-if="comp.isGatingDefault"
+                          class="badge badge-neutral gating-indicator"
+                        >
                           Gating
                         </span>
                       </div>
                       <div class="comp-row-right">
                         <StatusChip
                           v-if="getEmployeeCompetenceItem(selectedEmployee, comp.id)"
-                          :status="getEmployeeCompetenceItem(selectedEmployee, comp.id)!.derivedStatus"
-                          :expiry-date="getEmployeeCompetenceItem(selectedEmployee, comp.id)!.expiryDate"
+                          :status="
+                            getEmployeeCompetenceItem(selectedEmployee, comp.id)!.derivedStatus
+                          "
+                          :expiry-date="
+                            getEmployeeCompetenceItem(selectedEmployee, comp.id)!.expiryDate
+                          "
                         />
                         <span
-                          v-if="getEmployeeCompetenceItem(selectedEmployee, comp.id) && getResponsibleParty(getEmployeeCompetenceItem(selectedEmployee, comp.id)!) !== '—'"
+                          v-if="
+                            getEmployeeCompetenceItem(selectedEmployee, comp.id) &&
+                            getResponsibleParty(
+                              getEmployeeCompetenceItem(selectedEmployee, comp.id)!,
+                            ) !== '—'
+                          "
                           class="responsible-badge"
-                          :class="getResponsibleParty(getEmployeeCompetenceItem(selectedEmployee, comp.id)!) === 'Manager' ? 'responsible-manager' : 'responsible-employee'"
+                          :class="
+                            getResponsibleParty(
+                              getEmployeeCompetenceItem(selectedEmployee, comp.id)!,
+                            ) === 'Manager'
+                              ? 'responsible-manager'
+                              : 'responsible-employee'
+                          "
                         >
-                          {{ getResponsibleParty(getEmployeeCompetenceItem(selectedEmployee, comp.id)!) }}
+                          {{
+                            getResponsibleParty(
+                              getEmployeeCompetenceItem(selectedEmployee, comp.id)!,
+                            )
+                          }}
                         </span>
                         <!-- Evidence review: visible to managers when IN_PROGRESS or REQUIRED -->
                         <template
-                          v-if="isManager &&
+                          v-if="
+                            isManager &&
                             getEmployeeCompetenceItem(selectedEmployee, comp.id) &&
-                            (getEmployeeCompetenceItem(selectedEmployee, comp.id)!.derivedStatus === 'IN_PROGRESS' ||
-                             getEmployeeCompetenceItem(selectedEmployee, comp.id)!.derivedStatus === 'REQUIRED')"
+                            (getEmployeeCompetenceItem(selectedEmployee, comp.id)!.derivedStatus ===
+                              'IN_PROGRESS' ||
+                              getEmployeeCompetenceItem(selectedEmployee, comp.id)!
+                                .derivedStatus === 'REQUIRED')
+                          "
                         >
                           <Button
                             size="sm"
                             variant="outline"
                             class="review-btn accept-btn"
-                            @click="handleAccept(getEmployeeCompetenceItem(selectedEmployee, comp.id)!)"
-                          >Accept</Button>
+                            @click="
+                              handleAccept(getEmployeeCompetenceItem(selectedEmployee, comp.id)!)
+                            "
+                            >Accept</Button
+                          >
                           <Button
                             size="sm"
                             variant="ghost"
                             class="review-btn reject-btn"
                             @click="startReject(comp.id)"
-                          >Reject</Button>
+                            >Reject</Button
+                          >
                         </template>
                         <!-- N/A: visible to managers when REQUIRED or EXPIRED -->
                         <Button
-                          v-if="isManager &&
+                          v-if="
+                            isManager &&
                             getEmployeeCompetenceItem(selectedEmployee, comp.id) &&
-                            (getEmployeeCompetenceItem(selectedEmployee, comp.id)!.derivedStatus === 'REQUIRED' ||
-                             getEmployeeCompetenceItem(selectedEmployee, comp.id)!.derivedStatus === 'EXPIRED')"
+                            (getEmployeeCompetenceItem(selectedEmployee, comp.id)!.derivedStatus ===
+                              'REQUIRED' ||
+                              getEmployeeCompetenceItem(selectedEmployee, comp.id)!
+                                .derivedStatus === 'EXPIRED')
+                          "
                           size="sm"
                           variant="ghost"
                           class="review-btn na-btn"
                           @click="startNa(comp.id)"
-                        >N/A</Button>
+                          >N/A</Button
+                        >
                       </div>
                     </div>
 
@@ -1449,14 +1499,21 @@ onMounted(async () => {
                         v-model="rejectReasons[comp.id]"
                         placeholder="Reason for rejection…"
                         class="inline-form-input"
-                        @keyup.enter="confirmReject(getEmployeeCompetenceItem(selectedEmployee, comp.id)!)"
+                        @keyup.enter="
+                          confirmReject(getEmployeeCompetenceItem(selectedEmployee, comp.id)!)
+                        "
                       />
                       <Button
                         size="sm"
                         variant="destructive"
-                        @click="confirmReject(getEmployeeCompetenceItem(selectedEmployee, comp.id)!)"
-                      >Confirm</Button>
-                      <Button size="sm" variant="ghost" @click="showingRejectFor = null">Cancel</Button>
+                        @click="
+                          confirmReject(getEmployeeCompetenceItem(selectedEmployee, comp.id)!)
+                        "
+                        >Confirm</Button
+                      >
+                      <Button size="sm" variant="ghost" @click="showingRejectFor = null"
+                        >Cancel</Button
+                      >
                     </div>
 
                     <!-- N/A inline form -->
@@ -1465,13 +1522,16 @@ onMounted(async () => {
                         v-model="naJustifications[comp.id]"
                         placeholder="Justification for N/A…"
                         class="inline-form-input"
-                        @keyup.enter="confirmNa(getEmployeeCompetenceItem(selectedEmployee, comp.id)!)"
+                        @keyup.enter="
+                          confirmNa(getEmployeeCompetenceItem(selectedEmployee, comp.id)!)
+                        "
                       />
                       <Button
                         size="sm"
                         :disabled="!naJustifications[comp.id]?.trim()"
                         @click="confirmNa(getEmployeeCompetenceItem(selectedEmployee, comp.id)!)"
-                      >Confirm</Button>
+                        >Confirm</Button
+                      >
                       <Button size="sm" variant="ghost" @click="showingNaFor = null">Cancel</Button>
                     </div>
                   </div>
@@ -1532,15 +1592,26 @@ onMounted(async () => {
                 </div>
                 <div class="detail-item">
                   <span class="detail-label">Gating</span>
-                  <span class="detail-value">{{ getCellRequirementInfo(cellDrillEmployee.jobTitle, cellDrillComp.id)!.isGating ? 'Yes — Gating' : 'No' }}</span>
+                  <span class="detail-value">{{
+                    getCellRequirementInfo(cellDrillEmployee.jobTitle, cellDrillComp.id)!.isGating
+                      ? 'Yes — Gating'
+                      : 'No'
+                  }}</span>
                 </div>
                 <div class="detail-item">
                   <span class="detail-label">Mandatory</span>
-                  <span class="detail-value">{{ getCellRequirementInfo(cellDrillEmployee.jobTitle, cellDrillComp.id)!.mandatory ? 'Yes' : 'No' }}</span>
+                  <span class="detail-value">{{
+                    getCellRequirementInfo(cellDrillEmployee.jobTitle, cellDrillComp.id)!.mandatory
+                      ? 'Yes'
+                      : 'No'
+                  }}</span>
                 </div>
                 <div class="detail-item">
                   <span class="detail-label">Requirement Set</span>
-                  <span class="detail-value">{{ getCellRequirementInfo(cellDrillEmployee.jobTitle, cellDrillComp.id)!.sourceSetId }}</span>
+                  <span class="detail-value">{{
+                    getCellRequirementInfo(cellDrillEmployee.jobTitle, cellDrillComp.id)!
+                      .sourceSetId
+                  }}</span>
                 </div>
               </template>
               <template v-else>
@@ -1550,7 +1621,9 @@ onMounted(async () => {
                 </div>
                 <div class="detail-item">
                   <span class="detail-label">Source</span>
-                  <span class="detail-value">No requirement set found for {{ cellDrillEmployee.jobTitle }}</span>
+                  <span class="detail-value"
+                    >No requirement set found for {{ cellDrillEmployee.jobTitle }}</span
+                  >
                 </div>
               </template>
             </div>
@@ -1561,7 +1634,10 @@ onMounted(async () => {
             <div class="detail-grid">
               <div class="detail-item">
                 <span class="detail-label">Assessed Status</span>
-                <StatusChip :status="cellDrillItem.derivedStatus" :expiry-date="cellDrillItem.expiryDate" />
+                <StatusChip
+                  :status="cellDrillItem.derivedStatus"
+                  :expiry-date="cellDrillItem.expiryDate"
+                />
               </div>
               <div class="detail-item">
                 <span class="detail-label">Last Assessment</span>
@@ -1573,11 +1649,16 @@ onMounted(async () => {
               </div>
               <div class="detail-item">
                 <span class="detail-label">Evidence Reference</span>
-                <span class="detail-value">{{ cellDrillItem.evidenceRef ?? `EV-${cellDrillEmployee.employeeNo}-${cellDrillComp.code}` }}</span>
+                <span class="detail-value">{{
+                  cellDrillItem.evidenceRef ??
+                  `EV-${cellDrillEmployee.employeeNo}-${cellDrillComp.code}`
+                }}</span>
               </div>
               <div class="detail-item">
                 <span class="detail-label">Assessor</span>
-                <span class="detail-value">{{ mockAssessorName(cellDrillEmployee.employeeId) }}</span>
+                <span class="detail-value">{{
+                  mockAssessorName(cellDrillEmployee.employeeId)
+                }}</span>
               </div>
               <div class="detail-item">
                 <span class="detail-label">Source of Requirement</span>
@@ -1604,7 +1685,6 @@ onMounted(async () => {
   min-width: 0;
   margin: calc(-1 * var(--space-xl));
   width: calc(100% + 2 * var(--space-xl));
-  height: calc(100vh - 64px);
 }
 
 .page-header {
@@ -1773,21 +1853,32 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 
-.legend-valid     { color: var(--brand-success); }
-.legend-supervised { color: oklch(0.50 0.13 60); }
-.legend-progress  { color: var(--brand-primary); }
-.legend-required  { color: var(--text-caption); }
-.legend-expiring  { color: var(--brand-warning); }
-.legend-expired   { color: var(--brand-critical); }
-.legend-na        { color: var(--text-caption); }
+.legend-valid {
+  color: var(--brand-success);
+}
+.legend-supervised {
+  color: oklch(0.5 0.13 60);
+}
+.legend-progress {
+  color: var(--brand-primary);
+}
+.legend-required {
+  color: var(--text-caption);
+}
+.legend-expiring {
+  color: var(--brand-warning);
+}
+.legend-expired {
+  color: var(--brand-critical);
+}
+.legend-na {
+  color: var(--text-caption);
+}
 
 /* ─── Matrix content ─────────────────────────────────────────── */
 
 .matrix-content {
-  flex: 1;
-  overflow: hidden;
   padding: var(--space-sm) var(--space-md);
-  min-height: 0;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -1811,10 +1902,18 @@ onMounted(async () => {
   padding: var(--space-xs) var(--space-sm);
 }
 
-.summary-stat.success .stat-value { color: var(--brand-success); }
-.summary-stat.warning .stat-value { color: var(--brand-warning); }
-.summary-stat.danger .stat-value  { color: var(--brand-critical); }
-.summary-stat.supervised .stat-value { color: oklch(0.50 0.13 60); }
+.summary-stat.success .stat-value {
+  color: var(--brand-success);
+}
+.summary-stat.warning .stat-value {
+  color: var(--brand-warning);
+}
+.summary-stat.danger .stat-value {
+  color: var(--brand-critical);
+}
+.summary-stat.supervised .stat-value {
+  color: oklch(0.5 0.13 60);
+}
 
 .stat-value {
   font-size: 1.25rem;
@@ -1893,9 +1992,18 @@ onMounted(async () => {
   min-width: 160px;
 }
 
-.readiness-auth { color: var(--brand-success); font-weight: 600; }
-.readiness-supervised { color: oklch(0.50 0.13 60); font-weight: 600; }
-.readiness-not-auth { color: var(--brand-critical); font-weight: 600; }
+.readiness-auth {
+  color: var(--brand-success);
+  font-weight: 600;
+}
+.readiness-supervised {
+  color: oklch(0.5 0.13 60);
+  font-weight: 600;
+}
+.readiness-not-auth {
+  color: var(--brand-critical);
+  font-weight: 600;
+}
 
 .readiness-bar-wrap {
   display: inline-block;
@@ -1923,18 +2031,12 @@ onMounted(async () => {
 /* ─── Matrix card ────────────────────────────────────────────── */
 
 .matrix-card {
-  flex: 1;
-  min-height: 0;
   min-width: 0;
-  overflow: hidden;
 }
 
 .matrix-card-content {
   padding: 0;
   min-width: 0;
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
 }
 
 .table-wrapper {
@@ -1970,12 +2072,6 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 
-.vacancy-avatar {
-  background-color: color-mix(in oklch, var(--brand-warning) 15%, transparent);
-  color: var(--brand-warning);
-  border: 1px dashed var(--brand-warning);
-}
-
 .employee-info {
   display: flex;
   flex-direction: column;
@@ -1985,11 +2081,6 @@ onMounted(async () => {
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--text-heading);
-}
-
-.vacancy-name {
-  color: var(--brand-warning);
-  font-style: italic;
 }
 
 .employee-no {
@@ -2021,9 +2112,18 @@ onMounted(async () => {
   text-align: right;
 }
 
-.count-warning { color: var(--brand-warning); font-weight: 600; }
-.count-danger  { color: var(--brand-critical); font-weight: 600; }
-.count-supervised { color: oklch(0.50 0.13 60); font-weight: 600; }
+.count-warning {
+  color: var(--brand-warning);
+  font-weight: 600;
+}
+.count-danger {
+  color: var(--brand-critical);
+  font-weight: 600;
+}
+.count-supervised {
+  color: oklch(0.5 0.13 60);
+  font-weight: 600;
+}
 
 .gating-codes {
   display: flex;
@@ -2096,12 +2196,6 @@ onMounted(async () => {
 
 .grid-wrapper {
   min-width: 0;
-  height: 100%;
-}
-
-.grid-wrapper :deep([data-slot="table-container"]) {
-  height: 100%;
-  overflow: auto;
 }
 
 .grid-table .frozen-column {
@@ -2109,12 +2203,28 @@ onMounted(async () => {
   background-color: var(--bg-surface);
 }
 
-.grid-table thead .frozen-column { z-index: 21; }
-.grid-table tbody .frozen-column { z-index: 11; }
+.grid-table thead .frozen-column {
+  z-index: 21;
+}
+.grid-table tbody .frozen-column {
+  z-index: 11;
+}
 
-.grid-table .frozen-column:nth-child(1) { left: 0;     width: 200px; min-width: 200px; }
-.grid-table .frozen-column:nth-child(2) { left: 200px; width: 160px; min-width: 160px; }
-.grid-table .frozen-column:nth-child(3) { left: 360px; width: 120px; min-width: 120px; }
+.grid-table .frozen-column:nth-child(1) {
+  left: 0;
+  width: 200px;
+  min-width: 200px;
+}
+.grid-table .frozen-column:nth-child(2) {
+  left: 200px;
+  width: 160px;
+  min-width: 160px;
+}
+.grid-table .frozen-column:nth-child(3) {
+  left: 360px;
+  width: 120px;
+  min-width: 120px;
+}
 .grid-table .frozen-column:nth-child(4) {
   left: 480px;
   width: 110px;
@@ -2194,22 +2304,6 @@ onMounted(async () => {
   background-color: var(--bg-subtle);
 }
 
-/* 6.6 Vacancy row */
-.vacancy-row {
-  background: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 4px,
-    color-mix(in oklch, var(--brand-warning) 5%, transparent) 4px,
-    color-mix(in oklch, var(--brand-warning) 5%, transparent) 8px
-  );
-  opacity: 0.85;
-}
-
-.vacancy-row .frozen-column {
-  background-color: color-mix(in oklch, var(--brand-warning) 6%, var(--bg-surface));
-}
-
 .employee-cell-grid {
   left: 0;
   min-width: 200px;
@@ -2260,13 +2354,27 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 
-.dot-valid             { background-color: var(--brand-success); }
-.dot-expiring          { background-color: var(--brand-warning); }
-.dot-expired           { background-color: var(--brand-critical); }
-.dot-required          { background-color: var(--text-caption); }
-.dot-in-progress       { background-color: var(--brand-primary); }
-.dot-n-a               { background-color: var(--text-caption); }
-.dot-under-supervision { background-color: oklch(0.50 0.13 60); }
+.dot-valid {
+  background-color: var(--brand-success);
+}
+.dot-expiring {
+  background-color: var(--brand-warning);
+}
+.dot-expired {
+  background-color: var(--brand-critical);
+}
+.dot-required {
+  background-color: var(--text-caption);
+}
+.dot-in-progress {
+  background-color: var(--brand-primary);
+}
+.dot-n-a {
+  background-color: var(--text-caption);
+}
+.dot-under-supervision {
+  background-color: oklch(0.5 0.13 60);
+}
 
 /* 6.1 Requirements / Gap mode cell labels */
 .req-cell {
@@ -2290,7 +2398,7 @@ onMounted(async () => {
 
 .req-required {
   background-color: color-mix(in oklch, var(--brand-warning) 15%, transparent);
-  color: oklch(0.40 0.14 60);
+  color: oklch(0.4 0.14 60);
   border: 1px solid color-mix(in oklch, var(--brand-warning) 40%, transparent);
 }
 
@@ -2306,32 +2414,6 @@ onMounted(async () => {
   opacity: 0.3;
   font-size: 1rem;
   line-height: 1;
-}
-
-/* ─── Bottom bar ─────────────────────────────────────────────── */
-
-.bottom-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-sm) var(--space-md);
-  background-color: var(--bg-surface);
-  border-top: var(--border-subtle);
-  flex-shrink: 0;
-}
-
-.bottom-toggles {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-}
-
-.refresh-info {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  font-size: 0.75rem;
-  color: var(--text-caption);
 }
 
 /* ─── Drawers ────────────────────────────────────────────────── */
@@ -2408,13 +2490,17 @@ onMounted(async () => {
   background-color: color-mix(in oklch, var(--brand-warning) 12%, transparent);
 }
 
-.summary-item.warning .summary-value { color: var(--brand-warning); }
+.summary-item.warning .summary-value {
+  color: var(--brand-warning);
+}
 
 .summary-item.danger {
   background-color: color-mix(in oklch, var(--brand-critical) 10%, transparent);
 }
 
-.summary-item.danger .summary-value { color: var(--brand-critical); }
+.summary-item.danger .summary-value {
+  color: var(--brand-critical);
+}
 
 .summary-value {
   font-size: 1.25rem;
@@ -2510,8 +2596,12 @@ onMounted(async () => {
   background-color: color-mix(in oklch, var(--brand-success) 10%, transparent);
 }
 
-.reject-btn { color: var(--brand-critical); }
-.na-btn     { color: var(--text-caption); }
+.reject-btn {
+  color: var(--brand-critical);
+}
+.na-btn {
+  color: var(--text-caption);
+}
 
 /* Inline forms */
 .inline-review-form {
@@ -2588,7 +2678,6 @@ onMounted(async () => {
   background-color: var(--bg-subtle);
 }
 
-/* badge-neutral used for Unfilled vacancy */
 .badge-neutral {
   background-color: var(--bg-subtle);
   color: var(--text-caption);

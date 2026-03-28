@@ -24,12 +24,15 @@ export const competencyLibraryApi = {
   },
   getById: async (id: string): Promise<CompetencyLibraryItem | undefined> => {
     const mod = await import('@/data/competencies.json')
-    return (mod.default as CompetencyLibraryItem[]).find(c => c.id === id)
+    return (mod.default as CompetencyLibraryItem[]).find((c) => c.id === id)
   },
   create: async (data: Partial<CompetencyLibraryItem>): Promise<CompetencyLibraryItem> => {
     return data as CompetencyLibraryItem
   },
-  update: async (_id: string, data: Partial<CompetencyLibraryItem>): Promise<CompetencyLibraryItem> => {
+  update: async (
+    _id: string,
+    data: Partial<CompetencyLibraryItem>,
+  ): Promise<CompetencyLibraryItem> => {
     return data as CompetencyLibraryItem
   },
   archive: async (_id: string): Promise<void> => {
@@ -47,16 +50,23 @@ export const rolesApi = {
     const mod = await import('@/data/roleApplicability.json')
     return mod.default as RoleApplicabilityDecision[]
   },
-  getApplicabilityByJobTitle: async (jobTitleId: string): Promise<RoleApplicabilityDecision | undefined> => {
+  getApplicabilityByJobTitle: async (
+    jobTitleId: string,
+  ): Promise<RoleApplicabilityDecision | undefined> => {
     const mod = await import('@/data/roleApplicability.json')
-    return (mod.default as RoleApplicabilityDecision[]).find(r => r.erpJobTitleId === jobTitleId)
+    return (mod.default as RoleApplicabilityDecision[]).find((r) => r.erpJobTitleId === jobTitleId)
   },
-  saveApplicability: async (data: Partial<RoleApplicabilityDecision>): Promise<RoleApplicabilityDecision> => {
+  saveApplicability: async (
+    data: Partial<RoleApplicabilityDecision>,
+  ): Promise<RoleApplicabilityDecision> => {
     return data as RoleApplicabilityDecision
   },
   getRequirementSets: async (): Promise<RoleRequirementSet[]> => {
     const mod = await import('@/data/roleRequirements.json')
-    const raw = mod.default as unknown as Record<string, { setId: string; status: string; publishedAt: string; requirements: RoleRequirement[] }>
+    const raw = mod.default as unknown as Record<
+      string,
+      { setId: string; status: string; publishedAt: string; requirements: RoleRequirement[] }
+    >
     return Object.entries(raw).map(([jobTitleId, val]) => ({
       id: val.setId,
       erpJobTitleId: jobTitleId,
@@ -67,9 +77,14 @@ export const rolesApi = {
       updatedAt: val.publishedAt,
     }))
   },
-  getRequirementSetByJobTitle: async (jobTitleId: string): Promise<RoleRequirementSet | undefined> => {
+  getRequirementSetByJobTitle: async (
+    jobTitleId: string,
+  ): Promise<RoleRequirementSet | undefined> => {
     const mod = await import('@/data/roleRequirements.json')
-    const raw = mod.default as Record<string, { setId: string; status: string; publishedAt: string }>
+    const raw = mod.default as Record<
+      string,
+      { setId: string; status: string; publishedAt: string }
+    >
     const entry = raw[jobTitleId]
     if (!entry) return undefined
     return {
@@ -90,14 +105,24 @@ export const rolesApi = {
   },
   getRequirements: async (setId: string): Promise<RoleRequirement[]> => {
     const mod = await import('@/data/roleRequirements.json')
-    const raw = mod.default as unknown as Record<string, { setId: string; requirements: RoleRequirement[] }>
-    const entry = Object.values(raw).find(v => v.setId === setId)
+    const raw = mod.default as unknown as Record<
+      string,
+      { setId: string; requirements: RoleRequirement[] }
+    >
+    const entry = Object.values(raw).find((v) => v.setId === setId)
     return entry?.requirements ?? []
   },
-  addRequirement: async (_setId: string, data: Partial<RoleRequirement>): Promise<RoleRequirement> => {
+  addRequirement: async (
+    _setId: string,
+    data: Partial<RoleRequirement>,
+  ): Promise<RoleRequirement> => {
     return data as RoleRequirement
   },
-  updateRequirement: async (_setId: string, _reqId: string, data: Partial<RoleRequirement>): Promise<RoleRequirement> => {
+  updateRequirement: async (
+    _setId: string,
+    _reqId: string,
+    data: Partial<RoleRequirement>,
+  ): Promise<RoleRequirement> => {
     return data as RoleRequirement
   },
   removeRequirement: async (_setId: string, _reqId: string): Promise<void> => {
@@ -115,6 +140,8 @@ export const trainingNeedsApi = {
   getAll: async (_params?: { status?: string; employeeId?: string }): Promise<TrainingNeed[]> => [],
   getById: async (_id: string): Promise<TrainingNeed | undefined> => undefined,
   create: async (data: Partial<TrainingNeed>): Promise<TrainingNeed> => data as TrainingNeed,
-  update: async (_id: string, data: Partial<TrainingNeed>): Promise<TrainingNeed> => data as TrainingNeed,
-  complete: async (_id: string, data: Partial<TrainingCompletion>): Promise<TrainingCompletion> => data as TrainingCompletion,
+  update: async (_id: string, data: Partial<TrainingNeed>): Promise<TrainingNeed> =>
+    data as TrainingNeed,
+  complete: async (_id: string, data: Partial<TrainingCompletion>): Promise<TrainingCompletion> =>
+    data as TrainingCompletion,
 }

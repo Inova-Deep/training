@@ -80,7 +80,7 @@ function handleSave() {
   }
 
   // Update the competency item status in the matrix store (in-memory)
-  const row = matrixStore.mockEmployeeRows.find(r => r.employeeId === props.employeeId)
+  const row = matrixStore.mockEmployeeRows.find((r) => r.employeeId === props.employeeId)
   if (row) {
     const item = row.competenceItems.get(props.competencyId)
     if (item) {
@@ -98,7 +98,7 @@ function handleSave() {
   }
 
   toast.success(
-    `Assessment recorded — ${props.competencyTitle} marked ${outcome.value} for ${props.employeeName}`
+    `Assessment recorded — ${props.competencyTitle} marked ${outcome.value} for ${props.employeeName}`,
   )
 
   emit('saved')
@@ -148,11 +148,7 @@ function handleClose() {
           <div class="form-grid">
             <div class="form-field">
               <Label for="assessment-date" class="form-label">Assessment Date</Label>
-              <Input
-                id="assessment-date"
-                v-model="assessmentDate"
-                type="date"
-              />
+              <Input id="assessment-date" v-model="assessmentDate" type="date" />
             </div>
             <div class="form-field">
               <Label for="assessment-method" class="form-label">Assessment Method</Label>
@@ -161,11 +157,7 @@ function handleClose() {
                   <SelectValue placeholder="Select method" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem
-                    v-for="method in ASSESSMENT_METHODS"
-                    :key="method"
-                    :value="method"
-                  >
+                  <SelectItem v-for="method in ASSESSMENT_METHODS" :key="method" :value="method">
                     {{ method }}
                   </SelectItem>
                 </SelectContent>
@@ -207,12 +199,10 @@ function handleClose() {
             />
           </div>
           <div class="form-field form-field-full">
-            <Label for="evidence-ref" class="form-label">Evidence Reference <span class="optional-hint">(optional)</span></Label>
-            <Input
-              id="evidence-ref"
-              v-model="evidenceRef"
-              placeholder="e.g. EV-2026-008"
-            />
+            <Label for="evidence-ref" class="form-label"
+              >Evidence Reference <span class="optional-hint">(optional)</span></Label
+            >
+            <Input id="evidence-ref" v-model="evidenceRef" placeholder="e.g. EV-2026-008" />
           </div>
         </div>
       </div>
@@ -300,7 +290,7 @@ function handleClose() {
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space-md);
-  border: 1px solid var(--border-color, rgba(0,0,0,0.1));
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: background-color 0.15s;

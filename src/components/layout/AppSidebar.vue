@@ -14,22 +14,17 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  useSidebar
+  useSidebar,
 } from '@/components/ui/sidebar'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger
-} from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   LayoutDashboard,
   Grid3x3,
@@ -44,7 +39,7 @@ import {
   Settings,
   ChevronUp,
   Sparkles,
-  UserCircle2
+  UserCircle2,
 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 
@@ -78,70 +73,79 @@ const NAV_MY_COMPETENCIES: NavItem = {
   title: 'My Competence Profile',
   icon: UserCircle2,
   to: '/my-competencies',
-  tooltip: 'Your readiness profile — role requirements, assessed competencies, gaps, evidence, and authorisation status'
+  tooltip:
+    'Your readiness profile — role requirements, assessed competencies, gaps, evidence, and authorisation status',
 }
 
 const NAV_DASHBOARD: NavItem = {
   title: 'Dashboard',
   icon: LayoutDashboard,
   to: '/dashboard',
-  tooltip: 'Organisation view of competence compliance, gating risks, and upcoming expiries'
+  tooltip: 'Organisation view of competence compliance, gating risks, and upcoming expiries',
 }
 
 const NAV_SKILLS_MATRIX: NavItem = {
   title: 'Skills Matrix',
   icon: Grid3x3,
   to: '/skills-matrix',
-  tooltip: 'Organisational competence matrix — required vs. assessed vs. gap, filtered by department, role, and risk'
+  tooltip:
+    'Organisational competence matrix — required vs. assessed vs. gap, filtered by department, role, and risk',
 }
 
 const NAV_PEOPLE: NavItem = {
   title: 'People',
   icon: Users,
   to: '/people',
-  tooltip: 'Browse/search employees from ERP and view competence records, evidence, and training history'
+  tooltip:
+    'Browse/search employees from ERP and view competence records, evidence, and training history',
 }
 
 const NAV_ROLES: NavItem = {
   title: 'Roles',
   icon: Briefcase,
   to: '/roles',
-  tooltip: 'Configure Job Title applicability, role requirements, and gating rules for independent work'
+  tooltip:
+    'Configure Job Title applicability, role requirements, and gating rules for independent work',
 }
 
 const NAV_COMPETENCY_LIBRARY: NavItem = {
   title: 'Competency Library',
   icon: Library,
   to: '/competency-library',
-  tooltip: 'Maintain the reusable list of competency requirements, categories, risk levels, and default evidence rules'
+  tooltip:
+    'Maintain the reusable list of competency requirements, categories, risk levels, and default evidence rules',
 }
 
 const NAV_TRAINING_NEEDS: NavItem = {
   title: 'Training & Gap Actions',
   icon: GraduationCap,
   to: '/training-needs',
-  tooltip: 'Track gap-closure actions by source — NCR, audit, expiry, procedure change — and verify effectiveness'
+  tooltip:
+    'Track gap-closure actions by source — NCR, audit, expiry, procedure change — and verify effectiveness',
 }
 
 const NAV_AWARENESS_TOPICS: NavItem = {
   title: 'Awareness & Communications',
   icon: Megaphone,
   to: '/awareness-topics',
-  tooltip: 'Controlled awareness communications — procedure revisions, safety briefings, quality alerts — with acknowledgement tracking'
+  tooltip:
+    'Controlled awareness communications — procedure revisions, safety briefings, quality alerts — with acknowledgement tracking',
 }
 
 const NAV_REFERENCE_LISTS: NavItem = {
   title: 'Reference Lists',
   icon: ListChecks,
   to: '/admin/reference-lists',
-  tooltip: 'Manage controlled values (risk/status/training types/assessment methods) and key thresholds'
+  tooltip:
+    'Manage controlled values (risk/status/training types/assessment methods) and key thresholds',
 }
 
 const NAV_ERP_CONNECTION: NavItem = {
   title: 'ERP Connection',
   icon: Database,
   to: '/admin/erp-connection',
-  tooltip: 'Test ERP connectivity, validate credentials, and view integration status for demo environment'
+  tooltip:
+    'Test ERP connectivity, validate credentials, and view integration status for demo environment',
 }
 
 // ─── Role-gated navigation groups ─────────────────────────────────────────────
@@ -210,10 +214,6 @@ const navigationGroups = computed<NavGroup[]>(() => {
 
   if (role === 'QHSE') {
     return [
-      {
-        title: 'My Work',
-        items: [NAV_MY_COMPETENCIES],
-      },
       {
         title: 'Operations',
         items: [NAV_DASHBOARD, NAV_SKILLS_MATRIX],
@@ -308,10 +308,7 @@ const isActive = (path: string) => {
               <SidebarMenuItem v-for="item in group.items" :key="item.title">
                 <Tooltip>
                   <TooltipTrigger as-child>
-                    <SidebarMenuButton
-                      as-child
-                      :is-active="isActive(item.to)"
-                    >
+                    <SidebarMenuButton as-child :is-active="isActive(item.to)">
                       <a @click="handleNavClick(item.to)" class="nav-link">
                         <component :is="item.icon" />
                         <span>{{ item.title }}</span>

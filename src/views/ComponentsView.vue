@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
-import { 
+import {
   Plus,
   Edit,
   Download,
@@ -17,36 +17,25 @@ import {
   XCircle,
   Settings,
   Bell,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
 } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
-} from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from '@/components/ui/select'
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from '@/components/ui/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Dialog,
   DialogContent,
@@ -54,7 +43,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
+  DialogTrigger,
 } from '@/components/ui/dialog'
 import {
   Sheet,
@@ -63,13 +52,9 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-  SheetTrigger
+  SheetTrigger,
 } from '@/components/ui/sheet'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger
-} from '@/components/ui/popover'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { DateTimePicker } from '@/components/ui/date-time-picker'
 import {
@@ -78,26 +63,18 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger
-} from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
-  AccordionTrigger
+  AccordionTrigger,
 } from '@/components/ui/accordion'
-import {
-  RadioGroup,
-  RadioGroupItem
-} from '@/components/ui/radio-group'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -107,7 +84,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import {
   Breadcrumb,
@@ -115,7 +92,7 @@ import {
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
-  BreadcrumbSeparator
+  BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 import {
   Table,
@@ -123,7 +100,7 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
+  TableRow,
 } from '@/components/ui/table'
 import { format } from 'date-fns'
 import type { DateValue } from '@internationalized/date'
@@ -335,16 +312,18 @@ const showToast = (type: 'success' | 'error' | 'warning' | 'info') => {
                     <PopoverTrigger as-child>
                       <Button variant="outline" class="form-date-trigger">
                         <CalendarIcon class="icon-sm" />
-                        {{ selectedDate ? format(selectedDate.toDate('UTC'), 'PPP') : 'Pick a date' }}
+                        {{
+                          selectedDate ? format(selectedDate.toDate('UTC'), 'PPP') : 'Pick a date'
+                        }}
                       </Button>
                     </PopoverTrigger>
-                     <PopoverContent class="popover-calendar" align="start">
-                       <Calendar v-model="selectedDate" layout="month-and-year" />
-                     </PopoverContent>
-                   </Popover>
-                 </div>
-                 <div class="form-field">
-                   <Label>Date & Time</Label>
+                    <PopoverContent class="popover-calendar" align="start">
+                      <Calendar v-model="selectedDate" layout="month-and-year" />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div class="form-field">
+                  <Label>Date & Time</Label>
                   <DateTimePicker v-model="selectedDateTime" placeholder="Select date and time" />
                 </div>
                 <div class="form-field form-field-full">
@@ -469,7 +448,9 @@ const showToast = (type: 'success' | 'error' | 'warning' | 'info') => {
                     <PopoverTrigger as-child>
                       <Button variant="outline" class="form-date-trigger">
                         <CalendarIcon class="icon-sm" />
-                        {{ selectedDate ? format(selectedDate.toDate('UTC'), 'PPP') : 'Pick a date' }}
+                        {{
+                          selectedDate ? format(selectedDate.toDate('UTC'), 'PPP') : 'Pick a date'
+                        }}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent class="popover-calendar" align="start">
@@ -555,13 +536,15 @@ const showToast = (type: 'success' | 'error' | 'warning' | 'info') => {
                   <AccordionItem value="item-1">
                     <AccordionTrigger>What is this platform?</AccordionTrigger>
                     <AccordionContent>
-                      This is a comprehensive training management platform designed for enterprise use.
+                      This is a comprehensive training management platform designed for enterprise
+                      use.
                     </AccordionContent>
                   </AccordionItem>
                   <AccordionItem value="item-2">
                     <AccordionTrigger>How do I get started?</AccordionTrigger>
                     <AccordionContent>
-                      Navigate to the dashboard to see an overview of your training compliance status.
+                      Navigate to the dashboard to see an overview of your training compliance
+                      status.
                     </AccordionContent>
                   </AccordionItem>
                   <AccordionItem value="item-3">
@@ -672,7 +655,12 @@ const showToast = (type: 'success' | 'error' | 'warning' | 'info') => {
                       <TableCell class="table-actions-cell">
                         <DropdownMenu>
                           <DropdownMenuTrigger as-child>
-                            <Button variant="ghost" size="icon" class="table-action-btn" aria-label="Actions">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              class="table-action-btn"
+                              aria-label="Actions"
+                            >
                               <MoreHorizontal class="icon-xs" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -697,7 +685,12 @@ const showToast = (type: 'success' | 'error' | 'warning' | 'info') => {
                       <TableCell class="table-actions-cell">
                         <DropdownMenu>
                           <DropdownMenuTrigger as-child>
-                            <Button variant="ghost" size="icon" class="table-action-btn" aria-label="Actions">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              class="table-action-btn"
+                              aria-label="Actions"
+                            >
                               <MoreHorizontal class="icon-xs" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -722,7 +715,12 @@ const showToast = (type: 'success' | 'error' | 'warning' | 'info') => {
                       <TableCell class="table-actions-cell">
                         <DropdownMenu>
                           <DropdownMenuTrigger as-child>
-                            <Button variant="ghost" size="icon" class="table-action-btn" aria-label="Actions">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              class="table-action-btn"
+                              aria-label="Actions"
+                            >
                               <MoreHorizontal class="icon-xs" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -851,9 +849,7 @@ const showToast = (type: 'success' | 'error' | 'warning' | 'info') => {
                   <SheetContent class="sheet-panel">
                     <SheetHeader>
                       <SheetTitle>Edit Record</SheetTitle>
-                      <SheetDescription>
-                        Make changes to the record below.
-                      </SheetDescription>
+                      <SheetDescription> Make changes to the record below. </SheetDescription>
                     </SheetHeader>
                     <div class="sheet-body">
                       <div class="form-grid">
@@ -931,7 +927,8 @@ const showToast = (type: 'success' | 'error' | 'warning' | 'info') => {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete your account and remove your data from our servers.
+                        This action cannot be undone. This will permanently delete your account and
+                        remove your data from our servers.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -955,8 +952,14 @@ const showToast = (type: 'success' | 'error' | 'warning' | 'info') => {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .showcase-tabs {
@@ -978,8 +981,12 @@ const showToast = (type: 'success' | 'error' | 'warning' | 'info') => {
 }
 
 @keyframes slideIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .showcase-grid {
@@ -1098,8 +1105,8 @@ const showToast = (type: 'success' | 'error' | 'warning' | 'info') => {
   gap: var(--space-xs);
 }
 
-.form-field :deep([data-slot="input"]),
-.form-field :deep([data-slot="select-trigger"]),
+.form-field :deep([data-slot='input']),
+.form-field :deep([data-slot='select-trigger']),
 .form-field :deep(.date-time-trigger),
 .form-field :deep(.form-date-trigger) {
   width: 100%;
@@ -1225,7 +1232,7 @@ const showToast = (type: 'success' | 'error' | 'warning' | 'info') => {
   padding: 0 !important;
 }
 
-.sheet-panel:deep([data-slot="sheet-content"]) {
+.sheet-panel:deep([data-slot='sheet-content']) {
   width: 800px !important;
   max-width: 90vw !important;
 }
@@ -1264,15 +1271,15 @@ const showToast = (type: 'success' | 'error' | 'warning' | 'info') => {
   .showcase-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .showcase-item-wide {
     grid-column: 1;
   }
-  
+
   .form-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .form-field-full {
     grid-column: 1;
   }

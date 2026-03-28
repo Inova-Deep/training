@@ -16,7 +16,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   placeholder: 'Pick date and time',
-  disabled: false
+  disabled: false,
 })
 
 const emit = defineEmits<{
@@ -28,9 +28,12 @@ const selectedDate = ref<DateValue | undefined>(props.modelValue)
 const hours = ref('09')
 const minutes = ref('00')
 
-watch(() => props.modelValue, (val) => {
-  selectedDate.value = val
-})
+watch(
+  () => props.modelValue,
+  (val) => {
+    selectedDate.value = val
+  },
+)
 
 const formattedValue = computed(() => {
   if (!selectedDate.value) return ''
@@ -48,12 +51,12 @@ const handleDateSelect = (value: unknown) => {
 const handleTimeChange = () => {
   let h = parseInt(hours.value)
   let m = parseInt(minutes.value)
-  
+
   if (isNaN(h) || h < 0) h = 0
   if (h > 23) h = 23
   if (isNaN(m) || m < 0) m = 0
   if (m > 59) m = 59
-  
+
   hours.value = h.toString().padStart(2, '0')
   minutes.value = m.toString().padStart(2, '0')
 }
@@ -69,11 +72,7 @@ const handleConfirm = () => {
 <template>
   <Popover v-model:open="open">
     <PopoverTrigger as-child>
-      <Button
-        variant="outline"
-        :disabled="disabled"
-        class="date-time-trigger"
-      >
+      <Button variant="outline" :disabled="disabled" class="date-time-trigger">
         <CalendarIcon class="trigger-icon" />
         <span v-if="formattedValue">{{ formattedValue }}</span>
         <span v-else class="placeholder-text">{{ placeholder }}</span>
@@ -83,7 +82,7 @@ const handleConfirm = () => {
       <div class="date-time-content">
         <div class="calendar-section">
           <Calendar
-            :model-value="(selectedDate as any)"
+            :model-value="selectedDate as any"
             layout="month-and-year"
             @update:model-value="(val: any) => handleDateSelect(val)"
           />
@@ -120,12 +119,8 @@ const handleConfirm = () => {
           </div>
         </div>
         <div class="actions-section">
-          <Button variant="outline" size="sm" @click="open = false">
-            Cancel
-          </Button>
-          <Button size="sm" @click="handleConfirm">
-            Confirm
-          </Button>
+          <Button variant="outline" size="sm" @click="open = false"> Cancel </Button>
+          <Button size="sm" @click="handleConfirm"> Confirm </Button>
         </div>
       </div>
     </PopoverContent>

@@ -1,24 +1,49 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select'
 import { DatePicker } from '@/components/ui/date-picker'
 import {
-  Stepper, StepperItem, StepperTrigger, StepperIndicator,
-  StepperTitle, StepperSeparator
+  Stepper,
+  StepperItem,
+  StepperTrigger,
+  StepperIndicator,
+  StepperTitle,
+  StepperSeparator,
 } from '@/components/ui/stepper'
 import {
-  GraduationCap, Users, ExternalLink, BookOpen, FileText, Eye, Award,
-  Check
+  GraduationCap,
+  Users,
+  ExternalLink,
+  BookOpen,
+  FileText,
+  Eye,
+  Award,
+  Check,
 } from 'lucide-vue-next'
-import { useTrainingNeedsStore, type ResolutionType, type ResolutionData } from '@/stores/trainingNeeds'
+import {
+  useTrainingNeedsStore,
+  type ResolutionType,
+  type ResolutionData,
+} from '@/stores/trainingNeeds'
 import { useEmployeesStore } from '@/stores/employees'
 import { useCompetencyLibraryStore } from '@/stores/competencyLibrary'
 import type { DateValue } from '@internationalized/date'
@@ -39,34 +64,36 @@ const compStore = useCompetencyLibraryStore()
 
 const currentNeed = computed(() => {
   if (!props.needId) return null
-  return trainingStore.trainingNeeds.find(n => n.id === props.needId) || null
+  return trainingStore.trainingNeeds.find((n) => n.id === props.needId) || null
 })
 
 const employee = computed(() => {
   if (!currentNeed.value) return null
-  return empStore.employees.find(e => e.id === currentNeed.value?.erpEmployeeId) || null
+  return empStore.employees.find((e) => e.id === currentNeed.value?.erpEmployeeId) || null
 })
 
 const competency = computed(() => {
   if (!currentNeed.value) return null
-  return compStore.competencies.find(c => c.id === currentNeed.value?.employeeCompetenceItemId) || null
+  return (
+    compStore.competencies.find((c) => c.id === currentNeed.value?.employeeCompetenceItemId) || null
+  )
 })
 
 // ── Workflow stepper ──────────────────────────────────────────────────────────
 const workflowSteps: { key: TrainingNeedWorkflowStatus; label: string }[] = [
-  { key: 'IDENTIFIED',           label: 'Identified' },
-  { key: 'APPROVED',             label: 'Approved' },
-  { key: 'SCHEDULED',            label: 'Scheduled' },
-  { key: 'IN_PROGRESS',          label: 'In Progress' },
-  { key: 'EVIDENCE_SUBMITTED',   label: 'Evidence' },
+  { key: 'IDENTIFIED', label: 'Identified' },
+  { key: 'APPROVED', label: 'Approved' },
+  { key: 'SCHEDULED', label: 'Scheduled' },
+  { key: 'IN_PROGRESS', label: 'In Progress' },
+  { key: 'EVIDENCE_SUBMITTED', label: 'Evidence' },
   { key: 'EFFECTIVENESS_REVIEW', label: 'Effectiveness' },
-  { key: 'CLOSED',               label: 'Closed' },
+  { key: 'CLOSED', label: 'Closed' },
 ]
 
 const currentStepIndex = computed(() => {
   const ws = currentNeed.value?.workflowStatus
   if (!ws) return 0
-  const idx = workflowSteps.findIndex(s => s.key === ws)
+  const idx = workflowSteps.findIndex((s) => s.key === ws)
   return idx >= 0 ? idx : 0
 })
 
@@ -79,30 +106,34 @@ const plannedDate = ref<DateValue>()
 const effectivenessCheckDue = ref<DateValue>()
 const formData = ref<Partial<ResolutionData>>({
   type: 'COACHING_OJT',
-  notes: ''
+  notes: '',
 })
 
 const isSubmitting = ref(false)
 
 const interventionTypes: { key: ResolutionType; label: string; desc: string }[] = [
-  { key: 'COACHING_OJT',           label: 'Coaching / OJT',        desc: 'Internal knowledge transfer' },
-  { key: 'TOOLBOX_TALK',           label: 'Toolbox Talk',          desc: 'Team briefing on topic' },
-  { key: 'EXTERNAL_COURSE',        label: 'External Course',       desc: 'Attend accredited training' },
-  { key: 'INTERNAL_BRIEFING',      label: 'Internal Briefing',     desc: 'Classroom or one-to-one' },
-  { key: 'PROCEDURE_READ_ACK',     label: 'Read & Acknowledge',    desc: 'Document review and sign-off' },
-  { key: 'SUPERVISOR_OBSERVATION', label: 'Supervisor Obs.',       desc: 'Observed practical demonstration' },
-  { key: 'CERTIFICATION_RENEWAL',  label: 'Cert. Renewal',         desc: 'External recertification' },
+  { key: 'COACHING_OJT', label: 'Coaching / OJT', desc: 'Internal knowledge transfer' },
+  { key: 'TOOLBOX_TALK', label: 'Toolbox Talk', desc: 'Team briefing on topic' },
+  { key: 'EXTERNAL_COURSE', label: 'External Course', desc: 'Attend accredited training' },
+  { key: 'INTERNAL_BRIEFING', label: 'Internal Briefing', desc: 'Classroom or one-to-one' },
+  { key: 'PROCEDURE_READ_ACK', label: 'Read & Acknowledge', desc: 'Document review and sign-off' },
+  {
+    key: 'SUPERVISOR_OBSERVATION',
+    label: 'Supervisor Obs.',
+    desc: 'Observed practical demonstration',
+  },
+  { key: 'CERTIFICATION_RENEWAL', label: 'Cert. Renewal', desc: 'External recertification' },
 ]
 
 const submitLabel = computed(() => {
   const labels: Record<ResolutionType, string> = {
-    COACHING_OJT:           'Schedule Coaching / OJT',
-    TOOLBOX_TALK:           'Schedule Toolbox Talk',
-    EXTERNAL_COURSE:        'Book External Course',
-    INTERNAL_BRIEFING:      'Schedule Internal Briefing',
-    PROCEDURE_READ_ACK:     'Issue Read & Acknowledge',
+    COACHING_OJT: 'Schedule Coaching / OJT',
+    TOOLBOX_TALK: 'Schedule Toolbox Talk',
+    EXTERNAL_COURSE: 'Book External Course',
+    INTERNAL_BRIEFING: 'Schedule Internal Briefing',
+    PROCEDURE_READ_ACK: 'Issue Read & Acknowledge',
     SUPERVISOR_OBSERVATION: 'Schedule Supervisor Observation',
-    CERTIFICATION_RENEWAL:  'Book Certification Renewal',
+    CERTIFICATION_RENEWAL: 'Book Certification Renewal',
   }
   return labels[selectedPath.value]
 })
@@ -110,15 +141,18 @@ const submitLabel = computed(() => {
 // Show effectiveness check for all except PROCEDURE_READ_ACK
 const showEffectivenessCheck = computed(() => selectedPath.value !== 'PROCEDURE_READ_ACK')
 
-watch(() => props.isOpen, (val) => {
-  if (val) {
-    const existing = currentNeed.value?.interventionType as ResolutionType | undefined
-    selectedPath.value = existing ?? 'COACHING_OJT'
-    plannedDate.value = undefined
-    effectivenessCheckDue.value = undefined
-    formData.value = { type: selectedPath.value, notes: '' }
-  }
-})
+watch(
+  () => props.isOpen,
+  (val) => {
+    if (val) {
+      const existing = currentNeed.value?.interventionType as ResolutionType | undefined
+      selectedPath.value = existing ?? 'COACHING_OJT'
+      plannedDate.value = undefined
+      effectivenessCheckDue.value = undefined
+      formData.value = { type: selectedPath.value, notes: '' }
+    }
+  },
+)
 
 watch(selectedPath, (val) => {
   formData.value = { ...formData.value, type: val }
@@ -153,12 +187,12 @@ const handleSubmit = async () => {
         </div>
         <SheetTitle>Resolve Competence Gap</SheetTitle>
         <SheetDescription>
-          Choose an intervention type to address this requirement for {{ employee?.firstName }} {{ employee?.lastName }}.
+          Choose an intervention type to address this requirement for {{ employee?.firstName }}
+          {{ employee?.lastName }}.
         </SheetDescription>
       </SheetHeader>
 
       <div class="sheet-body">
-
         <!-- Workflow Stepper -->
         <div class="stepper-wrapper">
           <Stepper :model-value="stepperValue" class="workflow-stepper">
@@ -175,7 +209,10 @@ const handleSubmit = async () => {
                 </StepperIndicator>
                 <StepperTitle class="stepper-title-compact">{{ step.label }}</StepperTitle>
               </StepperTrigger>
-              <StepperSeparator v-if="index < workflowSteps.length - 1" class="stepper-sep-compact" />
+              <StepperSeparator
+                v-if="index < workflowSteps.length - 1"
+                class="stepper-sep-compact"
+              />
             </StepperItem>
           </Stepper>
         </div>
@@ -221,7 +258,12 @@ const handleSubmit = async () => {
             class="path-container"
             :class="{ active: selectedPath === itype.key }"
           >
-            <RadioGroupItem :value="itype.key" :id="`path-${itype.key}`" class="sr-only" :aria-label="itype.label" />
+            <RadioGroupItem
+              :value="itype.key"
+              :id="`path-${itype.key}`"
+              class="sr-only"
+              :aria-label="itype.label"
+            />
             <Label :for="`path-${itype.key}`" class="path-label">
               <GraduationCap v-if="itype.key === 'COACHING_OJT'" class="icon-sm" />
               <Users v-else-if="itype.key === 'TOOLBOX_TALK'" class="icon-sm" />
@@ -238,16 +280,23 @@ const handleSubmit = async () => {
 
         <!-- Dynamic Form Fields -->
         <div class="resolution-form">
-
           <!-- COACHING_OJT: trainer name, planned date -->
           <div v-if="selectedPath === 'COACHING_OJT'" class="form-grid">
             <div class="form-field form-field-full">
               <Label for="trainer-name">Trainer Name</Label>
-              <Input id="trainer-name" placeholder="Search employee..." v-model="formData.trainerName" />
+              <Input
+                id="trainer-name"
+                placeholder="Search employee..."
+                v-model="formData.trainerName"
+              />
             </div>
             <div class="form-field form-field-full">
               <Label for="planned-date-ojt">Planned Date</Label>
-              <DatePicker id="planned-date-ojt" v-model="plannedDate" placeholder="Select planned date" />
+              <DatePicker
+                id="planned-date-ojt"
+                v-model="plannedDate"
+                placeholder="Select planned date"
+              />
             </div>
           </div>
 
@@ -255,15 +304,27 @@ const handleSubmit = async () => {
           <div v-if="selectedPath === 'TOOLBOX_TALK'" class="form-grid">
             <div class="form-field form-field-full">
               <Label for="briefing-lead">Briefing Lead</Label>
-              <Input id="briefing-lead" placeholder="Search employee..." v-model="formData.briefingLead" />
+              <Input
+                id="briefing-lead"
+                placeholder="Search employee..."
+                v-model="formData.briefingLead"
+              />
             </div>
             <div class="form-field form-field-full">
               <Label for="planned-date-tt">Planned Date</Label>
-              <DatePicker id="planned-date-tt" v-model="plannedDate" placeholder="Select planned date" />
+              <DatePicker
+                id="planned-date-tt"
+                v-model="plannedDate"
+                placeholder="Select planned date"
+              />
             </div>
             <div class="form-field form-field-full">
               <Label for="topic-ref">Topic Reference</Label>
-              <Input id="topic-ref" placeholder="e.g. TBT-2026-004" v-model="formData.topicReference" />
+              <Input
+                id="topic-ref"
+                placeholder="e.g. TBT-2026-004"
+                v-model="formData.topicReference"
+              />
             </div>
           </div>
 
@@ -271,11 +332,19 @@ const handleSubmit = async () => {
           <div v-if="selectedPath === 'EXTERNAL_COURSE'" class="form-grid">
             <div class="form-field form-field-full">
               <Label for="provider-name">Provider Name</Label>
-              <Input id="provider-name" placeholder="e.g. Red Cross, OPITO" v-model="formData.providerName" />
+              <Input
+                id="provider-name"
+                placeholder="e.g. Red Cross, OPITO"
+                v-model="formData.providerName"
+              />
             </div>
             <div class="form-field form-field-full">
               <Label for="planned-date-ec">Planned Date</Label>
-              <DatePicker id="planned-date-ec" v-model="plannedDate" placeholder="Select planned date" />
+              <DatePicker
+                id="planned-date-ec"
+                v-model="plannedDate"
+                placeholder="Select planned date"
+              />
             </div>
           </div>
 
@@ -283,11 +352,19 @@ const handleSubmit = async () => {
           <div v-if="selectedPath === 'INTERNAL_BRIEFING'" class="form-grid">
             <div class="form-field form-field-full">
               <Label for="facilitator">Facilitator</Label>
-              <Input id="facilitator" placeholder="Search employee..." v-model="formData.facilitator" />
+              <Input
+                id="facilitator"
+                placeholder="Search employee..."
+                v-model="formData.facilitator"
+              />
             </div>
             <div class="form-field form-field-full">
               <Label for="planned-date-ib">Planned Date</Label>
-              <DatePicker id="planned-date-ib" v-model="plannedDate" placeholder="Select planned date" />
+              <DatePicker
+                id="planned-date-ib"
+                v-model="plannedDate"
+                placeholder="Select planned date"
+              />
             </div>
             <div class="form-field form-field-full">
               <Label for="location">Location</Label>
@@ -299,7 +376,11 @@ const handleSubmit = async () => {
           <div v-if="selectedPath === 'PROCEDURE_READ_ACK'" class="form-grid">
             <div class="form-field form-field-full">
               <Label for="doc-ref">Document Reference</Label>
-              <Input id="doc-ref" placeholder="e.g. CTA-PRO-004 v2.0" v-model="formData.documentReference" />
+              <Input
+                id="doc-ref"
+                placeholder="e.g. CTA-PRO-004 v2.0"
+                v-model="formData.documentReference"
+              />
             </div>
           </div>
 
@@ -307,11 +388,19 @@ const handleSubmit = async () => {
           <div v-if="selectedPath === 'SUPERVISOR_OBSERVATION'" class="form-grid">
             <div class="form-field form-field-full">
               <Label for="supervisor">Designated Supervisor</Label>
-              <Input id="supervisor" placeholder="Search employee..." v-model="formData.designatedSupervisor" />
+              <Input
+                id="supervisor"
+                placeholder="Search employee..."
+                v-model="formData.designatedSupervisor"
+              />
             </div>
             <div class="form-field form-field-full">
               <Label for="planned-date-so">Planned Date</Label>
-              <DatePicker id="planned-date-so" v-model="plannedDate" placeholder="Select planned date" />
+              <DatePicker
+                id="planned-date-so"
+                v-model="plannedDate"
+                placeholder="Select planned date"
+              />
             </div>
           </div>
 
@@ -319,15 +408,27 @@ const handleSubmit = async () => {
           <div v-if="selectedPath === 'CERTIFICATION_RENEWAL'" class="form-grid">
             <div class="form-field form-field-full">
               <Label for="cert-provider">Provider</Label>
-              <Input id="cert-provider" placeholder="e.g. OPITO, City and Guilds" v-model="formData.providerName" />
+              <Input
+                id="cert-provider"
+                placeholder="e.g. OPITO, City and Guilds"
+                v-model="formData.providerName"
+              />
             </div>
             <div class="form-field form-field-full">
               <Label for="planned-date-cr">Planned Date</Label>
-              <DatePicker id="planned-date-cr" v-model="plannedDate" placeholder="Select planned date" />
+              <DatePicker
+                id="planned-date-cr"
+                v-model="plannedDate"
+                placeholder="Select planned date"
+              />
             </div>
             <div class="form-field form-field-full">
               <Label for="cert-body">Certification Body</Label>
-              <Input id="cert-body" placeholder="e.g. SQA, NEBOSH" v-model="formData.certificationBody" />
+              <Input
+                id="cert-body"
+                placeholder="e.g. SQA, NEBOSH"
+                v-model="formData.certificationBody"
+              />
             </div>
           </div>
 
@@ -352,7 +453,11 @@ const handleSubmit = async () => {
               </div>
               <div class="form-field form-field-full">
                 <Label for="eff-due">Effectiveness Check Due</Label>
-                <DatePicker id="eff-due" v-model="effectivenessCheckDue" placeholder="Default: 90 days from planned date" />
+                <DatePicker
+                  id="eff-due"
+                  v-model="effectivenessCheckDue"
+                  placeholder="Default: 90 days from planned date"
+                />
               </div>
             </div>
           </div>
@@ -366,7 +471,6 @@ const handleSubmit = async () => {
               v-model="formData.notes"
             />
           </div>
-
         </div>
       </div>
 
@@ -533,7 +637,9 @@ const handleSubmit = async () => {
   border: var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: var(--space-sm);
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
   cursor: pointer;
   background-color: var(--bg-surface);
 }

@@ -19,7 +19,10 @@ const props = defineProps<{
 }>()
 
 const chartData = computed(() => {
-  const roleMap = new Map<string, { authorised: number; supervised: number; notAuthorised: number }>()
+  const roleMap = new Map<
+    string,
+    { authorised: number; supervised: number; notAuthorised: number }
+  >()
 
   for (const emp of props.employees) {
     const role = emp.jobTitle || 'Unknown'
@@ -47,7 +50,7 @@ const chartData = computed(() => {
     .slice(0, 6)
 
   // Shorten long role titles
-  const shorten = (t: string) => t.length > 22 ? t.substring(0, 20) + '…' : t
+  const shorten = (t: string) => (t.length > 22 ? t.substring(0, 20) + '…' : t)
 
   return {
     labels: sorted.map(([role]) => shorten(role)),

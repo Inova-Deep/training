@@ -112,7 +112,14 @@ export interface RoleRequirement {
   sortOrder: number
 }
 
-export type BaseStatusCode = 'N_A' | 'REQUIRED' | 'IN_PROGRESS' | 'VALID' | 'UNDER_SUPERVISION' | 'PARTIALLY_MET' | 'REASSESSMENT_DUE'
+export type BaseStatusCode =
+  | 'N_A'
+  | 'REQUIRED'
+  | 'IN_PROGRESS'
+  | 'VALID'
+  | 'UNDER_SUPERVISION'
+  | 'PARTIALLY_MET'
+  | 'REASSESSMENT_DUE'
 export type DerivedStatusCode = BaseStatusCode | 'EXPIRING' | 'EXPIRED'
 
 export type TrainingNeedSource =
@@ -297,7 +304,14 @@ export interface AwarenessAck {
   acknowledgedByUserId: string
 }
 
-export type UserRole = 'EMPLOYEE' | 'SUPERVISOR' | 'MANAGER' | 'QHSE' | 'HR_ADMIN' | 'ADMIN' | 'LEADERSHIP_VIEWER'
+export type UserRole =
+  | 'EMPLOYEE'
+  | 'SUPERVISOR'
+  | 'MANAGER'
+  | 'QHSE'
+  | 'HR_ADMIN'
+  | 'ADMIN'
+  | 'LEADERSHIP_VIEWER'
 
 export interface AppUser {
   id: string

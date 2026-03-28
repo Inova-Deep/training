@@ -1,12 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Doughnut } from 'vue-chartjs'
-import {
-  Chart as ChartJS,
-  ArcElement,
-  Tooltip,
-  Legend,
-} from 'chart.js'
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import type { EmployeeMatrixRow } from '@/stores/skillsMatrix'
 import { useSkillsMatrixStore } from '@/stores/skillsMatrix'
 
@@ -45,8 +40,7 @@ const chartData = computed(() => {
     }
   }
 
-  const sorted = Array.from(categoryMap.entries())
-    .sort((a, b) => b[1] - a[1])
+  const sorted = Array.from(categoryMap.entries()).sort((a, b) => b[1] - a[1])
 
   return {
     labels: sorted.map(([cat]) => cat),

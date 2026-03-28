@@ -14,7 +14,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   placeholder: 'Pick a date',
-  disabled: false
+  disabled: false,
 })
 
 const emit = defineEmits<{
@@ -25,17 +25,20 @@ const open = ref(false)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const selectedDate = ref<any>(props.modelValue)
 
-watch(() => props.modelValue, (val) => {
-  selectedDate.value = val
-})
+watch(
+  () => props.modelValue,
+  (val) => {
+    selectedDate.value = val
+  },
+)
 
 const formattedValue = computed(() => {
   if (!selectedDate.value) return ''
   const date = selectedDate.value.toDate('UTC')
-  return date.toLocaleDateString('en-GB', { 
-    day: '2-digit', 
-    month: 'short', 
-    year: 'numeric' 
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
   })
 })
 
@@ -57,11 +60,7 @@ const handleConfirm = () => {
 <template>
   <Popover v-model:open="open">
     <PopoverTrigger as-child>
-      <Button
-        variant="outline"
-        :disabled="disabled"
-        class="date-picker-trigger"
-      >
+      <Button variant="outline" :disabled="disabled" class="date-picker-trigger">
         <CalendarIcon class="trigger-icon" />
         <span v-if="formattedValue">{{ formattedValue }}</span>
         <span v-else class="placeholder-text">{{ placeholder }}</span>
@@ -70,17 +69,13 @@ const handleConfirm = () => {
     <PopoverContent class="date-picker-popover" align="start">
       <div class="date-picker-content">
         <Calendar
-          :model-value="(selectedDate as any)"
+          :model-value="selectedDate as any"
           layout="month-and-year"
           @update:model-value="handleDateSelect"
         />
         <div class="actions-section">
-          <Button variant="outline" size="sm" @click="open = false">
-            Cancel
-          </Button>
-          <Button size="sm" @click="handleConfirm">
-            Confirm
-          </Button>
+          <Button variant="outline" size="sm" @click="open = false"> Cancel </Button>
+          <Button size="sm" @click="handleConfirm"> Confirm </Button>
         </div>
       </div>
     </PopoverContent>

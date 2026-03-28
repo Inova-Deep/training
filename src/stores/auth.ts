@@ -7,7 +7,13 @@ import type { AppUser, User, UserRole } from '@/types'
 
 // ─── Demo persona types ────────────────────────────────────────────────────────
 
-export type DemoPersonaKey = 'employee' | 'supervisor' | 'manager' | 'qhse' | 'hr_admin' | 'leadership'
+export type DemoPersonaKey =
+  | 'employee'
+  | 'supervisor'
+  | 'manager'
+  | 'qhse'
+  | 'hr_admin'
+  | 'leadership'
 
 export interface DemoPersona {
   key: DemoPersonaKey
@@ -129,15 +135,16 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function fetchUserInfo(email: string) {
+  async function fetchUserInfo(_email: string) {
+    const persona = DEMO_PERSONAS.hr_admin
     try {
-      const dmlUserData = await usersApi.getByEmail(email)
+      const dmlUserData = await usersApi.getByEmail(_email)
       dmlUser.value = dmlUserData
 
       user.value = {
         id: dmlUserData.id,
-        email: dmlUserData.email,
-        displayName: dmlUserData.displayName ?? email.split('@')[0] ?? 'Unknown User',
+        email: persona.email,
+        displayName: persona.displayName,
         role: 'HR_ADMIN',
         erpEmployeeId: dmlUserData.employeeId ?? undefined,
         isActive: dmlUserData.isActive,
@@ -145,11 +152,10 @@ export const useAuthStore = defineStore('auth', () => {
         updatedAt: dmlUserData.updatedAt,
       }
     } catch {
-      const namePart = email.split('@')[0]
       user.value = {
         id: 'demo-user-id',
-        email,
-        displayName: namePart || 'Unknown User',
+        email: persona.email,
+        displayName: persona.displayName,
         role: 'HR_ADMIN',
         isActive: true,
         createdAt: new Date().toISOString(),
@@ -189,7 +195,7 @@ export const useAuthStore = defineStore('auth', () => {
       setToken(storedToken)
       user.value = {
         id: 'demo-hr-admin',
-        email: DEMO_EMAIL,
+        email: persona.email,
         displayName: persona.displayName,
         role: persona.role,
         isActive: true,
@@ -199,7 +205,8 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     // Always refresh — gets a real token and updates user info
-    authApi.login(DEMO_EMAIL, DEMO_PASSWORD)
+    authApi
+      .login(DEMO_EMAIL, DEMO_PASSWORD)
       .then(async (response) => {
         token.value = response.token
         setToken(response.token)

@@ -14,7 +14,16 @@ import {
 } from 'chart.js'
 import type { EmployeeMatrixRow } from '@/stores/skillsMatrix'
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+)
 
 const props = defineProps<{
   employees: EmployeeMatrixRow[]
@@ -58,11 +67,11 @@ const chartData = computed(() => {
     }
   }
 
-  const expiredData = months.map(m => m.isPast ? (expiredByMonth.get(m.key) ?? 0) : null)
-  const forecastData = months.map(m => !m.isPast ? (expiringByMonth.get(m.key) ?? 0) : null)
+  const expiredData = months.map((m) => (m.isPast ? (expiredByMonth.get(m.key) ?? 0) : null))
+  const forecastData = months.map((m) => (!m.isPast ? (expiringByMonth.get(m.key) ?? 0) : null))
 
   return {
-    labels: months.map(m => m.label),
+    labels: months.map((m) => m.label),
     datasets: [
       {
         label: 'Expired (past)',
@@ -117,7 +126,9 @@ const chartOptions = {
   <div class="chart-card">
     <div class="chart-card-header">
       <h3 class="chart-card-title">Certification Expiry Trend</h3>
-      <span class="chart-card-subtitle">Past 6 months expired · Next 6 months forecast expiring</span>
+      <span class="chart-card-subtitle"
+        >Past 6 months expired · Next 6 months forecast expiring</span
+      >
     </div>
     <div class="chart-body">
       <Line :data="chartData" :options="chartOptions" />

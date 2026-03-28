@@ -1,16 +1,42 @@
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue'
 import {
-  MoreHorizontal, Plus, Filter, Search,
-  AlertTriangle, Clock, UserCheck, GraduationCap,
-  ChevronRight, AlertCircle
+  MoreHorizontal,
+  Plus,
+  Filter,
+  Search,
+  AlertTriangle,
+  Clock,
+  UserCheck,
+  GraduationCap,
+  ChevronRight,
+  AlertCircle,
 } from 'lucide-vue-next'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select'
 import { useTrainingNeedsStore } from '@/stores/trainingNeeds'
 import { useEmployeesStore } from '@/stores/employees'
 import { useCompetencyLibraryStore } from '@/stores/competencyLibrary'
@@ -24,7 +50,7 @@ const compStore = useCompetencyLibraryStore()
 const authStore = useAuthStore()
 
 const canCreateTrainingNeed = computed(() =>
-  ['SUPERVISOR', 'MANAGER', 'QHSE', 'HR_ADMIN', 'ADMIN'].includes(authStore.userRole)
+  ['SUPERVISOR', 'MANAGER', 'QHSE', 'HR_ADMIN', 'ADMIN'].includes(authStore.userRole),
 )
 
 const selectedNeedId = ref<string | null>(null)
@@ -35,7 +61,7 @@ onMounted(async () => {
     trainingStore.fetchTrainingNeeds(),
     empStore.fetchEmployees(),
     empStore.fetchAllReferenceData(),
-    compStore.fetchCompetencies()
+    compStore.fetchCompetencies(),
   ])
 })
 
@@ -45,77 +71,79 @@ const openDetails = (id: string) => {
 }
 
 const getEmployee = (id: string) => {
-  const emp = empStore.employees.find(e => e.id === id)
+  const emp = empStore.employees.find((e) => e.id === id)
   if (emp) return emp
   return {
     id: 'unknown',
     displayName: 'Unknown',
     employeeNo: '???',
-    jobTitle: { name: 'Unknown' }
+    jobTitle: { name: 'Unknown' },
   } as any
 }
 
 const getCompetency = (id: string) => {
-  const comp = compStore.competencies.find(c => c.id === id)
+  const comp = compStore.competencies.find((c) => c.id === id)
   if (comp) return comp
   return {
     id: 'unknown',
     title: 'Unknown',
     code: '???',
-    riskLevelCode: 'LOW'
+    riskLevelCode: 'LOW',
   } as any
 }
 
 // Source type display helpers
 const sourceTypeLabels: Record<TrainingNeedSource, string> = {
-  NCR_CAPA:          'NCR / CAPA',
-  INCIDENT_NEAR_MISS:'Incident / Near Miss',
-  AUDIT_FINDING:     'Audit Finding',
-  EXPIRY_RENEWAL:    'Expiry / Renewal',
-  PROCEDURE_CHANGE:  'Procedure Change',
-  NEW_EQUIPMENT:     'New Equipment',
-  NEW_STARTER:       'New Starter',
-  MANAGER_REQUEST:   'Manager Request',
-  COMPETENCE_GAP:    'Competence Gap',
+  NCR_CAPA: 'NCR / CAPA',
+  INCIDENT_NEAR_MISS: 'Incident / Near Miss',
+  AUDIT_FINDING: 'Audit Finding',
+  EXPIRY_RENEWAL: 'Expiry / Renewal',
+  PROCEDURE_CHANGE: 'Procedure Change',
+  NEW_EQUIPMENT: 'New Equipment',
+  NEW_STARTER: 'New Starter',
+  MANAGER_REQUEST: 'Manager Request',
+  COMPETENCE_GAP: 'Competence Gap',
 }
 
 const sourceTypeBadgeClass: Record<TrainingNeedSource, string> = {
-  NCR_CAPA:          'badge-critical',
-  INCIDENT_NEAR_MISS:'badge-critical',
-  AUDIT_FINDING:     'badge-warning',
-  EXPIRY_RENEWAL:    'badge-warning',
-  PROCEDURE_CHANGE:  'badge-primary',
-  NEW_EQUIPMENT:     'badge-primary',
-  NEW_STARTER:       'badge-success',
-  MANAGER_REQUEST:   'badge-neutral',
-  COMPETENCE_GAP:    'badge-neutral',
+  NCR_CAPA: 'badge-critical',
+  INCIDENT_NEAR_MISS: 'badge-critical',
+  AUDIT_FINDING: 'badge-warning',
+  EXPIRY_RENEWAL: 'badge-warning',
+  PROCEDURE_CHANGE: 'badge-primary',
+  NEW_EQUIPMENT: 'badge-primary',
+  NEW_STARTER: 'badge-success',
+  MANAGER_REQUEST: 'badge-neutral',
+  COMPETENCE_GAP: 'badge-neutral',
 }
 
 const getSourceLabel = (sourceType?: string) =>
   sourceType ? (sourceTypeLabels[sourceType as TrainingNeedSource] ?? sourceType) : '—'
 
 const getSourceBadgeClass = (sourceType?: string) =>
-  sourceType ? (sourceTypeBadgeClass[sourceType as TrainingNeedSource] ?? 'badge-neutral') : 'badge-neutral'
+  sourceType
+    ? (sourceTypeBadgeClass[sourceType as TrainingNeedSource] ?? 'badge-neutral')
+    : 'badge-neutral'
 
 // Workflow status display helpers
 const workflowStatusLabels: Record<TrainingNeedWorkflowStatus, string> = {
-  IDENTIFIED:           'Identified',
-  APPROVED:             'Approved',
-  SCHEDULED:            'Scheduled',
-  IN_PROGRESS:          'In Progress',
-  EVIDENCE_SUBMITTED:   'Evidence Submitted',
+  IDENTIFIED: 'Identified',
+  APPROVED: 'Approved',
+  SCHEDULED: 'Scheduled',
+  IN_PROGRESS: 'In Progress',
+  EVIDENCE_SUBMITTED: 'Evidence Submitted',
   EFFECTIVENESS_REVIEW: 'Effectiveness Review',
-  CLOSED:               'Closed',
+  CLOSED: 'Closed',
 }
 
 const workflowStatusBadgeClass: Record<TrainingNeedWorkflowStatus, string> = {
-  IDENTIFIED:           'badge-neutral',
-  APPROVED:             'badge-primary',
-  SCHEDULED:            'badge-primary',
-  IN_PROGRESS:          'badge-primary',
-  EVIDENCE_SUBMITTED:   'badge-warning',
+  IDENTIFIED: 'badge-neutral',
+  APPROVED: 'badge-primary',
+  SCHEDULED: 'badge-primary',
+  IN_PROGRESS: 'badge-primary',
+  EVIDENCE_SUBMITTED: 'badge-warning',
   EFFECTIVENESS_REVIEW: 'badge-warning',
-  CLOSED:               'badge-success',
+  CLOSED: 'badge-success',
 }
 
 const getWorkflowLabel = (need: any) => {
@@ -145,7 +173,10 @@ const isGating = (need: any) => {
 }
 
 const newHireCount = computed(() => {
-  return trainingStore.trainingNeeds.filter(n => n.createdReason === 'NEW_HIRE' && (n.workflowStatus === 'IDENTIFIED' || n.status === 'OPEN')).length
+  return trainingStore.trainingNeeds.filter(
+    (n) =>
+      n.createdReason === 'NEW_HIRE' && (n.workflowStatus === 'IDENTIFIED' || n.status === 'OPEN'),
+  ).length
 })
 </script>
 
@@ -153,7 +184,9 @@ const newHireCount = computed(() => {
   <div class="page-header">
     <div class="header-content">
       <h1 class="page-title">Training Needs & Competence Actions</h1>
-      <p class="page-subtitle">Gap-closure actions — tracked by source, assigned with due dates, closed with evidence</p>
+      <p class="page-subtitle">
+        Gap-closure actions — tracked by source, assigned with due dates, closed with evidence
+      </p>
     </div>
     <div class="header-actions">
       <Button v-if="canCreateTrainingNeed" variant="outline" size="sm">
@@ -178,9 +211,7 @@ const newHireCount = computed(() => {
         There are {{ newHireCount }} new hires requiring certificate uploads or initial assessments.
       </span>
     </div>
-    <Button variant="secondary" size="sm">
-      Handle Onboarding
-    </Button>
+    <Button variant="secondary" size="sm"> Handle Onboarding </Button>
   </div>
 
   <!-- Filters -->
@@ -189,7 +220,11 @@ const newHireCount = computed(() => {
       <div class="filter-group">
         <div class="search-wrapper">
           <Search class="search-icon icon-xs" />
-          <Input placeholder="Search source or reference..." class="filter-input-search" v-model="trainingStore.filters.search" />
+          <Input
+            placeholder="Search source or reference..."
+            class="filter-input-search"
+            v-model="trainingStore.filters.search"
+          />
         </div>
 
         <Select v-model="trainingStore.filters.departmentId">
@@ -290,7 +325,9 @@ const newHireCount = computed(() => {
                   </div>
                   <div class="user-info-col">
                     <span class="user-name">{{ getEmployee(need.erpEmployeeId).displayName }}</span>
-                    <span class="user-job-title">{{ getEmployee(need.erpEmployeeId).jobTitle?.name }}</span>
+                    <span class="user-job-title">{{
+                      getEmployee(need.erpEmployeeId).jobTitle?.name
+                    }}</span>
                   </div>
                 </div>
               </TableCell>
@@ -320,9 +357,16 @@ const newHireCount = computed(() => {
                   <div class="risk-level-row">
                     <span
                       class="status-dot"
-                      :class="getCompetency(need.employeeCompetenceItemId || '').riskLevelCode === 'HIGH_CRITICAL' ? 'status-dot-critical' : 'status-dot-warning'"
+                      :class="
+                        getCompetency(need.employeeCompetenceItemId || '').riskLevelCode ===
+                        'HIGH_CRITICAL'
+                          ? 'status-dot-critical'
+                          : 'status-dot-warning'
+                      "
                     ></span>
-                    <span class="risk-level-text">{{ getCompetency(need.employeeCompetenceItemId || '').riskLevelCode }}</span>
+                    <span class="risk-level-text">{{
+                      getCompetency(need.employeeCompetenceItemId || '').riskLevelCode
+                    }}</span>
                   </div>
                 </div>
               </TableCell>
@@ -341,8 +385,21 @@ const newHireCount = computed(() => {
 
               <TableCell>
                 <div class="date-cell">
-                  <span class="date-text">{{ new Date(need.dueDate || '').toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) }}</span>
-                  <span v-if="need.dueDate && new Date(need.dueDate) < new Date() && need.workflowStatus !== 'CLOSED'" class="overdue-label">Overdue</span>
+                  <span class="date-text">{{
+                    new Date(need.dueDate || '').toLocaleDateString('en-GB', {
+                      day: '2-digit',
+                      month: 'short',
+                    })
+                  }}</span>
+                  <span
+                    v-if="
+                      need.dueDate &&
+                      new Date(need.dueDate) < new Date() &&
+                      need.workflowStatus !== 'CLOSED'
+                    "
+                    class="overdue-label"
+                    >Overdue</span
+                  >
                 </div>
               </TableCell>
 
@@ -355,7 +412,12 @@ const newHireCount = computed(() => {
               <TableCell class="table-actions-cell" @click.stop>
                 <DropdownMenu>
                   <DropdownMenuTrigger as-child>
-                    <Button variant="ghost" size="icon" class="table-action-btn" :aria-label="`Actions for ${getEmployee(need.erpEmployeeId).displayName}`">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      class="table-action-btn"
+                      :aria-label="`Actions for ${getEmployee(need.erpEmployeeId).displayName}`"
+                    >
                       <MoreHorizontal class="icon-xs" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -382,7 +444,10 @@ const newHireCount = computed(() => {
                 <div class="training-empty-state">
                   <AlertCircle class="training-empty-icon" />
                   <p class="training-empty-title">No training needs identified</p>
-                  <p class="training-empty-subtitle">Training needs are created when competence gaps, NCRs, or other triggers are detected.</p>
+                  <p class="training-empty-subtitle">
+                    Training needs are created when competence gaps, NCRs, or other triggers are
+                    detected.
+                  </p>
                 </div>
               </TableCell>
             </TableRow>
@@ -430,8 +495,14 @@ const newHireCount = computed(() => {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .banner-icon {
@@ -533,13 +604,27 @@ const newHireCount = computed(() => {
   background-color: var(--bg-subtle);
 }
 
-.col-employee { width: 200px; }
-.col-requirement { width: 220px; }
-.col-gating { width: 90px; }
-.col-type { width: 130px; }
-.col-source { width: 160px; }
-.col-date { width: 100px; }
-.col-status { width: 150px; }
+.col-employee {
+  width: 200px;
+}
+.col-requirement {
+  width: 220px;
+}
+.col-gating {
+  width: 90px;
+}
+.col-type {
+  width: 130px;
+}
+.col-source {
+  width: 160px;
+}
+.col-date {
+  width: 100px;
+}
+.col-status {
+  width: 150px;
+}
 
 /* Table Rows */
 .clickable-row {

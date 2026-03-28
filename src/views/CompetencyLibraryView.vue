@@ -4,9 +4,28 @@ import { MoreHorizontal, Plus, Search, Archive, Edit, Eye } from 'lucide-vue-nex
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { useCompetencyLibraryStore } from '@/stores/competencyLibrary'
@@ -19,9 +38,7 @@ const store = useCompetencyLibraryStore()
 const refStore = useReferenceListsStore()
 const authStore = useAuthStore()
 
-const canAddCompetency = computed(() =>
-  ['QHSE', 'HR_ADMIN', 'ADMIN'].includes(authStore.userRole)
-)
+const canAddCompetency = computed(() => ['QHSE', 'HR_ADMIN', 'ADMIN'].includes(authStore.userRole))
 
 const search = ref('')
 const typeFilter = ref('all')
@@ -34,14 +51,14 @@ const isFormOpen = ref(false)
 const editingCompetency = ref<CompetencyLibraryItem | null>(null)
 
 const COMPETENCY_TYPES = [
-  { value: 'SKILL',                      label: 'Skill' },
-  { value: 'TRAINING',                   label: 'Training' },
-  { value: 'CERTIFICATION',              label: 'Certification' },
-  { value: 'AWARENESS_TOPIC',            label: 'Awareness Topic' },
-  { value: 'OJT_COACHING',              label: 'OJT / Coaching' },
-  { value: 'PROCEDURE_BRIEFING',         label: 'Procedure Briefing' },
-  { value: 'EXTERNAL_QUALIFICATION',     label: 'External Qualification' },
-  { value: 'EQUIPMENT_QUALIFICATION',    label: 'Equipment Qualification' },
+  { value: 'SKILL', label: 'Skill' },
+  { value: 'TRAINING', label: 'Training' },
+  { value: 'CERTIFICATION', label: 'Certification' },
+  { value: 'AWARENESS_TOPIC', label: 'Awareness Topic' },
+  { value: 'OJT_COACHING', label: 'OJT / Coaching' },
+  { value: 'PROCEDURE_BRIEFING', label: 'Procedure Briefing' },
+  { value: 'EXTERNAL_QUALIFICATION', label: 'External Qualification' },
+  { value: 'EQUIPMENT_QUALIFICATION', label: 'Equipment Qualification' },
 ]
 
 const CATEGORIES = [
@@ -70,8 +87,9 @@ const ALL_DEPARTMENTS = [
 ]
 
 const filteredCompetencies = computed(() => {
-  return store.competencies.filter(c => {
-    const matchesSearch = !search.value ||
+  return store.competencies.filter((c) => {
+    const matchesSearch =
+      !search.value ||
       c.title.toLowerCase().includes(search.value.toLowerCase()) ||
       c.code?.toLowerCase().includes(search.value.toLowerCase())
 
@@ -83,32 +101,49 @@ const filteredCompetencies = computed(() => {
 
     const matchesSafety = !safetyCriticalOnly.value || c.safetyCritical === true
 
-    const matchesDept = deptFilter.value === 'all' ||
+    const matchesDept =
+      deptFilter.value === 'all' ||
       !c.applicableDepartments ||
-      c.applicableDepartments.some(d =>
-        d.toLowerCase() === deptFilter.value.toLowerCase() || d === 'All'
+      c.applicableDepartments.some(
+        (d) => d.toLowerCase() === deptFilter.value.toLowerCase() || d === 'All',
       )
 
-    return matchesSearch && matchesType && matchesCategory && matchesMandatory && matchesSafety && matchesDept
+    return (
+      matchesSearch &&
+      matchesType &&
+      matchesCategory &&
+      matchesMandatory &&
+      matchesSafety &&
+      matchesDept
+    )
   })
 })
 
 function typeBadgeClass(type: string | undefined): string {
   switch (type) {
-    case 'CERTIFICATION':           return 'badge-primary'
-    case 'EXTERNAL_QUALIFICATION':  return 'badge-primary'
-    case 'EQUIPMENT_QUALIFICATION': return 'badge-warning'
-    case 'SKILL':                   return 'badge-success'
-    case 'TRAINING':                return 'badge-neutral'
-    case 'OJT_COACHING':           return 'badge-neutral'
-    case 'AWARENESS_TOPIC':         return 'badge-neutral'
-    case 'PROCEDURE_BRIEFING':      return 'badge-neutral'
-    default:                        return 'badge-neutral'
+    case 'CERTIFICATION':
+      return 'badge-primary'
+    case 'EXTERNAL_QUALIFICATION':
+      return 'badge-primary'
+    case 'EQUIPMENT_QUALIFICATION':
+      return 'badge-warning'
+    case 'SKILL':
+      return 'badge-success'
+    case 'TRAINING':
+      return 'badge-neutral'
+    case 'OJT_COACHING':
+      return 'badge-neutral'
+    case 'AWARENESS_TOPIC':
+      return 'badge-neutral'
+    case 'PROCEDURE_BRIEFING':
+      return 'badge-neutral'
+    default:
+      return 'badge-neutral'
   }
 }
 
 function typeBadgeLabel(type: string | undefined): string {
-  return COMPETENCY_TYPES.find(t => t.value === type)?.label ?? (type ?? '—')
+  return COMPETENCY_TYPES.find((t) => t.value === type)?.label ?? type ?? '—'
 }
 
 function openAddForm() {
@@ -161,7 +196,10 @@ onMounted(() => {
 <template>
   <div class="page-header">
     <h1 class="page-title">Competency Library</h1>
-    <p class="page-subtitle">Controlled library of competence requirements — skills, certifications, qualifications, and procedure awareness</p>
+    <p class="page-subtitle">
+      Controlled library of competence requirements — skills, certifications, qualifications, and
+      procedure awareness
+    </p>
   </div>
 
   <Card class="data-card">
@@ -175,7 +213,6 @@ onMounted(() => {
       </div>
     </CardHeader>
     <CardContent class="data-card-content">
-
       <!-- Filter bar -->
       <div class="filter-bar">
         <div class="search-input-wrapper">
@@ -261,7 +298,11 @@ onMounted(() => {
               </TableCell>
               <TableCell class="table-name-cell">{{ comp.title }}</TableCell>
               <TableCell>
-                <span v-if="comp.competencyType" class="badge badge-sm" :class="typeBadgeClass(comp.competencyType)">
+                <span
+                  v-if="comp.competencyType"
+                  class="badge badge-sm"
+                  :class="typeBadgeClass(comp.competencyType)"
+                >
                   {{ typeBadgeLabel(comp.competencyType) }}
                 </span>
                 <span v-else class="text-caption">—</span>
@@ -272,7 +313,9 @@ onMounted(() => {
               <TableCell>
                 <div class="flag-badges">
                   <span v-if="comp.mandatory" class="badge badge-primary badge-sm">Mandatory</span>
-                  <span v-if="comp.safetyCritical" class="badge badge-critical badge-sm">Safety Critical</span>
+                  <span v-if="comp.safetyCritical" class="badge badge-critical badge-sm"
+                    >Safety Critical</span
+                  >
                 </div>
               </TableCell>
               <TableCell class="text-caption-sm">
@@ -282,12 +325,16 @@ onMounted(() => {
                 {{ formatValidity(comp) }}
               </TableCell>
               <TableCell>
-                <div v-if="comp.applicableDepartments && comp.applicableDepartments.length" class="dept-tags">
+                <div
+                  v-if="comp.applicableDepartments && comp.applicableDepartments.length"
+                  class="dept-tags"
+                >
                   <span
                     v-for="dept in comp.applicableDepartments.slice(0, 2)"
                     :key="dept"
                     class="badge badge-neutral badge-sm"
-                  >{{ dept }}</span>
+                    >{{ dept }}</span
+                  >
                   <span v-if="comp.applicableDepartments.length > 2" class="more-tag">
                     +{{ comp.applicableDepartments.length - 2 }}
                   </span>
@@ -297,7 +344,12 @@ onMounted(() => {
               <TableCell class="table-actions-cell">
                 <DropdownMenu>
                   <DropdownMenuTrigger as-child>
-                    <Button variant="ghost" size="icon" class="table-action-btn" :aria-label="`Actions for ${comp.title}`">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      class="table-action-btn"
+                      :aria-label="`Actions for ${comp.title}`"
+                    >
                       <MoreHorizontal class="icon-xs" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -350,6 +402,9 @@ onMounted(() => {
 .table-name-cell {
   font-weight: 500;
   max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .data-card-actions {

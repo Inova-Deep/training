@@ -1,7 +1,7 @@
 [
   {
     "id": "tmpl-001",
-    "competencyLibraryItemId": "comp-loto",
+    "competencyLibraryItemId": "comp-002",
     "trainingTypeCode": "CERT_LICENCE",
     "createdReason": "EXPIRED_RENEWAL",
     "dueDaysFromNow": -5,
@@ -11,7 +11,7 @@
   },
   {
     "id": "tmpl-002",
-    "competencyLibraryItemId": "comp-fa",
+    "competencyLibraryItemId": "comp-015",
     "trainingTypeCode": "CERT_LICENCE",
     "createdReason": "EXPIRING_RENEWAL",
     "dueDaysFromNow": 12,
@@ -21,7 +21,7 @@
   },
   {
     "id": "tmpl-003",
-    "competencyLibraryItemId": "comp-flt",
+    "competencyLibraryItemId": "comp-024",
     "trainingTypeCode": "CERT_LICENCE",
     "createdReason": "NCR_CAPA",
     "dueDaysFromNow": 14,
@@ -31,7 +31,7 @@
   },
   {
     "id": "tmpl-004",
-    "competencyLibraryItemId": "comp-abr",
+    "competencyLibraryItemId": "comp-025",
     "trainingTypeCode": "PRACTICAL",
     "createdReason": "INCIDENT_NEAR_MISS",
     "dueDaysFromNow": 7,
@@ -41,7 +41,7 @@
   },
   {
     "id": "tmpl-005",
-    "competencyLibraryItemId": "comp-rca",
+    "competencyLibraryItemId": "comp-026",
     "trainingTypeCode": "TRAINING_COURSE",
     "createdReason": "AUDIT_FINDING",
     "dueDaysFromNow": 30,
@@ -51,7 +51,7 @@
   },
   {
     "id": "tmpl-006",
-    "competencyLibraryItemId": "comp-weld",
+    "competencyLibraryItemId": "comp-016",
     "trainingTypeCode": "CERT_LICENCE",
     "createdReason": "EXPIRING_RENEWAL",
     "dueDaysFromNow": 21,
@@ -61,7 +61,7 @@
   },
   {
     "id": "tmpl-007",
-    "competencyLibraryItemId": "comp-robot-op",
+    "competencyLibraryItemId": "comp-018",
     "trainingTypeCode": "EQUIPMENT_QUALIFICATION",
     "createdReason": "NEW_EQUIPMENT",
     "dueDaysFromNow": 30,
@@ -71,7 +71,7 @@
   },
   {
     "id": "tmpl-008",
-    "competencyLibraryItemId": "comp-powder",
+    "competencyLibraryItemId": "comp-021",
     "trainingTypeCode": "AWARENESS",
     "createdReason": "PROCEDURE_CHANGE",
     "dueDaysFromNow": 21,
@@ -81,7 +81,7 @@
   },
   {
     "id": "tmpl-009",
-    "competencyLibraryItemId": "comp-hse-ind",
+    "competencyLibraryItemId": "comp-011",
     "trainingTypeCode": "INDUCTION",
     "createdReason": "NEW_HIRE",
     "dueDaysFromNow": 5,
@@ -91,7 +91,7 @@
   },
   {
     "id": "tmpl-010",
-    "competencyLibraryItemId": "comp-ptw",
+    "competencyLibraryItemId": "comp-001",
     "trainingTypeCode": "AWARENESS",
     "createdReason": "MANAGER_REQUEST",
     "dueDaysFromNow": 14,
@@ -101,7 +101,7 @@
   },
   {
     "id": "tmpl-011",
-    "competencyLibraryItemId": "comp-weld",
+    "competencyLibraryItemId": "comp-016",
     "trainingTypeCode": "TRAINING_COURSE",
     "createdReason": "COMPETENCE_GAP",
     "dueDaysFromNow": 28,

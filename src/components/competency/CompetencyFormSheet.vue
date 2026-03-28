@@ -52,13 +52,13 @@ const CATEGORIES = [
 ]
 
 const COMPETENCY_TYPES = [
-  { value: 'SKILL',                   label: 'Skill' },
-  { value: 'TRAINING',                label: 'Training' },
-  { value: 'CERTIFICATION',           label: 'Certification' },
-  { value: 'AWARENESS_TOPIC',         label: 'Awareness Topic' },
-  { value: 'OJT_COACHING',           label: 'OJT / Coaching' },
-  { value: 'PROCEDURE_BRIEFING',      label: 'Procedure Briefing' },
-  { value: 'EXTERNAL_QUALIFICATION',  label: 'External Qualification' },
+  { value: 'SKILL', label: 'Skill' },
+  { value: 'TRAINING', label: 'Training' },
+  { value: 'CERTIFICATION', label: 'Certification' },
+  { value: 'AWARENESS_TOPIC', label: 'Awareness Topic' },
+  { value: 'OJT_COACHING', label: 'OJT / Coaching' },
+  { value: 'PROCEDURE_BRIEFING', label: 'Procedure Briefing' },
+  { value: 'EXTERNAL_QUALIFICATION', label: 'External Qualification' },
   { value: 'EQUIPMENT_QUALIFICATION', label: 'Equipment Qualification' },
 ]
 
@@ -81,13 +81,7 @@ const EVIDENCE_TYPES = [
   'Training Record',
 ]
 
-const VALIDITY_INTERVALS = [
-  '6 months',
-  '12 months',
-  '24 months',
-  '36 months',
-  'No expiry',
-]
+const VALIDITY_INTERVALS = ['6 months', '12 months', '24 months', '36 months', 'No expiry']
 
 const DEPARTMENTS = [
   'All',
@@ -124,65 +118,69 @@ const formData = ref({
   internalExternal: 'INTERNAL' as 'INTERNAL' | 'EXTERNAL',
   provider: '',
   linkedDocument: '',
-  applicableDepartmentsInput: '',  // comma-separated string for input
-  applicableRolesInput: '',        // comma-separated string for input
+  applicableDepartmentsInput: '', // comma-separated string for input
+  applicableRolesInput: '', // comma-separated string for input
 })
 
-watch(() => props.open, (isOpen) => {
-  if (isOpen) {
-    if (props.competency) {
-      formData.value = {
-        code: props.competency.code || '',
-        title: props.competency.title,
-        description: props.competency.description || '',
-        category: props.competency.category,
-        competencyType: props.competency.competencyType || ('' as CompetencyType | ''),
-        riskLevelCode: props.competency.riskLevelCode,
-        criticalityDomain: props.competency.criticalityDomain || '',
-        defaultTrainingTypeCode: props.competency.defaultTrainingTypeCode,
-        defaultAssessmentMethodCode: props.competency.defaultAssessmentMethodCode,
-        defaultRequiresExpiry: props.competency.defaultRequiresExpiry,
-        defaultValidityDays: props.competency.defaultValidityDays || 365,
-        mandatory: props.competency.mandatory ?? false,
-        safetyCritical: props.competency.safetyCritical ?? false,
-        qualityCritical: props.competency.qualityCritical ?? false,
-        assessmentMethod: props.competency.assessmentMethod || '',
-        evidenceType: props.competency.evidenceType || '',
-        validityInterval: props.competency.validityInterval || 'No expiry',
-        internalExternal: props.competency.internalExternal || 'INTERNAL',
-        provider: props.competency.provider || '',
-        linkedDocument: props.competency.linkedDocument || props.competency.linkedDocumentRef || '',
-        applicableDepartmentsInput: (props.competency.applicableDepartments || []).join(', '),
-        applicableRolesInput: (props.competency.applicableRoles || []).join(', '),
-      }
-    } else {
-      formData.value = {
-        code: '',
-        title: '',
-        description: '',
-        category: 'Technical',
-        competencyType: 'SKILL',
-        riskLevelCode: 'MEDIUM',
-        criticalityDomain: '',
-        defaultTrainingTypeCode: 'AWARENESS',
-        defaultAssessmentMethodCode: 'MANAGER_SIGNOFF',
-        defaultRequiresExpiry: false,
-        defaultValidityDays: 365,
-        mandatory: false,
-        safetyCritical: false,
-        qualityCritical: false,
-        assessmentMethod: '',
-        evidenceType: '',
-        validityInterval: 'No expiry',
-        internalExternal: 'INTERNAL',
-        provider: '',
-        linkedDocument: '',
-        applicableDepartmentsInput: '',
-        applicableRolesInput: '',
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (isOpen) {
+      if (props.competency) {
+        formData.value = {
+          code: props.competency.code || '',
+          title: props.competency.title,
+          description: props.competency.description || '',
+          category: props.competency.category,
+          competencyType: props.competency.competencyType || ('' as CompetencyType | ''),
+          riskLevelCode: props.competency.riskLevelCode,
+          criticalityDomain: props.competency.criticalityDomain || '',
+          defaultTrainingTypeCode: props.competency.defaultTrainingTypeCode,
+          defaultAssessmentMethodCode: props.competency.defaultAssessmentMethodCode,
+          defaultRequiresExpiry: props.competency.defaultRequiresExpiry,
+          defaultValidityDays: props.competency.defaultValidityDays || 365,
+          mandatory: props.competency.mandatory ?? false,
+          safetyCritical: props.competency.safetyCritical ?? false,
+          qualityCritical: props.competency.qualityCritical ?? false,
+          assessmentMethod: props.competency.assessmentMethod || '',
+          evidenceType: props.competency.evidenceType || '',
+          validityInterval: props.competency.validityInterval || 'No expiry',
+          internalExternal: props.competency.internalExternal || 'INTERNAL',
+          provider: props.competency.provider || '',
+          linkedDocument:
+            props.competency.linkedDocument || props.competency.linkedDocumentRef || '',
+          applicableDepartmentsInput: (props.competency.applicableDepartments || []).join(', '),
+          applicableRolesInput: (props.competency.applicableRoles || []).join(', '),
+        }
+      } else {
+        formData.value = {
+          code: '',
+          title: '',
+          description: '',
+          category: 'Technical',
+          competencyType: 'SKILL',
+          riskLevelCode: 'MEDIUM',
+          criticalityDomain: '',
+          defaultTrainingTypeCode: 'AWARENESS',
+          defaultAssessmentMethodCode: 'MANAGER_SIGNOFF',
+          defaultRequiresExpiry: false,
+          defaultValidityDays: 365,
+          mandatory: false,
+          safetyCritical: false,
+          qualityCritical: false,
+          assessmentMethod: '',
+          evidenceType: '',
+          validityInterval: 'No expiry',
+          internalExternal: 'INTERNAL',
+          provider: '',
+          linkedDocument: '',
+          applicableDepartmentsInput: '',
+          applicableRolesInput: '',
+        }
       }
     }
-  }
-})
+  },
+)
 
 async function handleSave() {
   try {
@@ -192,11 +190,11 @@ async function handleSave() {
       competencyType: (rest.competencyType || undefined) as CompetencyType | undefined,
       applicableDepartments: applicableDepartmentsInput
         .split(',')
-        .map(s => s.trim())
+        .map((s) => s.trim())
         .filter(Boolean),
       applicableRoles: applicableRolesInput
         .split(',')
-        .map(s => s.trim())
+        .map((s) => s.trim())
         .filter(Boolean),
     }
 
@@ -214,7 +212,7 @@ async function handleSave() {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function handleSelectChange(field: keyof typeof formData.value, value: any) {
-  (formData.value as Record<string, unknown>)[field] = value
+  ;(formData.value as Record<string, unknown>)[field] = value
 }
 </script>
 
@@ -231,7 +229,6 @@ function handleSelectChange(field: keyof typeof formData.value, value: any) {
       </SheetHeader>
 
       <div class="sheet-body">
-
         <!-- Basic Info -->
         <div class="form-section">
           <div class="form-grid">
@@ -300,7 +297,11 @@ function handleSelectChange(field: keyof typeof formData.value, value: any) {
                   <SelectValue placeholder="Select Risk" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem v-for="risk in refStore.riskLevels" :key="risk.code" :value="risk.code">
+                  <SelectItem
+                    v-for="risk in refStore.riskLevels"
+                    :key="risk.code"
+                    :value="risk.code"
+                  >
                     {{ risk.name }}
                   </SelectItem>
                 </SelectContent>
@@ -413,11 +414,19 @@ function handleSelectChange(field: keyof typeof formData.value, value: any) {
           <div class="form-grid">
             <div class="form-field">
               <Label for="provider" class="form-label">Provider / Owner</Label>
-              <Input id="provider" v-model="formData.provider" placeholder="e.g. TWI Certification, Internal HSE Team" />
+              <Input
+                id="provider"
+                v-model="formData.provider"
+                placeholder="e.g. TWI Certification, Internal HSE Team"
+              />
             </div>
             <div class="form-field">
               <Label for="linked-doc" class="form-label">Linked Document</Label>
-              <Input id="linked-doc" v-model="formData.linkedDocument" placeholder="e.g. BS EN ISO 9606-1, CTA-PRO-004" />
+              <Input
+                id="linked-doc"
+                v-model="formData.linkedDocument"
+                placeholder="e.g. BS EN ISO 9606-1, CTA-PRO-004"
+              />
             </div>
           </div>
         </div>
@@ -497,18 +506,20 @@ function handleSelectChange(field: keyof typeof formData.value, value: any) {
           <div v-if="formData.defaultRequiresExpiry" class="expiry-validity">
             <Label for="validity-days" class="form-label">Default Validity (Days)</Label>
             <div class="validity-input-group">
-              <Input id="validity-days" v-model.number="formData.defaultValidityDays" type="number" class="validity-input" />
+              <Input
+                id="validity-days"
+                v-model.number="formData.defaultValidityDays"
+                type="number"
+                class="validity-input"
+              />
               <span class="validity-suffix">days from completion</span>
             </div>
           </div>
         </div>
-
       </div>
 
       <SheetFooter class="sheet-footer">
-        <Button variant="outline" @click="emit('update:open', false)">
-          Cancel
-        </Button>
+        <Button variant="outline" @click="emit('update:open', false)"> Cancel </Button>
         <Button :disabled="libStore.isSaving" @click="handleSave">
           <Save v-if="!libStore.isSaving" class="icon-xs" />
           <span v-else class="spinner spinner-sm" />
@@ -694,7 +705,11 @@ function handleSelectChange(field: keyof typeof formData.value, value: any) {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

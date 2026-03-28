@@ -8,7 +8,10 @@ import {
   Clock,
   Users,
   ShieldAlert,
-  Filter
+  Filter,
+  MoreHorizontal,
+  Eye,
+  Pencil,
 } from 'lucide-vue-next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -21,83 +24,62 @@ import {
   TableBody,
   TableRow,
   TableHead,
-  TableCell
+  TableCell,
 } from '@/components/ui/table'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from '@/components/ui/select'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
 import { useSkillsMatrixStore } from '@/stores/skillsMatrix'
 import { useEmployeesStore } from '@/stores/employees'
-import { organizationApi } from '@/api/client'
-import type { JobTitle } from '@/api/client'
 import roleRequirementsData from '@/data/roleRequirements.json'
+import {
+  DEMO_DEPARTMENTS,
+  DEMO_ROLES,
+  matchRoleName,
+  normalizeRoleName,
+} from '@/lib/demoDomain'
 
-// ── Types ────────────────────────────────────────────────────────
-type RoleRequirementsJson = Record<string, {
-  setId: string
-  gatingCompetencyIds: string[]
-  requirements: Array<{
-    competencyLibraryItemId: string
-    isGating: boolean
-    mandatory: boolean
-    riskLevelCode: string
-  }>
-}>
+type RoleRequirementsJson = Record<
+  string,
+  {
+    setId: string
+    gatingCompetencyIds: string[]
+    requirements: Array<{
+      competencyLibraryItemId: string
+      isGating: boolean
+      mandatory: boolean
+      riskLevelCode: string
+    }>
+  }
+>
 
 const requirementsJson = roleRequirementsData as RoleRequirementsJson
+const DEPARTMENTS = DEMO_DEPARTMENTS
 
-// ── Department mapping ───────────────────────────────────────────
-const DEPT_MAP: Record<string, string> = {
-  'Additive Manufacturing Technician': 'Additive Manufacturing',
-  'Welding / Fabrication Technician': 'Welding & Fabrication',
-  'Robotics Operator': 'Robotics',
-  'Materials Testing Technician': 'Materials Testing',
-  'QA Inspector': 'Quality Assurance',
-  'QHSE Coordinator': 'HSE',
-  'Maintenance Technician': 'Operations',
-  'Maintenance Supervisor': 'Operations',
-  'Shift Lead': 'Operations',
-  'Electrical Technician': 'Operations',
-  'Instrumentation Technician': 'Operations',
-}
-
-const DEPARTMENTS = [
-  'All',
-  'Additive Manufacturing',
-  'Welding & Fabrication',
-  'Robotics',
-  'Materials Testing',
-  'Quality Assurance',
-  'HSE',
-  'Operations',
-]
-
-// ── Stores & router ──────────────────────────────────────────────
 const matrixStore = useSkillsMatrixStore()
 const employeesStore = useEmployeesStore()
 const router = useRouter()
 
-const erpJobTitles = ref<JobTitle[]>([])
 const search = ref('')
 const filterDept = ref('All')
 const filterCriticalOnly = ref(false)
 const filterOpenGaps = ref(false)
 const filterExpiringMandatory = ref(false)
 
-// ── Load data ─────────────────────────────────────────────────────
 onMounted(async () => {
   try {
-    const [titlesResponse] = await Promise.all([
-      organizationApi.getJobTitles({ size: 1000 }),
-      employeesStore.fetchEmployees()
-    ])
-    erpJobTitles.value = titlesResponse?.data || []
-
-    // Build matrix once employees are loaded
+    await employeesStore.fetchEmployees()
     if (employeesStore.allEmployees.length > 0) {
       await matrixStore.fetchAndBuildMatrix(employeesStore.allEmployees)
     }
@@ -106,29 +88,29 @@ onMounted(async () => {
   }
 })
 
-// ── Risk computation ──────────────────────────────────────────────
 type RiskLevel = 'Critical' | 'High' | 'Moderate' | 'Low'
 
 function computeRisk(roleName: string): RiskLevel {
-  const req = requirementsJson[roleName]
+  const normalizedRole = normalizeRoleName(roleName)
+  const req = requirementsJson[normalizedRole]
   if (!req) return 'Low'
 
-  const employees = matrixStore.mockEmployeeRows.filter(e =>
-    e.jobTitle.toLowerCase() === roleName.toLowerCase()
+  const employees = matrixStore.mockEmployeeRows.filter(
+    (e) => matchRoleName(e.jobTitle, normalizedRole),
   )
   const total = employees.length
   if (total === 0) return 'Low'
 
   for (const r of req.requirements) {
     const compId = r.competencyLibraryItemId
-    const gapCount = employees.filter(emp => {
+    const gapCount = employees.filter((emp) => {
       const item = emp.competenceItems.get(compId)
       return item && (item.derivedStatus === 'EXPIRED' || item.derivedStatus === 'REQUIRED')
     }).length
     const gapRate = gapCount / total
 
     if (gapRate > 0.25) {
-      const comp = matrixStore.competencies.find(c => c.id === compId)
+      const comp = matrixStore.competencies.find((c) => c.id === compId)
       if (!comp) continue
 
       if (comp.criticalityDomain === 'Safety Critical') return 'Critical'
@@ -139,7 +121,6 @@ function computeRisk(roleName: string): RiskLevel {
   return 'Low'
 }
 
-// ── Role stats ────────────────────────────────────────────────────
 interface RoleStats {
   name: string
   department: string
@@ -152,46 +133,43 @@ interface RoleStats {
   id: string
 }
 
-const EXCLUDED_KEYWORDS = ['chief', 'director']
-
 const roleStats = computed((): RoleStats[] => {
-  return erpJobTitles.value
-    .filter(t => {
-      const n = t.name.toLowerCase()
-      return !EXCLUDED_KEYWORDS.some(kw => n.includes(kw))
-    })
-    .map(title => {
-      const employees = matrixStore.mockEmployeeRows.filter(e =>
-        e.jobTitle.toLowerCase() === title.name.toLowerCase()
+  return DEMO_ROLES.map((role) => {
+      const employees = matrixStore.mockEmployeeRows.filter(
+        (e) => matchRoleName(e.jobTitle, role.name),
       )
       const assigned = employees.length
-      const fullyCompliant = employees.filter(e => e.isAuthorised).length
-      const withGaps = employees.filter(e => e.expiredCount > 0 || e.requiredCount > 0).length
-      const underSupervision = employees.filter(e => e.supervisionStatus === 'SUPERVISED_ONLY').length
-      const expiringItems = employees.filter(e => e.expiringCount > 0).length
-      const risk = computeRisk(title.name)
-      const department = DEPT_MAP[title.name] ?? 'Operations'
+      const fullyCompliant = employees.filter((e) => e.isAuthorised).length
+      const withGaps = employees.filter((e) => e.expiredCount > 0 || e.requiredCount > 0).length
+      const underSupervision = employees.filter(
+        (e) => e.supervisionStatus === 'SUPERVISED_ONLY',
+      ).length
+      const expiringItems = employees.filter((e) => e.expiringCount > 0).length
+      const risk = computeRisk(role.name)
 
       return {
-        name: title.name,
-        department,
+        name: role.name,
+        department: role.department,
         assigned,
         fullyCompliant,
         withGaps,
         underSupervision,
         expiringItems,
         risk,
-        id: title.id,
+        id: encodeURIComponent(role.name),
       }
     })
 })
 
-// ── Filtered roles ─────────────────────────────────────────────────
 const filteredRoles = computed(() => {
-  return roleStats.value.filter(r => {
+  return roleStats.value.filter((r) => {
     if (search.value) {
       const s = search.value.toLowerCase()
-      if (!r.name.toLowerCase().includes(s) && !r.department.toLowerCase().includes(s)) return false
+      if (
+        !r.name.toLowerCase().includes(s) &&
+        !r.department.toLowerCase().includes(s)
+      )
+        return false
     }
     if (filterDept.value && filterDept.value !== 'All') {
       if (r.department !== filterDept.value) return false
@@ -209,13 +187,16 @@ const filteredRoles = computed(() => {
   })
 })
 
-// ── Helpers ────────────────────────────────────────────────────────
 function riskClass(risk: RiskLevel) {
   switch (risk) {
-    case 'Critical': return 'badge-critical'
-    case 'High':     return 'badge-high'
-    case 'Moderate': return 'badge-warning'
-    default:         return 'badge-neutral'
+    case 'Critical':
+      return 'badge-critical'
+    case 'High':
+      return 'badge-high'
+    case 'Moderate':
+      return 'badge-warning'
+    default:
+      return 'badge-neutral'
   }
 }
 
@@ -227,7 +208,9 @@ function navigateToRole(id: string) {
 <template>
   <div class="page-header">
     <h1 class="page-title">Roles</h1>
-    <p class="page-subtitle">Job title competence profiles — readiness, risk, and team status</p>
+    <p class="page-subtitle">
+      Job title competence profiles — readiness, risk, and team status
+    </p>
   </div>
 
   <Card class="data-card">
@@ -235,8 +218,6 @@ function navigateToRole(id: string) {
       <CardTitle class="data-card-title">Role Readiness Overview</CardTitle>
     </CardHeader>
     <CardContent class="data-card-content">
-
-      <!-- ── Filter Bar ─────────────────────────────────────── -->
       <div class="filter-bar">
         <div class="filter-bar-left">
           <div class="search-input-wrapper">
@@ -256,7 +237,9 @@ function navigateToRole(id: string) {
                 <SelectValue placeholder="Department" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem v-for="d in DEPARTMENTS" :key="d" :value="d">{{ d }}</SelectItem>
+                <SelectItem v-for="d in DEPARTMENTS" :key="d" :value="d">{{
+                  d
+                }}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -299,7 +282,6 @@ function navigateToRole(id: string) {
         </div>
       </div>
 
-      <!-- ── Table ─────────────────────────────────────────── -->
       <div class="table-wrapper">
         <Table class="dense-table">
           <TableHeader>
@@ -307,28 +289,32 @@ function navigateToRole(id: string) {
               <TableHead>Role Name</TableHead>
               <TableHead>Department</TableHead>
               <TableHead class="col-center">
-                <span class="col-header-icon"><Users class="icon-xxs" /> Assigned</span>
+                <span class="col-header-icon"
+                  ><Users class="icon-xxs" /> Assigned</span
+                >
               </TableHead>
               <TableHead class="col-center">
-                <span class="col-header-icon"><CheckCircle2 class="icon-xxs" /> Compliant</span>
+                <span class="col-header-icon"
+                  ><CheckCircle2 class="icon-xxs" /> Compliant</span
+                >
               </TableHead>
               <TableHead class="col-center">
-                <span class="col-header-icon"><AlertTriangle class="icon-xxs" /> With Gaps</span>
+                <span class="col-header-icon"
+                  ><AlertTriangle class="icon-xxs" /> With Gaps</span
+                >
               </TableHead>
               <TableHead class="col-center">Under Supervision</TableHead>
               <TableHead class="col-center">
-                <span class="col-header-icon"><Clock class="icon-xxs" /> Expiring</span>
+                <span class="col-header-icon"
+                  ><Clock class="icon-xxs" /> Expiring</span
+                >
               </TableHead>
               <TableHead class="col-center">Risk</TableHead>
+              <TableHead class="table-actions-header">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow
-              v-for="role in filteredRoles"
-              :key="role.id"
-              class="clickable-row"
-              @click="navigateToRole(role.id)"
-            >
+            <TableRow v-for="role in filteredRoles" :key="role.id">
               <TableCell class="table-name-cell">{{ role.name }}</TableCell>
               <TableCell>
                 <span class="dept-badge">{{ role.department }}</span>
@@ -337,30 +323,80 @@ function navigateToRole(id: string) {
                 <span class="stat-count">{{ role.assigned }}</span>
               </TableCell>
               <TableCell class="col-center">
-                <span v-if="role.assigned > 0" class="stat-count stat-good">{{ role.fullyCompliant }}</span>
+                <span
+                  v-if="role.assigned > 0"
+                  class="stat-count stat-good"
+                  >{{ role.fullyCompliant }}</span
+                >
                 <span v-else class="empty-value">—</span>
               </TableCell>
               <TableCell class="col-center">
-                <span v-if="role.withGaps > 0" class="stat-count stat-warn">{{ role.withGaps }}</span>
-                <span v-else-if="role.assigned > 0" class="stat-count stat-good">0</span>
+                <span
+                  v-if="role.withGaps > 0"
+                  class="stat-count stat-warn"
+                  >{{ role.withGaps }}</span
+                >
+                <span
+                  v-else-if="role.assigned > 0"
+                  class="stat-count stat-good"
+                  >0</span
+                >
                 <span v-else class="empty-value">—</span>
               </TableCell>
               <TableCell class="col-center">
-                <span v-if="role.underSupervision > 0" class="stat-count stat-info">{{ role.underSupervision }}</span>
-                <span v-else-if="role.assigned > 0" class="empty-value">0</span>
+                <span
+                  v-if="role.underSupervision > 0"
+                  class="stat-count stat-info"
+                  >{{ role.underSupervision }}</span
+                >
+                <span v-else-if="role.assigned > 0" class="empty-value"
+                  >0</span
+                >
                 <span v-else class="empty-value">—</span>
               </TableCell>
               <TableCell class="col-center">
-                <span v-if="role.expiringItems > 0" class="stat-count stat-warn">{{ role.expiringItems }}</span>
-                <span v-else-if="role.assigned > 0" class="empty-value">0</span>
+                <span
+                  v-if="role.expiringItems > 0"
+                  class="stat-count stat-warn"
+                  >{{ role.expiringItems }}</span
+                >
+                <span v-else-if="role.assigned > 0" class="empty-value"
+                  >0</span
+                >
                 <span v-else class="empty-value">—</span>
               </TableCell>
               <TableCell class="col-center">
-                <span class="badge" :class="riskClass(role.risk)">{{ role.risk }}</span>
+                <span class="badge" :class="riskClass(role.risk)">{{
+                  role.risk
+                }}</span>
+              </TableCell>
+              <TableCell class="table-actions-cell">
+                <DropdownMenu>
+                  <DropdownMenuTrigger as-child>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      class="table-action-btn"
+                      :aria-label="`Actions for ${role.name}`"
+                    >
+                      <MoreHorizontal class="icon-xs" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem @click="navigateToRole(role.id)">
+                      <Eye class="icon-xs icon-mr" />
+                      View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Pencil class="icon-xs icon-mr" />
+                      Edit Requirements
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
             <TableRow v-if="filteredRoles.length === 0">
-              <TableCell colspan="8" class="empty-state">
+              <TableCell colspan="9" class="empty-state">
                 No roles match the current filters.
               </TableCell>
             </TableRow>
@@ -369,15 +405,17 @@ function navigateToRole(id: string) {
       </div>
 
       <p class="table-footer-note">
-        {{ filteredRoles.length }} role{{ filteredRoles.length !== 1 ? 's' : '' }} shown.
-        Risk is computed from competency gap rates across assigned employees.
+        {{ filteredRoles.length }} role{{
+          filteredRoles.length !== 1 ? 's' : ''
+        }}
+        shown. Risk is computed from competency gap rates across assigned
+        employees.
       </p>
     </CardContent>
   </Card>
 </template>
 
 <style scoped>
-/* ── Filter bar ──────────────────────────────────────────────── */
 .filter-bar {
   display: flex;
   align-items: flex-start;
@@ -434,18 +472,8 @@ function navigateToRole(id: string) {
   user-select: none;
 }
 
-/* ── Table ───────────────────────────────────────────────────── */
 .table-wrapper {
   overflow-x: auto;
-}
-
-.clickable-row {
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.clickable-row:hover {
-  background-color: var(--bg-hover);
 }
 
 .table-name-cell {
@@ -462,7 +490,6 @@ function navigateToRole(id: string) {
   gap: 4px;
 }
 
-/* ── Dept badge ──────────────────────────────────────────────── */
 .dept-badge {
   display: inline-block;
   font-size: 0.75rem;
@@ -473,7 +500,6 @@ function navigateToRole(id: string) {
   white-space: nowrap;
 }
 
-/* ── Stat counts ─────────────────────────────────────────────── */
 .stat-count {
   font-size: 0.875rem;
   font-weight: 600;
@@ -499,7 +525,6 @@ function navigateToRole(id: string) {
   color: var(--text-caption);
 }
 
-/* ── Risk badges ─────────────────────────────────────────────── */
 .badge-critical {
   background-color: oklch(0.5 0.2 25 / 0.15);
   color: oklch(0.45 0.2 25);
@@ -512,7 +537,6 @@ function navigateToRole(id: string) {
   border: 1px solid oklch(0.65 0.18 50 / 0.3);
 }
 
-/* ── Footer note ─────────────────────────────────────────────── */
 .table-footer-note {
   font-size: 0.75rem;
   color: var(--text-caption);
@@ -520,7 +544,6 @@ function navigateToRole(id: string) {
   text-align: right;
 }
 
-/* ── Empty state ─────────────────────────────────────────────── */
 .empty-state {
   text-align: center;
   padding: var(--space-2xl);
@@ -528,9 +551,17 @@ function navigateToRole(id: string) {
   font-style: italic;
 }
 
-/* ── Icon sizes ──────────────────────────────────────────────── */
 .icon-xxs {
   width: 12px;
   height: 12px;
+}
+
+.icon-xs {
+  width: 14px;
+  height: 14px;
+}
+
+.icon-mr {
+  margin-right: 0.25rem;
 }
 </style>

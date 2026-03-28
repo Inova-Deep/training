@@ -21,27 +21,26 @@ export const useCompetencyLibraryStore = defineStore('competencyLibrary', () => 
   const searchQuery = ref('')
 
   const competencyById = computed(() => {
-    return (id: string) => competencies.value.find(c => c.id === id)
+    return (id: string) => competencies.value.find((c) => c.id === id)
   })
 
   const competencyByCode = computed(() => {
-    return (code: string) => competencies.value.find(c => c.code === code)
+    return (code: string) => competencies.value.find((c) => c.code === code)
   })
 
-  const activeCompetencies = computed(() =>
-    competencies.value.filter(c => !c.archivedAt)
-  )
+  const activeCompetencies = computed(() => competencies.value.filter((c) => !c.archivedAt))
 
   const competenciesByCategory = computed(() => {
-    return (category: string) => competencies.value.filter(c => c.category === category)
+    return (category: string) => competencies.value.filter((c) => c.category === category)
   })
 
   const competenciesByRiskLevel = computed(() => {
-    return (riskLevelCode: string) => competencies.value.filter(c => c.riskLevelCode === riskLevelCode)
+    return (riskLevelCode: string) =>
+      competencies.value.filter((c) => c.riskLevelCode === riskLevelCode)
   })
 
   const competenciesRequiringRenewal = computed(() =>
-    competencies.value.filter(c => c.defaultRequiresExpiry && !c.archivedAt)
+    competencies.value.filter((c) => c.defaultRequiresExpiry && !c.archivedAt),
   )
 
   const hasCompetencies = computed(() => competencies.value.length > 0)
@@ -51,10 +50,11 @@ export const useCompetencyLibraryStore = defineStore('competencyLibrary', () => 
 
     if (searchQuery.value) {
       const query = searchQuery.value.toLowerCase()
-      result = result.filter(c =>
-        c.title.toLowerCase().includes(query) ||
-        c.code?.toLowerCase().includes(query) ||
-        c.description?.toLowerCase().includes(query)
+      result = result.filter(
+        (c) =>
+          c.title.toLowerCase().includes(query) ||
+          c.code?.toLowerCase().includes(query) ||
+          c.description?.toLowerCase().includes(query),
       )
     }
 
@@ -73,7 +73,7 @@ export const useCompetencyLibraryStore = defineStore('competencyLibrary', () => 
   }
 
   async function fetchCompetency(id: string) {
-    currentCompetency.value = competencies.value.find(c => c.id === id) ?? null
+    currentCompetency.value = competencies.value.find((c) => c.id === id) ?? null
   }
 
   async function createCompetency(data: CompetencyFormData) {
@@ -102,7 +102,7 @@ export const useCompetencyLibraryStore = defineStore('competencyLibrary', () => 
     isSaving.value = true
     error.value = null
     try {
-      const index = competencies.value.findIndex(c => c.id === id)
+      const index = competencies.value.findIndex((c) => c.id === id)
       if (index !== -1) {
         competencies.value[index] = {
           ...competencies.value[index]!,
@@ -128,7 +128,7 @@ export const useCompetencyLibraryStore = defineStore('competencyLibrary', () => 
     isLoading.value = true
     error.value = null
     try {
-      competencies.value = competencies.value.filter(c => c.id !== id)
+      competencies.value = competencies.value.filter((c) => c.id !== id)
       if (currentCompetency.value?.id === id) {
         currentCompetency.value = null
       }
@@ -164,7 +164,12 @@ export const useCompetencyLibraryStore = defineStore('competencyLibrary', () => 
     isLoading.value = false
     isSaving.value = false
     error.value = null
-    pagination.value = { page: 1, pageSize: 20, total: competenciesData.length, totalPages: Math.ceil(competenciesData.length / 20) }
+    pagination.value = {
+      page: 1,
+      pageSize: 20,
+      total: competenciesData.length,
+      totalPages: Math.ceil(competenciesData.length / 20),
+    }
     searchQuery.value = ''
   }
 

@@ -20,8 +20,17 @@
     "internalExternal": "INTERNAL",
     "provider": "Internal HSE Team",
     "linkedDocument": "CTA-PRO-PTW-001",
-    "applicableDepartments": ["Additive Manufacturing", "Welding & Fabrication", "Robotics & Automation", "Materials Testing"],
-    "applicableRoles": ["Maintenance Technician", "Maintenance Supervisor", "Production Supervisor"],
+    "applicableDepartments": [
+      "Additive Manufacturing",
+      "Welding & Fabrication",
+      "Robotics & Automation",
+      "Materials Testing"
+    ],
+    "applicableRoles": [
+      "Maintenance Technician",
+      "Maintenance Supervisor",
+      "Production Supervisor"
+    ],
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
   },
@@ -47,8 +56,18 @@
     "internalExternal": "INTERNAL",
     "provider": "Internal HSE Team",
     "linkedDocument": "CTA-PRO-HSE-002",
-    "applicableDepartments": ["Additive Manufacturing", "Welding & Fabrication", "Robotics & Automation", "Maintenance"],
-    "applicableRoles": ["Maintenance Technician", "AM Technician", "Robotics Operator", "Welding Technician"],
+    "applicableDepartments": [
+      "Additive Manufacturing",
+      "Welding & Fabrication",
+      "Robotics & Automation",
+      "Maintenance"
+    ],
+    "applicableRoles": [
+      "Maintenance Technician",
+      "AM Technician",
+      "Robotics Operator",
+      "Welding Technician"
+    ],
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
   },
@@ -253,7 +272,11 @@
     "internalExternal": "INTERNAL",
     "provider": "Quality Team",
     "linkedDocument": "CTA-PRO-CAPA-001",
-    "applicableDepartments": ["Quality Assurance", "Additive Manufacturing", "Welding & Fabrication"],
+    "applicableDepartments": [
+      "Quality Assurance",
+      "Additive Manufacturing",
+      "Welding & Fabrication"
+    ],
     "applicableRoles": ["QA Inspector", "Production Supervisor", "AM Technician"],
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
@@ -538,7 +561,11 @@
     "provider": "AM Cell Supervisor / HSE",
     "linkedDocument": "CTA-PRO-POWDER-001",
     "applicableDepartments": ["Additive Manufacturing", "Materials Testing"],
-    "applicableRoles": ["AM Technician", "Additive Manufacturing Technician", "Materials Testing Technician"],
+    "applicableRoles": [
+      "AM Technician",
+      "Additive Manufacturing Technician",
+      "Materials Testing Technician"
+    ],
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
   },
@@ -666,7 +693,11 @@
     "internalExternal": "INTERNAL",
     "provider": "Quality Team",
     "linkedDocument": "CTA-PRO-RCA-001",
-    "applicableDepartments": ["Quality Assurance", "Additive Manufacturing", "Welding & Fabrication"],
+    "applicableDepartments": [
+      "Quality Assurance",
+      "Additive Manufacturing",
+      "Welding & Fabrication"
+    ],
     "applicableRoles": ["QA Inspector", "Production Supervisor", "QHSE Coordinator"],
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"

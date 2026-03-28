@@ -1,13 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { toast } from 'vue-sonner'
-import {
-  ChevronDown,
-  ChevronUp,
-  FileText,
-  ShieldAlert,
-  User,
-} from 'lucide-vue-next'
+import { ChevronDown, ChevronUp, FileText, ShieldAlert, User } from 'lucide-vue-next'
 import {
   Sheet,
   SheetContent,
@@ -16,7 +10,14 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table'
 import { useSkillsMatrixStore, type SupervisionStatus } from '@/stores/skillsMatrix'
 import { useAuthStore } from '@/stores/auth'
 import type { Employee } from '@/api/client'
@@ -38,22 +39,22 @@ const matrixStore = useSkillsMatrixStore()
 const authStore = useAuthStore()
 
 // Access control
-const canTakeAction = computed(() =>
-  authStore.userRole === 'MANAGER' || authStore.userRole === 'HR_ADMIN'
+const canTakeAction = computed(
+  () => authStore.userRole === 'MANAGER' || authStore.userRole === 'HR_ADMIN',
 )
 
 // Matrix row for this employee
 const matrixRow = computed(() =>
-  props.employee ? matrixStore.getEmployeeById(props.employee.id) ?? null : null
+  props.employee ? (matrixStore.getEmployeeById(props.employee.id) ?? null) : null,
 )
 
 // Work status badge helper
 const statusMap: Record<SupervisionStatus, { label: string; badgeClass: string }> = {
-  FIT_FOR_INDEPENDENT_WORK: { label: 'Independent',     badgeClass: 'badge-success' },
-  SUPERVISED_ONLY:          { label: 'Supervised',       badgeClass: 'badge-warning' },
-  RESTRICTED_SCOPE:         { label: 'Restricted Scope', badgeClass: 'badge-warning' },
-  REASSESSMENT_REQUIRED:    { label: 'Reassessment Due', badgeClass: 'badge-warning' },
-  NON_COMPLIANT_MANDATORY:  { label: 'Non-Compliant',    badgeClass: 'badge-critical' },
+  FIT_FOR_INDEPENDENT_WORK: { label: 'Independent', badgeClass: 'badge-success' },
+  SUPERVISED_ONLY: { label: 'Supervised', badgeClass: 'badge-warning' },
+  RESTRICTED_SCOPE: { label: 'Restricted Scope', badgeClass: 'badge-warning' },
+  REASSESSMENT_REQUIRED: { label: 'Reassessment Due', badgeClass: 'badge-warning' },
+  NON_COMPLIANT_MANDATORY: { label: 'Non-Compliant', badgeClass: 'badge-critical' },
 }
 
 const workStatusInfo = computed(() => {
@@ -79,7 +80,9 @@ const competencyRows = computed((): CompetencyTableRow[] => {
   for (const [compId, item] of matrixRow.value.competenceItems.entries()) {
     const comp = matrixStore.getCompetencyById(compId)
     if (!comp) continue
-    const isGap = ['REQUIRED', 'EXPIRED', 'UNDER_SUPERVISION', 'EXPIRING'].includes(item.derivedStatus)
+    const isGap = ['REQUIRED', 'EXPIRED', 'UNDER_SUPERVISION', 'EXPIRING'].includes(
+      item.derivedStatus,
+    )
     rows.push({
       competencyId: compId,
       code: comp.code,
@@ -99,36 +102,52 @@ const competencyRows = computed((): CompetencyTableRow[] => {
   return rows
 })
 
-const openGaps = computed(() => competencyRows.value.filter(r => r.isGap))
+const openGaps = computed(() => competencyRows.value.filter((r) => r.isGap))
 
 // Status badge helpers
 function statusBadgeClass(status: string): string {
   switch (status) {
-    case 'VALID':             return 'badge-success'
-    case 'EXPIRING':          return 'badge-warning'
-    case 'EXPIRED':           return 'badge-critical'
-    case 'REQUIRED':          return 'badge-neutral'
-    case 'IN_PROGRESS':       return 'badge-primary'
-    case 'UNDER_SUPERVISION': return 'badge-warning'
-    default:                  return 'badge-neutral'
+    case 'VALID':
+      return 'badge-success'
+    case 'EXPIRING':
+      return 'badge-warning'
+    case 'EXPIRED':
+      return 'badge-critical'
+    case 'REQUIRED':
+      return 'badge-neutral'
+    case 'IN_PROGRESS':
+      return 'badge-primary'
+    case 'UNDER_SUPERVISION':
+      return 'badge-warning'
+    default:
+      return 'badge-neutral'
   }
 }
 
 function statusLabel(status: string): string {
   switch (status) {
-    case 'VALID':             return 'Valid'
-    case 'EXPIRING':          return 'Expiring'
-    case 'EXPIRED':           return 'Expired'
-    case 'REQUIRED':          return 'Required'
-    case 'IN_PROGRESS':       return 'In Progress'
-    case 'UNDER_SUPERVISION': return 'Under Supervision'
-    case 'N_A':               return 'N/A'
-    default:                  return status
+    case 'VALID':
+      return 'Valid'
+    case 'EXPIRING':
+      return 'Expiring'
+    case 'EXPIRED':
+      return 'Expired'
+    case 'REQUIRED':
+      return 'Required'
+    case 'IN_PROGRESS':
+      return 'In Progress'
+    case 'UNDER_SUPERVISION':
+      return 'Under Supervision'
+    case 'N_A':
+      return 'N/A'
+    default:
+      return status
   }
 }
 
 function gapSeverityClass(row: CompetencyTableRow): string {
-  if (row.isGating && (row.derivedStatus === 'EXPIRED' || row.derivedStatus === 'REQUIRED')) return 'badge-critical'
+  if (row.isGating && (row.derivedStatus === 'EXPIRED' || row.derivedStatus === 'REQUIRED'))
+    return 'badge-critical'
   if (row.derivedStatus === 'EXPIRED') return 'badge-critical'
   if (row.isGating && row.derivedStatus === 'UNDER_SUPERVISION') return 'badge-warning'
   if (row.derivedStatus === 'EXPIRING') return 'badge-warning'
@@ -136,7 +155,8 @@ function gapSeverityClass(row: CompetencyTableRow): string {
 }
 
 function gapSeverityLabel(row: CompetencyTableRow): string {
-  if (row.isGating && (row.derivedStatus === 'EXPIRED' || row.derivedStatus === 'REQUIRED')) return 'Critical'
+  if (row.isGating && (row.derivedStatus === 'EXPIRED' || row.derivedStatus === 'REQUIRED'))
+    return 'Critical'
   if (row.derivedStatus === 'EXPIRED') return 'High'
   if (row.isGating && row.derivedStatus === 'UNDER_SUPERVISION') return 'High'
   if (row.derivedStatus === 'EXPIRING') return 'Moderate'
@@ -172,11 +192,41 @@ const assessmentHistory = computed((): AssessmentEvent[] => {
   if (!props.employee) return []
   const hash = props.employee.id.charCodeAt(0) % 5
   const allEvents: AssessmentEvent[] = [
-    { date: '2025-11-14', competency: 'LOTO',     method: 'Practical Observation',   outcome: 'Pass', assessor: 'David Clarke'      },
-    { date: '2025-09-22', competency: 'ROBOT-OP', method: 'Practical Demonstration', outcome: 'Pass', assessor: 'James Roberts'     },
-    { date: '2025-07-05', competency: 'AM-SETUP', method: 'Practical Demonstration', outcome: 'Pass', assessor: 'David Clarke'      },
-    { date: '2025-04-18', competency: 'HSE-IND',  method: 'Record Review',           outcome: 'Pass', assessor: 'Sarah Bennett'     },
-    { date: '2025-02-10', competency: 'WELD',     method: 'External Exam',           outcome: 'Pass', assessor: 'TWI Certification' },
+    {
+      date: '2025-11-14',
+      competency: 'LOTO',
+      method: 'Practical Observation',
+      outcome: 'Pass',
+      assessor: 'David Clarke',
+    },
+    {
+      date: '2025-09-22',
+      competency: 'ROBOT-OP',
+      method: 'Practical Demonstration',
+      outcome: 'Pass',
+      assessor: 'James Roberts',
+    },
+    {
+      date: '2025-07-05',
+      competency: 'AM-SETUP',
+      method: 'Practical Demonstration',
+      outcome: 'Pass',
+      assessor: 'David Clarke',
+    },
+    {
+      date: '2025-04-18',
+      competency: 'HSE-IND',
+      method: 'Record Review',
+      outcome: 'Pass',
+      assessor: 'Sarah Bennett',
+    },
+    {
+      date: '2025-02-10',
+      competency: 'WELD',
+      method: 'External Exam',
+      outcome: 'Pass',
+      assessor: 'TWI Certification',
+    },
   ]
   const start = hash % 3
   return allEvents.slice(start, start + 4)
@@ -197,25 +247,45 @@ const relevantAwarenessTopics = computed((): { topic: AwarenessTopic; acknowledg
   const jobTitleName = (props.employee.jobTitle?.name ?? '').toLowerCase()
   const deptName = (props.employee.department?.name ?? '').toLowerCase()
 
-  return (awarenessTopicsData as AwarenessTopic[]).map(topic => {
-    const audience = (topic.targetAudience ?? '').toLowerCase()
-    const relevant =
-      audience.includes('all') ||
-      audience.split(/[,/]/).some(a => {
-        const trimmed = a.trim()
-        return jobTitleName.includes(trimmed) || trimmed.includes(deptName)
-      })
-    if (!relevant) return null
-    const hash = (props.employee!.id.charCodeAt(0) + topic.id.charCodeAt(topic.id.length - 1)) % 3
-    return { topic, acknowledged: hash !== 0 }
-  }).filter((x): x is { topic: AwarenessTopic; acknowledged: boolean } => x !== null)
+  return (awarenessTopicsData as AwarenessTopic[])
+    .map((topic) => {
+      const audience = (topic.targetAudience ?? '').toLowerCase()
+      const relevant =
+        audience.includes('all') ||
+        audience.split(/[,/]/).some((a) => {
+          const trimmed = a.trim()
+          return jobTitleName.includes(trimmed) || trimmed.includes(deptName)
+        })
+      if (!relevant) return null
+      const hash = (props.employee!.id.charCodeAt(0) + topic.id.charCodeAt(topic.id.length - 1)) % 3
+      return { topic, acknowledged: hash !== 0 }
+    })
+    .filter((x): x is { topic: AwarenessTopic; acknowledged: boolean } => x !== null)
 })
 
 // Training needs (mock subset for demo)
 const MOCK_TRAINING_NEEDS = [
-  { id: 'tn-a', title: 'LOTO Renewal',       source: 'EXPIRY_RENEWAL', status: 'IDENTIFIED',  interventionType: 'CERTIFICATION_RENEWAL' },
-  { id: 'tn-b', title: 'AM Setup Practical', source: 'COMPETENCE_GAP', status: 'IN_PROGRESS', interventionType: 'COACHING_OJT'          },
-  { id: 'tn-c', title: 'HSE Toolbox Talk',   source: 'AUDIT_FINDING',  status: 'APPROVED',    interventionType: 'TOOLBOX_TALK'          },
+  {
+    id: 'tn-a',
+    title: 'LOTO Renewal',
+    source: 'EXPIRY_RENEWAL',
+    status: 'IDENTIFIED',
+    interventionType: 'CERTIFICATION_RENEWAL',
+  },
+  {
+    id: 'tn-b',
+    title: 'AM Setup Practical',
+    source: 'COMPETENCE_GAP',
+    status: 'IN_PROGRESS',
+    interventionType: 'COACHING_OJT',
+  },
+  {
+    id: 'tn-c',
+    title: 'HSE Toolbox Talk',
+    source: 'AUDIT_FINDING',
+    status: 'APPROVED',
+    interventionType: 'TOOLBOX_TALK',
+  },
 ]
 
 const trainingNeeds = computed(() => {
@@ -264,7 +334,11 @@ function recordEvidence() {
 }
 
 function changeSupervisionStatus() {
-  const statuses: SupervisionStatus[] = ['FIT_FOR_INDEPENDENT_WORK', 'SUPERVISED_ONLY', 'RESTRICTED_SCOPE']
+  const statuses: SupervisionStatus[] = [
+    'FIT_FOR_INDEPENDENT_WORK',
+    'SUPERVISED_ONLY',
+    'RESTRICTED_SCOPE',
+  ]
   if (!matrixRow.value) return
   const currentIndex = statuses.indexOf(matrixRow.value.supervisionStatus as SupervisionStatus)
   const next = statuses[(currentIndex + 1) % statuses.length]!
@@ -300,15 +374,14 @@ function formatName(emp: Employee): string {
     <SheetContent class="person-drawer">
       <SheetHeader>
         <SheetTitle class="visually-hidden">Person Detail</SheetTitle>
-        <SheetDescription class="visually-hidden">Full readiness profile for the selected employee</SheetDescription>
+        <SheetDescription class="visually-hidden"
+          >Full readiness profile for the selected employee</SheetDescription
+        >
       </SheetHeader>
 
-      <div v-if="!employee" class="drawer-empty">
-        Select an employee to view their profile.
-      </div>
+      <div v-if="!employee" class="drawer-empty">Select an employee to view their profile.</div>
 
       <div v-else class="drawer-body">
-
         <!-- 1. Person Header -->
         <div class="person-header-section">
           <div class="person-avatar-block">
@@ -318,15 +391,22 @@ function formatName(emp: Employee): string {
             <div class="person-meta">
               <h2 class="person-name">{{ formatName(employee) }}</h2>
               <p class="person-sub">{{ employee.jobTitle?.name || '—' }}</p>
-              <p class="person-sub muted">{{ employee.department?.name || '—' }} · {{ employee.businessUnit?.name || '—' }}</p>
+              <p class="person-sub muted">
+                {{ employee.department?.name || '—' }} · {{ employee.businessUnit?.name || '—' }}
+              </p>
               <p v-if="employee.manager" class="person-sub muted">
                 Manager:
-                {{ employee.manager.displayName || `${employee.manager.firstName ?? ''} ${employee.manager.lastName ?? ''}`.trim() }}
+                {{
+                  employee.manager.displayName ||
+                  `${employee.manager.firstName ?? ''} ${employee.manager.lastName ?? ''}`.trim()
+                }}
               </p>
             </div>
           </div>
           <div class="person-header-badges">
-            <span v-if="workStatusInfo" class="badge" :class="workStatusInfo.badgeClass">{{ workStatusInfo.label }}</span>
+            <span v-if="workStatusInfo" class="badge" :class="workStatusInfo.badgeClass">{{
+              workStatusInfo.label
+            }}</span>
             <span v-else class="badge badge-neutral">No Matrix Data</span>
           </div>
           <div v-if="canTakeAction && matrixRow" class="person-header-actions">
@@ -335,7 +415,9 @@ function formatName(emp: Employee): string {
               Change Status
             </Button>
             <Button size="sm" variant="ghost" @click="scrollToTraining">View Training Needs</Button>
-            <Button size="sm" variant="ghost" @click="scrollToAwareness">View Awareness Topics</Button>
+            <Button size="sm" variant="ghost" @click="scrollToAwareness"
+              >View Awareness Topics</Button
+            >
           </div>
         </div>
 
@@ -344,17 +426,26 @@ function formatName(emp: Employee): string {
           <ShieldAlert class="restriction-icon" />
           <div>
             <p class="restriction-title">
-              {{ matrixRow?.supervisionStatus === 'NON_COMPLIANT_MANDATORY'
-                ? 'Non-Compliant — Work Restricted'
-                : 'Supervision Required' }}
+              {{
+                matrixRow?.supervisionStatus === 'NON_COMPLIANT_MANDATORY'
+                  ? 'Non-Compliant — Work Restricted'
+                  : 'Supervision Required'
+              }}
             </p>
             <p class="restriction-body">
-              {{ matrixRow?.supervisionStatus === 'NON_COMPLIANT_MANDATORY'
-                ? 'This employee cannot perform independent work until mandatory safety certifications are renewed.'
-                : 'This employee must work under supervision. The following gating items are not fully met:' }}
+              {{
+                matrixRow?.supervisionStatus === 'NON_COMPLIANT_MANDATORY'
+                  ? 'This employee cannot perform independent work until mandatory safety certifications are renewed.'
+                  : 'This employee must work under supervision. The following gating items are not fully met:'
+              }}
             </p>
             <div v-if="restrictionItems.length" class="restriction-items">
-              <span v-for="item in restrictionItems" :key="item" class="badge badge-critical badge-sm">{{ item }}</span>
+              <span
+                v-for="item in restrictionItems"
+                :key="item"
+                class="badge badge-critical badge-sm"
+                >{{ item }}</span
+              >
             </div>
           </div>
         </div>
@@ -362,15 +453,27 @@ function formatName(emp: Employee): string {
         <!-- Readiness summary cards -->
         <div v-if="matrixRow" class="readiness-cards">
           <div class="readiness-card">
-            <span class="readiness-card-value" :class="matrixRow.expiredCount > 0 ? 'value-red' : 'value-green'">{{ matrixRow.expiredCount }}</span>
+            <span
+              class="readiness-card-value"
+              :class="matrixRow.expiredCount > 0 ? 'value-red' : 'value-green'"
+              >{{ matrixRow.expiredCount }}</span
+            >
             <span class="readiness-card-label">Expired</span>
           </div>
           <div class="readiness-card">
-            <span class="readiness-card-value" :class="matrixRow.expiringCount > 0 ? 'value-amber' : 'value-green'">{{ matrixRow.expiringCount }}</span>
+            <span
+              class="readiness-card-value"
+              :class="matrixRow.expiringCount > 0 ? 'value-amber' : 'value-green'"
+              >{{ matrixRow.expiringCount }}</span
+            >
             <span class="readiness-card-label">Expiring</span>
           </div>
           <div class="readiness-card">
-            <span class="readiness-card-value" :class="matrixRow.requiredCount > 0 ? 'value-amber' : 'value-green'">{{ matrixRow.requiredCount }}</span>
+            <span
+              class="readiness-card-value"
+              :class="matrixRow.requiredCount > 0 ? 'value-amber' : 'value-green'"
+              >{{ matrixRow.requiredCount }}</span
+            >
             <span class="readiness-card-label">Required</span>
           </div>
           <div class="readiness-card">
@@ -387,7 +490,9 @@ function formatName(emp: Employee): string {
             <ChevronDown v-else class="icon-sm" />
           </button>
           <div v-if="sectionsOpen.requirements" class="section-content">
-            <div v-if="competencyRows.length === 0" class="section-empty">No competency data available.</div>
+            <div v-if="competencyRows.length === 0" class="section-empty">
+              No competency data available.
+            </div>
             <div v-else class="mini-table-wrapper">
               <Table class="dense-table mini-table">
                 <TableHeader>
@@ -423,7 +528,13 @@ function formatName(emp: Employee): string {
                     <TableCell class="text-muted-sm">{{ row.lastCompletedAt || '—' }}</TableCell>
                     <TableCell class="text-muted-sm">{{ row.expiryDate || '—' }}</TableCell>
                     <TableCell v-if="canTakeAction">
-                      <Button v-if="row.isGap" size="sm" variant="ghost" class="action-link" @click="startReassessment(row.code)">
+                      <Button
+                        v-if="row.isGap"
+                        size="sm"
+                        variant="ghost"
+                        class="action-link"
+                        @click="startReassessment(row.code)"
+                      >
                         Reassess
                       </Button>
                     </TableCell>
@@ -455,12 +566,28 @@ function formatName(emp: Employee): string {
                   <span class="gap-title">{{ gap.title }}</span>
                 </div>
                 <div class="gap-item-meta">
-                  <span class="badge badge-sm" :class="statusBadgeClass(gap.derivedStatus)">{{ statusLabel(gap.derivedStatus) }}</span>
-                  <span class="badge badge-sm" :class="gapSeverityClass(gap)">{{ gapSeverityLabel(gap) }}</span>
+                  <span class="badge badge-sm" :class="statusBadgeClass(gap.derivedStatus)">{{
+                    statusLabel(gap.derivedStatus)
+                  }}</span>
+                  <span class="badge badge-sm" :class="gapSeverityClass(gap)">{{
+                    gapSeverityLabel(gap)
+                  }}</span>
                 </div>
                 <div v-if="canTakeAction" class="gap-item-actions">
-                  <Button size="sm" variant="ghost" class="action-link" @click="startReassessment(gap.code)">Reassess</Button>
-                  <Button size="sm" variant="ghost" class="action-link" @click="assignIntervention(gap.code)">Assign Intervention</Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    class="action-link"
+                    @click="startReassessment(gap.code)"
+                    >Reassess</Button
+                  >
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    class="action-link"
+                    @click="assignIntervention(gap.code)"
+                    >Assign Intervention</Button
+                  >
                 </div>
               </div>
             </div>
@@ -496,12 +623,17 @@ function formatName(emp: Employee): string {
                 <TableBody>
                   <TableRow v-for="ev in evidenceRecords" :key="ev.id">
                     <TableCell class="text-muted-sm">{{ ev.type }}</TableCell>
-                    <TableCell><span class="comp-code">{{ ev.competencyCode }}</span></TableCell>
+                    <TableCell
+                      ><span class="comp-code">{{ ev.competencyCode }}</span></TableCell
+                    >
                     <TableCell class="text-muted-sm">{{ ev.issuer }}</TableCell>
                     <TableCell class="text-muted-sm">{{ ev.issueDate }}</TableCell>
                     <TableCell class="text-muted-sm">{{ ev.expiryDate || 'No Expiry' }}</TableCell>
                     <TableCell>
-                      <span class="badge badge-sm" :class="ev.reviewStatus === 'Accepted' ? 'badge-success' : 'badge-neutral'">
+                      <span
+                        class="badge badge-sm"
+                        :class="ev.reviewStatus === 'Accepted' ? 'badge-success' : 'badge-neutral'"
+                      >
                         {{ ev.reviewStatus }}
                       </span>
                     </TableCell>
@@ -534,10 +666,16 @@ function formatName(emp: Employee): string {
                 <TableBody>
                   <TableRow v-for="(ev, idx) in assessmentHistory" :key="idx">
                     <TableCell class="text-muted-sm">{{ ev.date }}</TableCell>
-                    <TableCell><span class="comp-code">{{ ev.competency }}</span></TableCell>
+                    <TableCell
+                      ><span class="comp-code">{{ ev.competency }}</span></TableCell
+                    >
                     <TableCell class="text-muted-sm">{{ ev.method }}</TableCell>
                     <TableCell>
-                      <span class="badge badge-sm" :class="ev.outcome === 'Pass' ? 'badge-success' : 'badge-critical'">{{ ev.outcome }}</span>
+                      <span
+                        class="badge badge-sm"
+                        :class="ev.outcome === 'Pass' ? 'badge-success' : 'badge-critical'"
+                        >{{ ev.outcome }}</span
+                      >
                     </TableCell>
                     <TableCell class="text-muted-sm">{{ ev.assessor }}</TableCell>
                   </TableRow>
@@ -559,12 +697,19 @@ function formatName(emp: Employee): string {
               No awareness topics assigned to this role.
             </div>
             <div v-else class="awareness-list">
-              <div v-for="{ topic, acknowledged } in relevantAwarenessTopics" :key="topic.id" class="awareness-item">
+              <div
+                v-for="{ topic, acknowledged } in relevantAwarenessTopics"
+                :key="topic.id"
+                class="awareness-item"
+              >
                 <div class="awareness-info">
                   <span class="awareness-title">{{ topic.title }}</span>
                   <span class="text-muted-sm">Due: {{ topic.dueDate }}</span>
                 </div>
-                <span class="badge badge-sm" :class="acknowledged ? 'badge-success' : 'badge-warning'">
+                <span
+                  class="badge badge-sm"
+                  :class="acknowledged ? 'badge-success' : 'badge-warning'"
+                >
                   {{ acknowledged ? 'Acknowledged' : 'Pending' }}
                 </span>
               </div>
@@ -580,7 +725,9 @@ function formatName(emp: Employee): string {
             <ChevronDown v-else class="icon-sm" />
           </button>
           <div v-if="sectionsOpen.training" class="section-content">
-            <div v-if="trainingNeeds.length === 0" class="section-empty">No training actions in progress.</div>
+            <div v-if="trainingNeeds.length === 0" class="section-empty">
+              No training actions in progress.
+            </div>
             <div v-else class="mini-table-wrapper">
               <Table class="dense-table mini-table">
                 <TableHeader>
@@ -594,18 +741,23 @@ function formatName(emp: Employee): string {
                 <TableBody>
                   <TableRow v-for="need in trainingNeeds" :key="need.id">
                     <TableCell class="text-muted-sm">{{ need.title }}</TableCell>
-                    <TableCell class="text-muted-sm">{{ need.source.replace(/_/g, ' ') }}</TableCell>
+                    <TableCell class="text-muted-sm">{{
+                      need.source.replace(/_/g, ' ')
+                    }}</TableCell>
                     <TableCell>
-                      <span class="badge badge-sm badge-neutral">{{ need.status.replace(/_/g, ' ') }}</span>
+                      <span class="badge badge-sm badge-neutral">{{
+                        need.status.replace(/_/g, ' ')
+                      }}</span>
                     </TableCell>
-                    <TableCell class="text-muted-sm">{{ need.interventionType?.replace(/_/g, ' ') || '—' }}</TableCell>
+                    <TableCell class="text-muted-sm">{{
+                      need.interventionType?.replace(/_/g, ' ') || '—'
+                    }}</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
             </div>
           </div>
         </div>
-
       </div>
     </SheetContent>
   </Sheet>
@@ -694,7 +846,9 @@ function formatName(emp: Employee): string {
   margin: 0;
 }
 
-.person-sub.muted { color: var(--text-caption); }
+.person-sub.muted {
+  color: var(--text-caption);
+}
 
 .person-header-badges {
   display: flex;
@@ -777,9 +931,15 @@ function formatName(emp: Employee): string {
   letter-spacing: 0.04em;
 }
 
-.value-red   { color: #dc2626; }
-.value-amber { color: #d97706; }
-.value-green { color: #16a34a; }
+.value-red {
+  color: #dc2626;
+}
+.value-amber {
+  color: #d97706;
+}
+.value-green {
+  color: #16a34a;
+}
 
 /* Sections */
 .drawer-section {
@@ -834,7 +994,9 @@ function formatName(emp: Employee): string {
   color: var(--text-caption);
 }
 
-.section-empty-success { color: #16a34a; }
+.section-empty-success {
+  color: #16a34a;
+}
 
 .section-action-row {
   display: flex;
@@ -843,8 +1005,12 @@ function formatName(emp: Employee): string {
 }
 
 /* Mini tables */
-.mini-table-wrapper { overflow-x: auto; }
-.mini-table { font-size: 0.75rem; }
+.mini-table-wrapper {
+  overflow-x: auto;
+}
+.mini-table {
+  font-size: 0.75rem;
+}
 
 .comp-code {
   font-family: var(--font-mono);
@@ -909,8 +1075,14 @@ function formatName(emp: Employee): string {
   color: var(--text-body);
 }
 
-.gap-item-meta { display: flex; gap: var(--space-xs); }
-.gap-item-actions { display: flex; gap: var(--space-xs); }
+.gap-item-meta {
+  display: flex;
+  gap: var(--space-xs);
+}
+.gap-item-actions {
+  display: flex;
+  gap: var(--space-xs);
+}
 
 /* Awareness */
 .awareness-list {
@@ -941,7 +1113,15 @@ function formatName(emp: Employee): string {
   color: var(--text-body);
 }
 
-.icon-xs { width: 14px; height: 14px; }
-.icon-sm { width: 16px; height: 16px; }
-.icon-mr { margin-right: 0.25rem; }
+.icon-xs {
+  width: 14px;
+  height: 14px;
+}
+.icon-sm {
+  width: 16px;
+  height: 16px;
+}
+.icon-mr {
+  margin-right: 0.25rem;
+}
 </style>

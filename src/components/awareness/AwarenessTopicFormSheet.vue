@@ -109,12 +109,15 @@ const formData = ref(defaultForm())
 const selectedAudience = ref<string[]>([])
 const isSaving = ref(false)
 
-watch(() => props.open, (isOpen) => {
-  if (isOpen) {
-    formData.value = defaultForm()
-    selectedAudience.value = []
-  }
-})
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (isOpen) {
+      formData.value = defaultForm()
+      selectedAudience.value = []
+    }
+  },
+)
 
 // ─── Audience checkboxes ───────────────────────────────────────────────────────
 
@@ -123,7 +126,7 @@ function toggleAudience(option: string) {
   if (idx === -1) {
     selectedAudience.value = [...selectedAudience.value, option]
   } else {
-    selectedAudience.value = selectedAudience.value.filter(a => a !== option)
+    selectedAudience.value = selectedAudience.value.filter((a) => a !== option)
   }
 }
 
@@ -137,9 +140,7 @@ function handleSave() {
 
   isSaving.value = true
 
-  const audience = selectedAudience.value.length > 0
-    ? selectedAudience.value
-    : ['All Employees']
+  const audience = selectedAudience.value.length > 0 ? selectedAudience.value : ['All Employees']
 
   const newTopic: AwarenessTopic = {
     id: `at-${Date.now()}`,
@@ -187,7 +188,9 @@ function handleSave() {
           <div class="section-title">Topic Details</div>
           <div class="form-grid">
             <div class="form-field form-field-full">
-              <Label for="at-title" class="form-label">Title <span class="required-mark">*</span></Label>
+              <Label for="at-title" class="form-label"
+                >Title <span class="required-mark">*</span></Label
+              >
               <Input
                 id="at-title"
                 v-model="formData.title"
@@ -196,17 +199,15 @@ function handleSave() {
             </div>
 
             <div class="form-field">
-              <Label for="at-type" class="form-label">Topic Type <span class="required-mark">*</span></Label>
+              <Label for="at-type" class="form-label"
+                >Topic Type <span class="required-mark">*</span></Label
+              >
               <Select v-model="formData.topicType">
                 <SelectTrigger id="at-type">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem
-                    v-for="type in TOPIC_TYPES"
-                    :key="type.value"
-                    :value="type.value"
-                  >
+                  <SelectItem v-for="type in TOPIC_TYPES" :key="type.value" :value="type.value">
                     {{ type.label }}
                   </SelectItem>
                 </SelectContent>
@@ -214,7 +215,9 @@ function handleSave() {
             </div>
 
             <div class="form-field">
-              <Label for="at-delivery" class="form-label">Delivery Method <span class="required-mark">*</span></Label>
+              <Label for="at-delivery" class="form-label"
+                >Delivery Method <span class="required-mark">*</span></Label
+              >
               <Select v-model="formData.deliveryMethod">
                 <SelectTrigger id="at-delivery">
                   <SelectValue placeholder="Select method" />
@@ -251,11 +254,7 @@ function handleSave() {
 
             <div class="form-field">
               <Label for="at-effective-date" class="form-label">Effective Date</Label>
-              <Input
-                id="at-effective-date"
-                v-model="formData.effectiveDate"
-                type="date"
-              />
+              <Input id="at-effective-date" v-model="formData.effectiveDate" type="date" />
             </div>
           </div>
         </div>
@@ -349,7 +348,9 @@ function handleSave() {
   border: var(--border-subtle);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
   background-color: var(--bg-surface);
 }
 

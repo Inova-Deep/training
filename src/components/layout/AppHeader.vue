@@ -1,24 +1,17 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import {
-  SidebarTrigger
-} from '@/components/ui/sidebar'
+import { SidebarTrigger } from '@/components/ui/sidebar'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuLabel
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import {
-  Bell,
-  RefreshCw,
-  LogOut,
-  ChevronDown
-} from 'lucide-vue-next'
+import { Bell, RefreshCw, LogOut, ChevronDown } from 'lucide-vue-next'
 import { useAuthStore, DEMO_PERSONAS, type DemoPersonaKey } from '@/stores/auth'
 
 const authStore = useAuthStore()
@@ -44,7 +37,7 @@ const userRoleLabel = computed(() => authStore.activePersona.roleLabel)
 
 const handleSync = async () => {
   isSyncing.value = true
-  await new Promise(resolve => setTimeout(resolve, SYNC_DURATION_MS))
+  await new Promise((resolve) => setTimeout(resolve, SYNC_DURATION_MS))
   isSyncing.value = false
 }
 </script>
@@ -84,10 +77,7 @@ const handleSync = async () => {
         tabindex="0"
         aria-label="Sync status, click to sync"
       >
-        <RefreshCw
-          class="sync-status-icon"
-          :class="{ 'sync-status-spin': isSyncing }"
-        />
+        <RefreshCw class="sync-status-icon" :class="{ 'sync-status-spin': isSyncing }" />
         <span v-if="!isSyncing">Synced</span>
         <span v-else>Syncing...</span>
       </div>
@@ -107,7 +97,9 @@ const handleSync = async () => {
             <div class="notification-item">
               <div class="notification-dot" />
               <div class="notification-content">
-                <span class="notification-title">Welding qualification renewal scheduled — due 15 Apr</span>
+                <span class="notification-title"
+                  >Welding qualification renewal scheduled — due 15 Apr</span
+                >
                 <span class="notification-time">2 hours ago</span>
               </div>
             </div>
@@ -116,7 +108,10 @@ const handleSync = async () => {
             <div class="notification-item">
               <div class="notification-dot" />
               <div class="notification-content">
-                <span class="notification-title">Additive Manufacturing Process Control Briefing — awaiting your acknowledgement</span>
+                <span class="notification-title"
+                  >Additive Manufacturing Process Control Briefing — awaiting your
+                  acknowledgement</span
+                >
                 <span class="notification-time">3 hours ago</span>
               </div>
             </div>
@@ -125,15 +120,15 @@ const handleSync = async () => {
             <div class="notification-item">
               <div class="notification-dot" />
               <div class="notification-content">
-                <span class="notification-title">Robot cell operation authorisation expiring in 12 days — James Fletcher</span>
+                <span class="notification-title"
+                  >Robot cell operation authorisation expiring in 12 days — James Fletcher</span
+                >
                 <span class="notification-time">1 day ago</span>
               </div>
             </div>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem class="view-all">
-            View all notifications
-          </DropdownMenuItem>
+          <DropdownMenuItem class="view-all"> View all notifications </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -290,8 +285,12 @@ const handleSync = async () => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── User menu ──────────────────────────────────────────────── */

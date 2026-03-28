@@ -1,11 +1,24 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { Search, MoreHorizontal, ChevronLeft, ChevronRight, X, Eye } from 'lucide-vue-next'
+import { Search, MoreHorizontal, ChevronLeft, ChevronRight, X } from 'lucide-vue-next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
 import {
   Select,
   SelectContent,
@@ -25,11 +38,11 @@ function getWorkStatusInfo(employeeId: string): { label: string; badgeClass: str
   const row = matrixStore.getEmployeeById(employeeId)
   if (!row) return null
   const map: Record<SupervisionStatus, { label: string; badgeClass: string }> = {
-    FIT_FOR_INDEPENDENT_WORK:   { label: 'Independent',       badgeClass: 'badge-success' },
-    SUPERVISED_ONLY:            { label: 'Supervised',         badgeClass: 'badge-warning' },
-    RESTRICTED_SCOPE:           { label: 'Restricted',         badgeClass: 'badge-warning' },
-    REASSESSMENT_REQUIRED:      { label: 'Reassessment Due',   badgeClass: 'badge-warning' },
-    NON_COMPLIANT_MANDATORY:    { label: 'Non-Compliant',      badgeClass: 'badge-critical' },
+    FIT_FOR_INDEPENDENT_WORK: { label: 'Independent', badgeClass: 'badge-success' },
+    SUPERVISED_ONLY: { label: 'Supervised', badgeClass: 'badge-warning' },
+    RESTRICTED_SCOPE: { label: 'Restricted', badgeClass: 'badge-warning' },
+    REASSESSMENT_REQUIRED: { label: 'Reassessment Due', badgeClass: 'badge-warning' },
+    NON_COMPLIANT_MANDATORY: { label: 'Non-Compliant', badgeClass: 'badge-critical' },
   }
   return map[row.supervisionStatus]
 }
@@ -68,11 +81,20 @@ function getInitials(firstName: string, lastName: string): string {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
 }
 
-function formatName(employee: { firstName: string; lastName: string; displayName: string | null }): string {
+function formatName(employee: {
+  firstName: string
+  lastName: string
+  displayName: string | null
+}): string {
   return employee.displayName || `${employee.firstName} ${employee.lastName}`
 }
 
-function getManagerName(manager: { firstName: string | null; lastName: string | null; displayName: string | null } | null | undefined): string {
+function getManagerName(
+  manager:
+    | { firstName: string | null; lastName: string | null; displayName: string | null }
+    | null
+    | undefined,
+): string {
   if (!manager) return '-'
   return manager.displayName || `${manager.firstName || ''} ${manager.lastName || ''}`.trim() || '-'
 }
@@ -128,10 +150,7 @@ watch(searchQuery, (value) => {
 })
 
 onMounted(async () => {
-  await Promise.all([
-    store.fetchAllReferenceData(),
-    store.fetchEmployees()
-  ])
+  await Promise.all([store.fetchAllReferenceData(), store.fetchEmployees()])
   if (matrixStore.mockEmployeeRows.length === 0) {
     await matrixStore.fetchAndBuildMatrix(store.filteredEmployees)
   }
@@ -141,7 +160,9 @@ onMounted(async () => {
 <template>
   <div class="page-header">
     <h1 class="page-title">People</h1>
-    <p class="page-subtitle">Employee directory — competence status, authorisation, gaps, and expiring certifications</p>
+    <p class="page-subtitle">
+      Employee directory — competence status, authorisation, gaps, and expiring certifications
+    </p>
   </div>
 
   <Card class="data-card">
@@ -174,7 +195,10 @@ onMounted(async () => {
             </SelectContent>
           </Select>
 
-          <Select :model-value="selectedBusinessUnit" @update:model-value="handleBusinessUnitChange">
+          <Select
+            :model-value="selectedBusinessUnit"
+            @update:model-value="handleBusinessUnitChange"
+          >
             <SelectTrigger class="filter-select">
               <SelectValue placeholder="Business Unit" />
             </SelectTrigger>
@@ -230,24 +254,17 @@ onMounted(async () => {
           </TableHeader>
           <TableBody>
             <TableRow v-if="isLoading">
-              <TableCell colspan="11" class="loading-cell">
-                Loading employees...
-              </TableCell>
+              <TableCell colspan="11" class="loading-cell"> Loading employees... </TableCell>
             </TableRow>
             <TableRow v-else-if="employees.length === 0">
-              <TableCell colspan="11" class="empty-cell">
-                No employees found
-              </TableCell>
+              <TableCell colspan="11" class="empty-cell"> No employees found </TableCell>
             </TableRow>
-            <TableRow
-              v-for="employee in employees"
-              :key="employee.id"
-              class="clickable-row"
-              @click="openDrawer(employee)"
-            >
+            <TableRow v-for="employee in employees" :key="employee.id">
               <TableCell>
                 <div class="table-user">
-                  <div class="table-avatar">{{ getInitials(employee.firstName, employee.lastName) }}</div>
+                  <div class="table-avatar">
+                    {{ getInitials(employee.firstName, employee.lastName) }}
+                  </div>
                   <span>{{ formatName(employee) }}</span>
                 </div>
               </TableCell>
@@ -256,11 +273,13 @@ onMounted(async () => {
               <TableCell>{{ employee.businessUnit?.name || '-' }}</TableCell>
               <TableCell>{{ getManagerName(employee.manager) }}</TableCell>
               <TableCell>
-                <span class="badge" :class="employee.status === 'active' ? 'badge-success' : 'badge-neutral'">
+                <span
+                  class="badge"
+                  :class="employee.status === 'active' ? 'badge-success' : 'badge-neutral'"
+                >
                   {{ employee.status === 'active' ? 'Active' : 'Inactive' }}
                 </span>
               </TableCell>
-              <!-- Work Status -->
               <TableCell>
                 <template v-if="getWorkStatusInfo(employee.id)">
                   <span class="badge" :class="getWorkStatusInfo(employee.id)!.badgeClass">
@@ -269,69 +288,74 @@ onMounted(async () => {
                 </template>
                 <span v-else class="text-muted">—</span>
               </TableCell>
-              <!-- Open Gaps -->
               <TableCell>
                 <template v-if="getMatrixRow(employee.id)">
                   <span
                     class="gap-count"
-                    :class="(getMatrixRow(employee.id)!.requiredCount + getMatrixRow(employee.id)!.expiredCount) > 0 ? 'gap-count-high' : 'gap-count-zero'"
+                    :class="
+                      getMatrixRow(employee.id)!.requiredCount +
+                        getMatrixRow(employee.id)!.expiredCount >
+                      0
+                        ? 'gap-count-high'
+                        : 'gap-count-zero'
+                    "
                   >
-                    {{ getMatrixRow(employee.id)!.requiredCount + getMatrixRow(employee.id)!.expiredCount }}
+                    {{
+                      getMatrixRow(employee.id)!.requiredCount +
+                      getMatrixRow(employee.id)!.expiredCount
+                    }}
                   </span>
                 </template>
                 <span v-else class="text-muted">—</span>
               </TableCell>
-              <!-- Mandatory Compliance -->
               <TableCell>
                 <template v-if="getMatrixRow(employee.id)">
                   <span
                     class="badge"
-                    :class="getMatrixRow(employee.id)!.isAuthorised ? 'badge-success' : 'badge-critical'"
+                    :class="
+                      getMatrixRow(employee.id)!.isAuthorised ? 'badge-success' : 'badge-critical'
+                    "
                   >
                     {{ getMatrixRow(employee.id)!.isAuthorised ? 'Compliant' : 'Non-Compliant' }}
                   </span>
                 </template>
                 <span v-else class="text-muted">—</span>
               </TableCell>
-              <!-- Expiring Certs -->
               <TableCell>
                 <template v-if="getMatrixRow(employee.id)">
                   <span
                     class="gap-count"
-                    :class="getMatrixRow(employee.id)!.expiringCount > 0 ? 'gap-count-warn' : 'gap-count-zero'"
+                    :class="
+                      getMatrixRow(employee.id)!.expiringCount > 0
+                        ? 'gap-count-warn'
+                        : 'gap-count-zero'
+                    "
                   >
                     {{ getMatrixRow(employee.id)!.expiringCount }}
                   </span>
                 </template>
                 <span v-else class="text-muted">—</span>
               </TableCell>
-              <!-- Actions -->
-              <TableCell class="table-actions-cell" @click.stop>
-                <div class="actions-row">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    class="view-btn"
-                    @click="openDrawer(employee)"
-                  >
-                    <Eye class="icon-xs icon-mr" />
-                    View
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger as-child>
-                      <Button variant="ghost" size="icon" class="table-action-btn" :aria-label="`Actions for ${formatName(employee)}`">
-                        <MoreHorizontal class="icon-xs" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem @click="openDrawer(employee)">View Profile</DropdownMenuItem>
-                      <DropdownMenuItem>View Competencies</DropdownMenuItem>
-                      <DropdownMenuItem>Training History</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>Edit Record</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+              <TableCell class="table-actions-cell">
+                <DropdownMenu>
+                  <DropdownMenuTrigger as-child>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      class="table-action-btn"
+                      :aria-label="`Actions for ${formatName(employee)}`"
+                    >
+                      <MoreHorizontal class="icon-xs" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem @click="openDrawer(employee)">View Profile</DropdownMenuItem>
+                    <DropdownMenuItem>View Competencies</DropdownMenuItem>
+                    <DropdownMenuItem>Training History</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>Edit Record</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
           </TableBody>
@@ -363,9 +387,7 @@ onMounted(async () => {
           >
             <ChevronLeft class="icon-sm" />
           </Button>
-          <span class="pagination-page-info">
-            Page {{ currentPage }} of {{ totalPages }}
-          </span>
+          <span class="pagination-page-info"> Page {{ currentPage }} of {{ totalPages }} </span>
           <Button
             variant="outline"
             size="icon"
@@ -390,10 +412,7 @@ onMounted(async () => {
   </Card>
 
   <!-- Person Detail Drawer -->
-  <PersonDetailDrawer
-    v-model:open="drawerOpen"
-    :employee="selectedEmployee"
-  />
+  <PersonDetailDrawer v-model:open="drawerOpen" :employee="selectedEmployee" />
 </template>
 
 <style scoped>
@@ -527,27 +546,5 @@ onMounted(async () => {
 .gap-count-warn {
   background: rgba(var(--color-amber-rgb, 245, 158, 11), 0.1);
   color: var(--color-amber, #d97706);
-}
-
-.clickable-row {
-  cursor: pointer;
-}
-
-.clickable-row:hover {
-  background: var(--bg-subtle);
-}
-
-.actions-row {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.view-btn {
-  font-size: 0.75rem;
-  height: 1.75rem;
-  padding: 0 0.5rem;
-  display: flex;
-  align-items: center;
 }
 </style>

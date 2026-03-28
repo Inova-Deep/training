@@ -14,7 +14,7 @@ import {
   Settings2,
   Shield,
   ArrowUpRight,
-  Users
+  Users,
 } from 'lucide-vue-next'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -28,14 +28,14 @@ const connectionStatus = ref({
   nextSync: '2026-02-21 20:32:00',
   syncInterval: 'Every 6 hours',
   uptime: '99.97%',
-  responseTime: '142ms'
+  responseTime: '142ms',
 })
 
 const syncMetrics = ref([
   { label: 'Employee Master Synced', value: '1,247', icon: Users, trend: '+12 this week' },
   { label: 'Response Time', value: '142ms', icon: Zap, trend: 'Within threshold' },
   { label: 'Uptime', value: '99.97%', icon: Activity, trend: 'Last 30 days' },
-  { label: 'Data Integrity', value: '100%', icon: Shield, trend: 'All checks passed' }
+  { label: 'Data Integrity', value: '100%', icon: Shield, trend: 'All checks passed' },
 ])
 
 const syncScope = ref([
@@ -55,31 +55,31 @@ const syncHistory = ref([
 
 const handleTestConnection = () => {
   toast.info('Demo Mode', {
-    description: 'In production, this would test the ERP connection and display results.'
+    description: 'In production, this would test the ERP connection and display results.',
   })
 }
 
 const handleForceSync = () => {
   toast.info('Demo Mode', {
-    description: 'In production, this would trigger a full synchronization with the ERP system.'
+    description: 'In production, this would trigger a full synchronization with the ERP system.',
   })
 }
 
 const handleViewLogs = () => {
   toast.info('Demo Mode', {
-    description: 'In production, this would open detailed sync logs and error reports.'
+    description: 'In production, this would open detailed sync logs and error reports.',
   })
 }
 
 const handleExportData = () => {
   toast.info('Demo Mode', {
-    description: 'In production, this would export synchronization data as CSV or Excel.'
+    description: 'In production, this would export synchronization data as CSV or Excel.',
   })
 }
 
 const handleConfigureEndpoint = () => {
   toast.info('Demo Mode', {
-    description: 'In production, this would open endpoint configuration settings.'
+    description: 'In production, this would open endpoint configuration settings.',
   })
 }
 </script>
@@ -87,23 +87,33 @@ const handleConfigureEndpoint = () => {
 <template>
   <div class="page-header">
     <h1 class="page-title">ERP Connection</h1>
-    <p class="page-subtitle">Monitor integration health and manage synchronization with the ERP system</p>
+    <p class="page-subtitle">
+      Monitor integration health and manage synchronization with the ERP system
+    </p>
   </div>
 
   <!-- Hero Status Section -->
-  <div class="status-hero" :class="connectionStatus.connected ? 'status-connected' : 'status-disconnected'">
+  <div
+    class="status-hero"
+    :class="connectionStatus.connected ? 'status-connected' : 'status-disconnected'"
+  >
     <div class="status-hero-content">
       <div class="status-hero-indicator">
-        <component :is="connectionStatus.connected ? CheckCircle2 : AlertCircle" class="status-hero-icon" />
+        <component
+          :is="connectionStatus.connected ? CheckCircle2 : AlertCircle"
+          class="status-hero-icon"
+        />
       </div>
       <div class="status-hero-text">
         <h2 class="status-hero-title">
           {{ connectionStatus.connected ? 'Connected to ERP' : 'Connection Lost' }}
         </h2>
         <p class="status-hero-description">
-          {{ connectionStatus.connected 
-            ? 'Synchronization is active and running normally' 
-            : 'Unable to reach the ERP system. Check network settings.' }}
+          {{
+            connectionStatus.connected
+              ? 'Synchronization is active and running normally'
+              : 'Unable to reach the ERP system. Check network settings.'
+          }}
         </p>
       </div>
     </div>
@@ -123,8 +133,8 @@ const handleConfigureEndpoint = () => {
         <span class="status-meta-value">{{ connectionStatus.nextSync }}</span>
       </div>
     </div>
-    <Button 
-      variant="outline" 
+    <Button
+      variant="outline"
       class="status-hero-action"
       @click="handleTestConnection"
       aria-label="Test ERP connection"
@@ -151,7 +161,9 @@ const handleConfigureEndpoint = () => {
     <CardHeader class="erp-card-header">
       <div>
         <CardTitle class="erp-card-title">Sync Scope</CardTitle>
-        <CardDescription class="erp-card-description">Data entities currently synchronised from ERP</CardDescription>
+        <CardDescription class="erp-card-description"
+          >Data entities currently synchronised from ERP</CardDescription
+        >
       </div>
     </CardHeader>
     <CardContent class="erp-card-content">
@@ -175,9 +187,16 @@ const handleConfigureEndpoint = () => {
       <CardHeader class="erp-card-header">
         <div>
           <CardTitle class="erp-card-title">Connection Details</CardTitle>
-          <CardDescription class="erp-card-description">Endpoint configuration and sync schedule</CardDescription>
+          <CardDescription class="erp-card-description"
+            >Endpoint configuration and sync schedule</CardDescription
+          >
         </div>
-        <Button variant="ghost" size="sm" @click="handleConfigureEndpoint" aria-label="Configure endpoint">
+        <Button
+          variant="ghost"
+          size="sm"
+          @click="handleConfigureEndpoint"
+          aria-label="Configure endpoint"
+        >
           <Settings2 class="icon-sm" />
         </Button>
       </CardHeader>
@@ -228,7 +247,9 @@ const handleConfigureEndpoint = () => {
       <CardHeader class="erp-card-header">
         <div>
           <CardTitle class="erp-card-title">Recent Sync Activity</CardTitle>
-          <CardDescription class="erp-card-description">Last 5 synchronization events</CardDescription>
+          <CardDescription class="erp-card-description"
+            >Last 5 synchronization events</CardDescription
+          >
         </div>
         <Button variant="ghost" size="sm" @click="handleViewLogs" aria-label="View all logs">
           <ArrowUpRight class="icon-sm" />
@@ -237,7 +258,10 @@ const handleConfigureEndpoint = () => {
       <CardContent class="erp-card-content">
         <div class="sync-history">
           <div v-for="event in syncHistory" :key="event.id" class="sync-event">
-            <div class="sync-event-indicator" :class="event.status === 'warning' ? 'sync-warning' : 'sync-success'" />
+            <div
+              class="sync-event-indicator"
+              :class="event.status === 'warning' ? 'sync-warning' : 'sync-success'"
+            />
             <div class="sync-event-content">
               <div class="sync-event-row">
                 <span class="sync-event-time">{{ event.time }}</span>
@@ -258,23 +282,45 @@ const handleConfigureEndpoint = () => {
   <Card class="erp-actions-card">
     <CardHeader class="erp-card-header">
       <CardTitle class="erp-card-title">Quick Actions</CardTitle>
-      <CardDescription class="erp-card-description">Manage ERP integration and data</CardDescription>
+      <CardDescription class="erp-card-description"
+        >Manage ERP integration and data</CardDescription
+      >
     </CardHeader>
     <CardContent class="erp-card-content">
       <div class="actions-grid">
-        <Button variant="outline" class="action-button" @click="handleForceSync" aria-label="Force full sync">
+        <Button
+          variant="outline"
+          class="action-button"
+          @click="handleForceSync"
+          aria-label="Force full sync"
+        >
           <RefreshCw class="icon-sm" />
           <span>Force Full Sync</span>
         </Button>
-        <Button variant="outline" class="action-button" @click="handleViewLogs" aria-label="View sync logs">
+        <Button
+          variant="outline"
+          class="action-button"
+          @click="handleViewLogs"
+          aria-label="View sync logs"
+        >
           <FileText class="icon-sm" />
           <span>View Sync Logs</span>
         </Button>
-        <Button variant="outline" class="action-button" @click="handleExportData" aria-label="Export data">
+        <Button
+          variant="outline"
+          class="action-button"
+          @click="handleExportData"
+          aria-label="Export data"
+        >
           <FileDown class="icon-sm" />
           <span>Export Data</span>
         </Button>
-        <Button variant="outline" class="action-button" @click="handleConfigureEndpoint" aria-label="Configure endpoint">
+        <Button
+          variant="outline"
+          class="action-button"
+          @click="handleConfigureEndpoint"
+          aria-label="Configure endpoint"
+        >
           <Settings2 class="icon-sm" />
           <span>Configure</span>
         </Button>
@@ -308,7 +354,11 @@ const handleConfigureEndpoint = () => {
 }
 
 .status-connected {
-  background: linear-gradient(135deg, oklch(0.62 0.08 162 / 0.08) 0%, oklch(0.62 0.08 162 / 0.02) 100%);
+  background: linear-gradient(
+    135deg,
+    oklch(0.62 0.08 162 / 0.08) 0%,
+    oklch(0.62 0.08 162 / 0.02) 100%
+  );
   border: 1px solid oklch(0.62 0.08 162 / 0.2);
 }
 
@@ -317,7 +367,11 @@ const handleConfigureEndpoint = () => {
 }
 
 .status-disconnected {
-  background: linear-gradient(135deg, oklch(0.62 0.15 25 / 0.08) 0%, oklch(0.62 0.15 25 / 0.02) 100%);
+  background: linear-gradient(
+    135deg,
+    oklch(0.62 0.15 25 / 0.08) 0%,
+    oklch(0.62 0.15 25 / 0.02) 100%
+  );
   border: 1px solid oklch(0.62 0.15 25 / 0.2);
 }
 
@@ -627,7 +681,7 @@ const handleConfigureEndpoint = () => {
   border-right: none;
 }
 
-.scope-item:nth-last-child(-n+2) {
+.scope-item:nth-last-child(-n + 2) {
   border-bottom: none;
 }
 

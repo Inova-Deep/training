@@ -4,12 +4,48 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
 const listTypes = [
-  { id: 1, title: 'Business Units', icon: Building, count: 8, description: 'Manage organisational business units' },
-  { id: 2, title: 'Departments', icon: Users, count: 24, description: 'Configure department structures' },
-  { id: 3, title: 'Job Titles', icon: Briefcase, count: 56, description: 'Define job titles and roles' },
-  { id: 4, title: 'Competency Categories', icon: FileText, count: 12, description: 'Organise competency types' },
-  { id: 5, title: 'Validity Thresholds', icon: Settings, count: 6, description: 'Set expiration warning periods' },
-  { id: 6, title: 'Compliance Levels', icon: Shield, count: 4, description: 'Define compliance severity levels' },
+  {
+    id: 1,
+    title: 'Business Units',
+    icon: Building,
+    count: 8,
+    description: 'Manage organisational business units',
+  },
+  {
+    id: 2,
+    title: 'Departments',
+    icon: Users,
+    count: 24,
+    description: 'Configure department structures',
+  },
+  {
+    id: 3,
+    title: 'Job Titles',
+    icon: Briefcase,
+    count: 56,
+    description: 'Define job titles and roles',
+  },
+  {
+    id: 4,
+    title: 'Competency Categories',
+    icon: FileText,
+    count: 12,
+    description: 'Organise competency types',
+  },
+  {
+    id: 5,
+    title: 'Validity Thresholds',
+    icon: Settings,
+    count: 6,
+    description: 'Set expiration warning periods',
+  },
+  {
+    id: 6,
+    title: 'Compliance Levels',
+    icon: Shield,
+    count: 4,
+    description: 'Define compliance severity levels',
+  },
 ]
 </script>
 
@@ -32,9 +68,7 @@ const listTypes = [
         <div class="reference-meta">
           <span class="reference-count">{{ list.count }} items</span>
         </div>
-        <Button variant="outline" size="sm" class="reference-action">
-          Manage
-        </Button>
+        <Button variant="outline" size="sm" class="reference-action"> Manage </Button>
       </CardContent>
     </Card>
   </div>

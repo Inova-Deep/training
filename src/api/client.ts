@@ -16,14 +16,14 @@ export function clearToken(): void {
 
 function buildQueryString(query?: Record<string, string | number | undefined>): string {
   if (!query) return ''
-  
+
   const params = new URLSearchParams()
   Object.entries(query).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
       params.append(key, String(value))
     }
   })
-  
+
   const qs = params.toString()
   return qs ? `?${qs}` : ''
 }
@@ -34,46 +34,46 @@ export async function apiFetch<T>(
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
     body?: unknown
     query?: Record<string, string | number | undefined>
-  }
+  },
 ): Promise<T> {
   const { method = 'GET', body, query } = options || {}
-  
+
   const url = `${API_BASE}${endpoint}${buildQueryString(query)}`
-  
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   }
-  
+
   const token = getToken()
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
   }
-  
+
   const fetchOptions: RequestInit = {
     method,
     headers,
   }
-  
+
   if (body && method !== 'GET') {
     fetchOptions.body = JSON.stringify(body)
   }
-  
+
   const response = await fetch(url, fetchOptions)
-  
+
   if (response.status === 401) {
     clearToken()
     throw new Error('Unauthorized')
   }
-  
+
   if (!response.ok) {
     const errorBody = await response.text()
     throw new Error(errorBody || `HTTP ${response.status}`)
   }
-  
+
   if (response.status === 204) {
     return undefined as T
   }
-  
+
   return response.json()
 }
 
@@ -203,11 +203,11 @@ export const organizationApi = {
   getBusinessUnits: (params?: { page?: number; size?: number; search?: string }) =>
     apiFetch<PaginatedResponse<BusinessUnit>>('/business-units', { query: params }),
   getBusinessUnit: (id: string) => apiFetch<BusinessUnit>(`/business-units/${id}`),
-  
+
   getDepartments: (params?: { page?: number; size?: number; search?: string }) =>
     apiFetch<PaginatedResponse<Department>>('/departments', { query: params }),
   getDepartment: (id: string) => apiFetch<Department>(`/departments/${id}`),
-  
+
   getJobTitles: (params?: { page?: number; size?: number; search?: string }) =>
     apiFetch<PaginatedResponse<JobTitle>>('/job-titles', { query: params }),
   getJobTitle: (id: string) => apiFetch<JobTitle>(`/job-titles/${id}`),
@@ -218,14 +218,16 @@ export const employeesApi = {
     apiFetch<PaginatedResponse<Employee>>('/employees', { query: params }),
   getById: (id: string) => apiFetch<Employee>(`/employees/${id}`),
   getHierarchy: (id: string) => apiFetch<EmployeeHierarchy[]>(`/employees/${id}/hierarchy`),
-  create: (data: Partial<Employee>) => apiFetch<Employee>('/employees', { method: 'POST', body: data }),
+  create: (data: Partial<Employee>) =>
+    apiFetch<Employee>('/employees', { method: 'POST', body: data }),
 }
 
 export const usersApi = {
   getAll: (params?: { page?: number; size?: number; search?: string }) =>
     apiFetch<PaginatedResponse<User>>('/users', { query: params }),
   getById: (id: string) => apiFetch<User>(`/users/${id}`),
-  getByEmail: (email: string) => apiFetch<User>(`/users/by-email?email=${encodeURIComponent(email)}`),
+  getByEmail: (email: string) =>
+    apiFetch<User>(`/users/by-email?email=${encodeURIComponent(email)}`),
   create: (data: Partial<User>) => apiFetch<User>('/users', { method: 'POST', body: data }),
   assignRole: (userId: string, roleId: string) =>
     apiFetch<{ message: string }>(`/users/${userId}/roles`, { method: 'POST', body: { roleId } }),
@@ -240,10 +242,6 @@ export const rolesApi = {
 }
 
 export const auditApi = {
-  getLogs: (params?: {
-    page?: number
-    size?: number
-    entityType?: string
-    action?: string
-  }) => apiFetch<PaginatedResponse<AuditLog>>('/audit-logs', { query: params }),
+  getLogs: (params?: { page?: number; size?: number; entityType?: string; action?: string }) =>
+    apiFetch<PaginatedResponse<AuditLog>>('/audit-logs', { query: params }),
 }

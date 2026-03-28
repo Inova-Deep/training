@@ -2,9 +2,21 @@
 import { ref, computed } from 'vue'
 import { onMounted } from 'vue'
 import {
-  AlertTriangle, ShieldCheck, ShieldAlert, Eye,
-  FileText, Award, Wrench, ClipboardList, BookOpen,
-  CheckCircle2, XCircle, Clock, Upload, RotateCcw, History,
+  AlertTriangle,
+  ShieldCheck,
+  ShieldAlert,
+  Eye,
+  FileText,
+  Award,
+  Wrench,
+  ClipboardList,
+  BookOpen,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Upload,
+  RotateCcw,
+  History,
 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { useAuthStore } from '@/stores/auth'
@@ -66,15 +78,13 @@ const linkedJobTitle = computed(() => authStore.activePersona.linkedJobTitle)
 const myRow = computed(() => {
   if (!linkedJobTitle.value) return null
   const needle = linkedJobTitle.value.toLowerCase()
-  return (
-    matrixStore.mockEmployeeRows.find(r => r.jobTitle.toLowerCase().includes(needle)) ?? null
-  )
+  return matrixStore.mockEmployeeRows.find((r) => r.jobTitle.toLowerCase().includes(needle)) ?? null
 })
 
 const alertItems = computed(() => {
   if (!myRow.value) return []
   return [...myRow.value.competenceItems.values()].filter(
-    item => item.derivedStatus === 'EXPIRING' || item.derivedStatus === 'EXPIRED'
+    (item) => item.derivedStatus === 'EXPIRING' || item.derivedStatus === 'EXPIRED',
   )
 })
 
@@ -92,11 +102,11 @@ const stats = computed(() => {
 const iwaStatus = computed(() => {
   if (!myRow.value) return 'not-authorised'
   const items = [...myRow.value.competenceItems.values()]
-  const gatingItems = items.filter(i => i.isGating)
-  if (gatingItems.some(i => i.derivedStatus === 'EXPIRED' || i.derivedStatus === 'REQUIRED')) {
+  const gatingItems = items.filter((i) => i.isGating)
+  if (gatingItems.some((i) => i.derivedStatus === 'EXPIRED' || i.derivedStatus === 'REQUIRED')) {
     return 'not-authorised'
   }
-  if (gatingItems.some(i => i.derivedStatus === 'UNDER_SUPERVISION')) {
+  if (gatingItems.some((i) => i.derivedStatus === 'UNDER_SUPERVISION')) {
     return 'under-supervision'
   }
   return 'authorised'
@@ -109,7 +119,13 @@ function getItem(competencyId: string): EmployeeCompetenceItem | undefined {
 // ─── All competencies (flat list) ─────────────────────────────────────────────
 
 const allCompetencies = computed(() => {
-  const result: Array<{ id: string; code: string; title: string; category: string; assessmentMethod: string }> = []
+  const result: Array<{
+    id: string
+    code: string
+    title: string
+    category: string
+    assessmentMethod: string
+  }> = []
   for (const [, comps] of matrixStore.competenciesByCategory) {
     for (const comp of comps) {
       result.push(comp)
@@ -140,35 +156,53 @@ function getNextReassessment(competencyId: string): string {
 
 function getActionRequired(item: EmployeeCompetenceItem, compCode?: string): string {
   switch (item.derivedStatus) {
-    case 'REQUIRED':          return 'Complete training'
-    case 'IN_PROGRESS':       return 'Submit evidence'
-    case 'EXPIRED':           return compCode ? `Renew ${compCode}` : 'Renew certification'
-    case 'EXPIRING':          return 'Schedule renewal'
-    case 'UNDER_SUPERVISION': return 'Await supervisor sign-off'
-    default:                  return '—'
+    case 'REQUIRED':
+      return 'Complete training'
+    case 'IN_PROGRESS':
+      return 'Submit evidence'
+    case 'EXPIRED':
+      return compCode ? `Renew ${compCode}` : 'Renew certification'
+    case 'EXPIRING':
+      return 'Schedule renewal'
+    case 'UNDER_SUPERVISION':
+      return 'Await supervisor sign-off'
+    default:
+      return '—'
   }
 }
 
 function getResponsible(item: EmployeeCompetenceItem): string {
   switch (item.derivedStatus) {
-    case 'REQUIRED':          return 'Employee'
-    case 'IN_PROGRESS':       return 'Manager'
-    case 'EXPIRED':           return item.isGating ? 'Employee + Manager' : 'Employee'
-    case 'EXPIRING':          return 'Employee'
-    case 'UNDER_SUPERVISION': return 'Line Manager'
-    default:                  return 'Employee'
+    case 'REQUIRED':
+      return 'Employee'
+    case 'IN_PROGRESS':
+      return 'Manager'
+    case 'EXPIRED':
+      return item.isGating ? 'Employee + Manager' : 'Employee'
+    case 'EXPIRING':
+      return 'Employee'
+    case 'UNDER_SUPERVISION':
+      return 'Line Manager'
+    default:
+      return 'Employee'
   }
 }
 
 function getExpiryClass(item: EmployeeCompetenceItem): string {
-  if (item.derivedStatus === 'EXPIRED')  return 'expiry-expired'
+  if (item.derivedStatus === 'EXPIRED') return 'expiry-expired'
   if (item.derivedStatus === 'EXPIRING') return 'expiry-expiring'
   return ''
 }
 
 // ─── Open Gaps tab ────────────────────────────────────────────────────────────
 
-const GAP_STATUSES = new Set(['REQUIRED', 'EXPIRED', 'UNDER_SUPERVISION', 'EXPIRING', 'IN_PROGRESS'])
+const GAP_STATUSES = new Set([
+  'REQUIRED',
+  'EXPIRED',
+  'UNDER_SUPERVISION',
+  'EXPIRING',
+  'IN_PROGRESS',
+])
 
 function getGapSeverity(item: EmployeeCompetenceItem): { label: string; cls: string } {
   if (item.isGating && (item.derivedStatus === 'EXPIRED' || item.derivedStatus === 'REQUIRED')) {
@@ -212,7 +246,9 @@ const openGaps = computed<GapItem[]>(() => {
       dueDate: item.expiryDate ?? '—',
     })
   }
-  gaps.sort((a, b) => (SEVERITY_ORDER[a.severity.label] ?? 9) - (SEVERITY_ORDER[b.severity.label] ?? 9))
+  gaps.sort(
+    (a, b) => (SEVERITY_ORDER[a.severity.label] ?? 9) - (SEVERITY_ORDER[b.severity.label] ?? 9),
+  )
   return gaps
 })
 
@@ -248,20 +284,21 @@ const gatingItems = computed<GatingItem[]>(() => {
   return result
 })
 
-const gatingPassCount = computed(() => gatingItems.value.filter(g => g.pass).length)
+const gatingPassCount = computed(() => gatingItems.value.filter((g) => g.pass).length)
 const gatingTotalCount = computed(() => gatingItems.value.length)
 
 // ─── Awareness Actions tab ────────────────────────────────────────────────────
 
 const myAwarenessTopics = computed(() => {
   const jt = authStore.activePersona.linkedJobTitle ?? ''
-  return awarenessTopicsData.filter(topic => {
+  return awarenessTopicsData.filter((topic) => {
     if (!Array.isArray(topic.requiredAudience)) return false
     return (
       topic.requiredAudience.includes('All Employees') ||
-      topic.requiredAudience.some((aud: string) =>
-        jt.toLowerCase().includes(aud.toLowerCase()) ||
-        aud.toLowerCase().includes(jt.toLowerCase())
+      topic.requiredAudience.some(
+        (aud: string) =>
+          jt.toLowerCase().includes(aud.toLowerCase()) ||
+          aud.toLowerCase().includes(jt.toLowerCase()),
       )
     )
   })
@@ -282,7 +319,8 @@ function getEvidenceTypeIcon(type: string) {
   if (type.toLowerCase().includes('certificate')) return Award
   if (type.toLowerCase().includes('observation')) return Eye
   if (type.toLowerCase().includes('toolbox')) return Wrench
-  if (type.toLowerCase().includes('sign-off') || type.toLowerCase().includes('sign off')) return CheckCircle2
+  if (type.toLowerCase().includes('sign-off') || type.toLowerCase().includes('sign off'))
+    return CheckCircle2
   if (type.toLowerCase().includes('manager')) return ClipboardList
   return FileText
 }
@@ -308,15 +346,40 @@ const historyEntries = ref<AssessmentHistoryEntry[]>([])
 
 const MOCK_HISTORY_POOL: AssessmentHistoryEntry[][] = [
   [
-    { date: '2024-04-15', method: 'Practical Observation', outcome: 'Competent', assessor: 'David Clarke' },
-    { date: '2023-04-10', method: 'Supervisor Sign-off', outcome: 'Not Yet Competent', assessor: 'Mark Hughes' },
+    {
+      date: '2024-04-15',
+      method: 'Practical Observation',
+      outcome: 'Competent',
+      assessor: 'David Clarke',
+    },
+    {
+      date: '2023-04-10',
+      method: 'Supervisor Sign-off',
+      outcome: 'Not Yet Competent',
+      assessor: 'Mark Hughes',
+    },
   ],
   [
-    { date: '2025-01-20', method: 'External Exam', outcome: 'Competent', assessor: 'TWI Certification' },
+    {
+      date: '2025-01-20',
+      method: 'External Exam',
+      outcome: 'Competent',
+      assessor: 'TWI Certification',
+    },
   ],
   [
-    { date: '2025-06-01', method: 'Practical Observation', outcome: 'Competent', assessor: 'HSE Coordinator' },
-    { date: '2024-06-05', method: 'Practical Observation', outcome: 'Partially Competent', assessor: 'David Clarke' },
+    {
+      date: '2025-06-01',
+      method: 'Practical Observation',
+      outcome: 'Competent',
+      assessor: 'HSE Coordinator',
+    },
+    {
+      date: '2024-06-05',
+      method: 'Practical Observation',
+      outcome: 'Partially Competent',
+      assessor: 'David Clarke',
+    },
   ],
 ]
 
@@ -358,7 +421,8 @@ const activeTab = ref('requirements')
   <div class="page-header">
     <h1 class="page-title">My Competencies</h1>
     <p class="page-subtitle">
-      Your personal readiness profile — requirements, gaps, evidence, authorisations, and awareness actions
+      Your personal readiness profile — requirements, gaps, evidence, authorisations, and awareness
+      actions
     </p>
   </div>
 
@@ -421,9 +485,10 @@ const activeTab = ref('requirements')
     <div v-if="alertItems.length > 0" class="alert-banner">
       <AlertTriangle class="alert-icon" />
       <span>
-        You have <strong>{{ alertItems.length }}</strong>
-        competence{{ alertItems.length !== 1 ? 's' : '' }} that
-        {{ alertItems.length !== 1 ? 'are' : 'is' }} expiring or expired — action required.
+        You have <strong>{{ alertItems.length }}</strong> competence{{
+          alertItems.length !== 1 ? 's' : ''
+        }}
+        that {{ alertItems.length !== 1 ? 'are' : 'is' }} expiring or expired — action required.
       </span>
     </div>
 
@@ -497,7 +562,9 @@ const activeTab = ref('requirements')
                     v-for="comp in comps"
                     :key="comp.id"
                     :class="{
-                      'row-attention': getItem(comp.id)?.derivedStatus === 'EXPIRED' || getItem(comp.id)?.derivedStatus === 'EXPIRING',
+                      'row-attention':
+                        getItem(comp.id)?.derivedStatus === 'EXPIRED' ||
+                        getItem(comp.id)?.derivedStatus === 'EXPIRING',
                       'row-supervised': getItem(comp.id)?.derivedStatus === 'UNDER_SUPERVISION',
                     }"
                   >
@@ -541,7 +608,10 @@ const activeTab = ref('requirements')
                           History
                         </Button>
                         <Button
-                          v-if="getItem(comp.id)?.derivedStatus !== 'VALID' && getItem(comp.id)?.derivedStatus !== 'N_A'"
+                          v-if="
+                            getItem(comp.id)?.derivedStatus !== 'VALID' &&
+                            getItem(comp.id)?.derivedStatus !== 'N_A'
+                          "
                           size="sm"
                           variant="ghost"
                           class="row-action-btn"
@@ -552,7 +622,10 @@ const activeTab = ref('requirements')
                           Reassess
                         </Button>
                         <Button
-                          v-if="canRecordAssessment && getItem(comp.id)?.derivedStatus === 'UNDER_SUPERVISION'"
+                          v-if="
+                            canRecordAssessment &&
+                            getItem(comp.id)?.derivedStatus === 'UNDER_SUPERVISION'
+                          "
                           size="sm"
                           variant="outline"
                           class="row-action-btn row-action-record"
@@ -576,12 +649,17 @@ const activeTab = ref('requirements')
         <div v-if="openGaps.length === 0" class="empty-tab-state">
           <CheckCircle2 class="empty-tab-icon success-icon" />
           <p class="empty-tab-title">No open gaps</p>
-          <p class="empty-tab-desc">All competencies are current — nothing requires action right now.</p>
+          <p class="empty-tab-desc">
+            All competencies are current — nothing requires action right now.
+          </p>
         </div>
         <template v-else>
           <div class="gaps-header">
             <p class="gaps-summary">
-              <strong>{{ openGaps.length }}</strong> competenc{{ openGaps.length !== 1 ? 'ies require' : 'y requires' }} action — sorted by severity.
+              <strong>{{ openGaps.length }}</strong> competenc{{
+                openGaps.length !== 1 ? 'ies require' : 'y requires'
+              }}
+              action — sorted by severity.
             </p>
           </div>
           <div class="req-table-wrapper">
@@ -602,13 +680,18 @@ const activeTab = ref('requirements')
                     {{ gap.title }}
                   </td>
                   <td>
-                    <span class="severity-badge" :class="gap.severity.cls">{{ gap.severity.label }}</span>
+                    <span class="severity-badge" :class="gap.severity.cls">{{
+                      gap.severity.label
+                    }}</span>
                   </td>
                   <td>
                     <StatusChip :status="gap.item.derivedStatus" compact />
                   </td>
                   <td class="action-text">{{ gap.recommendedAction }}</td>
-                  <td class="date-cell" :class="gap.item.derivedStatus === 'EXPIRED' ? 'expiry-expired' : ''">
+                  <td
+                    class="date-cell"
+                    :class="gap.item.derivedStatus === 'EXPIRED' ? 'expiry-expired' : ''"
+                  >
                     {{ gap.dueDate }}
                   </td>
                 </tr>
@@ -662,7 +745,9 @@ const activeTab = ref('requirements')
                 <td>
                   <span
                     class="ev-status-badge"
-                    :class="ev.reviewStatus === 'Accepted' ? 'ev-status-accepted' : 'ev-status-pending'"
+                    :class="
+                      ev.reviewStatus === 'Accepted' ? 'ev-status-accepted' : 'ev-status-pending'
+                    "
                   >
                     <CheckCircle2 v-if="ev.reviewStatus === 'Accepted'" class="ev-status-icon" />
                     <Clock v-else class="ev-status-icon" />
@@ -695,10 +780,12 @@ const activeTab = ref('requirements')
                 All gating requirements met — {{ currentEmployeeName }} may work independently.
               </template>
               <template v-else-if="iwaStatus === 'under-supervision'">
-                One or more gating competencies are under supervision — independent work requires sign-off.
+                One or more gating competencies are under supervision — independent work requires
+                sign-off.
               </template>
               <template v-else>
-                One or more gating requirements are expired or incomplete — independent work is not permitted.
+                One or more gating requirements are expired or incomplete — independent work is not
+                permitted.
               </template>
             </p>
             <p class="iwa-card-summary">
@@ -732,16 +819,17 @@ const activeTab = ref('requirements')
                   <StatusChip :status="g.item.derivedStatus" compact />
                 </td>
                 <td class="date-cell ev-ref-text">{{ g.evidenceRef }}</td>
-                <td class="date-cell" :class="g.item.derivedStatus === 'EXPIRED' ? 'expiry-expired' : ''">
+                <td
+                  class="date-cell"
+                  :class="g.item.derivedStatus === 'EXPIRED' ? 'expiry-expired' : ''"
+                >
                   {{ g.expiryDate }}
                 </td>
                 <td class="text-center">
                   <span v-if="g.pass" class="pass-indicator">
                     <CheckCircle2 class="pass-icon" /> Pass
                   </span>
-                  <span v-else class="fail-indicator">
-                    <XCircle class="fail-icon" /> Fail
-                  </span>
+                  <span v-else class="fail-indicator"> <XCircle class="fail-icon" /> Fail </span>
                 </td>
               </tr>
             </tbody>
@@ -749,8 +837,8 @@ const activeTab = ref('requirements')
         </div>
 
         <p class="gating-summary-line">
-          <strong>{{ gatingPassCount }}</strong> of <strong>{{ gatingTotalCount }}</strong> gating requirements met
-          —
+          <strong>{{ gatingPassCount }}</strong> of <strong>{{ gatingTotalCount }}</strong> gating
+          requirements met —
           <span :class="iwaStatus === 'authorised' ? 'text-success' : 'text-critical'">
             Independent Work {{ iwaStatus === 'authorised' ? 'Authorised' : 'NOT Authorised' }}
           </span>
@@ -768,7 +856,12 @@ const activeTab = ref('requirements')
           <div class="tab-section-header">
             <div>
               <p class="tab-section-title">Assigned Awareness Topics</p>
-              <p class="tab-section-subtitle">{{ myAwarenessTopics.length }} topic{{ myAwarenessTopics.length !== 1 ? 's' : '' }} assigned to your role</p>
+              <p class="tab-section-subtitle">
+                {{ myAwarenessTopics.length }} topic{{
+                  myAwarenessTopics.length !== 1 ? 's' : ''
+                }}
+                assigned to your role
+              </p>
             </div>
           </div>
           <div class="req-table-wrapper">
@@ -798,9 +891,14 @@ const activeTab = ref('requirements')
                   <td>
                     <span
                       class="ack-badge"
-                      :class="acknowledgedTopics.has(topic.id) ? 'ack-badge-done' : 'ack-badge-pending'"
+                      :class="
+                        acknowledgedTopics.has(topic.id) ? 'ack-badge-done' : 'ack-badge-pending'
+                      "
                     >
-                      <CheckCircle2 v-if="acknowledgedTopics.has(topic.id)" class="ack-badge-icon" />
+                      <CheckCircle2
+                        v-if="acknowledgedTopics.has(topic.id)"
+                        class="ack-badge-icon"
+                      />
                       <Clock v-else class="ack-badge-icon" />
                       {{ acknowledgedTopics.has(topic.id) ? 'Acknowledged' : 'Pending' }}
                     </span>
@@ -855,7 +953,8 @@ const activeTab = ref('requirements')
                       'outcome-not-yet': entry.outcome === 'Not Yet Competent',
                       'outcome-partial': entry.outcome === 'Partially Competent',
                     }"
-                  >{{ entry.outcome }}</span>
+                    >{{ entry.outcome }}</span
+                  >
                 </td>
                 <td class="action-text">{{ entry.assessor }}</td>
               </tr>
@@ -920,9 +1019,15 @@ const activeTab = ref('requirements')
   font-weight: 600;
 }
 
-.iwa-authorised      { color: var(--brand-success); }
-.iwa-supervised      { color: oklch(0.50 0.13 60); }
-.iwa-not-authorised  { color: var(--brand-critical); }
+.iwa-authorised {
+  color: var(--brand-success);
+}
+.iwa-supervised {
+  color: oklch(0.5 0.13 60);
+}
+.iwa-not-authorised {
+  color: var(--brand-critical);
+}
 
 .iwa-icon {
   width: 14px;
@@ -983,11 +1088,21 @@ const activeTab = ref('requirements')
   margin-top: 2px;
 }
 
-.stat-valid      .stat-value { color: var(--brand-success); }
-.stat-supervised .stat-value { color: oklch(0.50 0.13 60); }
-.stat-expiring   .stat-value { color: oklch(0.65 0.18 60); }
-.stat-expired    .stat-value { color: var(--brand-critical); }
-.stat-required   .stat-value { color: var(--brand-primary); }
+.stat-valid .stat-value {
+  color: var(--brand-success);
+}
+.stat-supervised .stat-value {
+  color: oklch(0.5 0.13 60);
+}
+.stat-expiring .stat-value {
+  color: oklch(0.65 0.18 60);
+}
+.stat-expired .stat-value {
+  color: var(--brand-critical);
+}
+.stat-required .stat-value {
+  color: var(--brand-primary);
+}
 
 /* ── Tabs ────────────────────────────────────────────────────── */
 .tabs-root {
@@ -1078,9 +1193,15 @@ const activeTab = ref('requirements')
   border-bottom: none;
 }
 
-.row-attention { background-color: oklch(0.7 0.18 50 / 0.04); }
-.row-supervised { background-color: oklch(0.85 0.10 70 / 0.08); }
-.row-acknowledged td { opacity: 0.65; }
+.row-attention {
+  background-color: oklch(0.7 0.18 50 / 0.04);
+}
+.row-supervised {
+  background-color: oklch(0.85 0.1 70 / 0.08);
+}
+.row-acknowledged td {
+  opacity: 0.65;
+}
 
 .comp-code {
   font-size: 0.75rem;
@@ -1199,8 +1320,8 @@ const activeTab = ref('requirements')
 }
 
 .severity-high {
-  background-color: oklch(0.60 0.18 40 / 0.15);
-  color: oklch(0.55 0.20 35);
+  background-color: oklch(0.6 0.18 40 / 0.15);
+  color: oklch(0.55 0.2 35);
 }
 
 .severity-moderate {
@@ -1314,8 +1435,8 @@ const activeTab = ref('requirements')
 }
 
 .iwa-card-under-supervision {
-  background-color: oklch(0.50 0.13 60 / 0.08);
-  border-color: oklch(0.50 0.13 60 / 0.3);
+  background-color: oklch(0.5 0.13 60 / 0.08);
+  border-color: oklch(0.5 0.13 60 / 0.3);
 }
 
 .iwa-card-not-authorised {
@@ -1334,9 +1455,15 @@ const activeTab = ref('requirements')
   background-color: var(--bg-surface);
 }
 
-.iwa-card-authorised .iwa-card-icon-wrap { color: var(--brand-success); }
-.iwa-card-under-supervision .iwa-card-icon-wrap { color: oklch(0.50 0.13 60); }
-.iwa-card-not-authorised .iwa-card-icon-wrap { color: var(--brand-critical); }
+.iwa-card-authorised .iwa-card-icon-wrap {
+  color: var(--brand-success);
+}
+.iwa-card-under-supervision .iwa-card-icon-wrap {
+  color: oklch(0.5 0.13 60);
+}
+.iwa-card-not-authorised .iwa-card-icon-wrap {
+  color: var(--brand-critical);
+}
 
 .iwa-card-icon {
   width: 22px;
@@ -1381,8 +1508,12 @@ const activeTab = ref('requirements')
   letter-spacing: 0.025em;
 }
 
-.pass-indicator { color: var(--brand-success); }
-.fail-indicator { color: var(--brand-critical); }
+.pass-indicator {
+  color: var(--brand-success);
+}
+.fail-indicator {
+  color: var(--brand-critical);
+}
 
 .pass-icon,
 .fail-icon {
@@ -1397,8 +1528,12 @@ const activeTab = ref('requirements')
   text-align: right;
 }
 
-.text-success { color: var(--brand-success); }
-.text-critical { color: var(--brand-critical); }
+.text-success {
+  color: var(--brand-success);
+}
+.text-critical {
+  color: var(--brand-critical);
+}
 
 /* ── Awareness tab ───────────────────────────────────────────── */
 .ack-badge {

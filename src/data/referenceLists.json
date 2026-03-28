@@ -29,15 +29,29 @@
     "Expired",
     "N/A"
   ],
-  "supervisionStatusLabels": [
-    "Independent",
-    "Supervised",
-    "Restricted"
-  ],
+  "supervisionStatusLabels": ["Independent", "Supervised", "Restricted"],
   "riskLevels": [
-    { "code": "LOW", "name": "Low Risk", "requiresAssessor": false, "defaultIsGating": false, "sortOrder": 1 },
-    { "code": "MEDIUM", "name": "Medium Risk", "requiresAssessor": false, "defaultIsGating": false, "sortOrder": 2 },
-    { "code": "HIGH_CRITICAL", "name": "High/Critical Risk", "requiresAssessor": true, "defaultIsGating": true, "sortOrder": 3 }
+    {
+      "code": "LOW",
+      "name": "Low Risk",
+      "requiresAssessor": false,
+      "defaultIsGating": false,
+      "sortOrder": 1
+    },
+    {
+      "code": "MEDIUM",
+      "name": "Medium Risk",
+      "requiresAssessor": false,
+      "defaultIsGating": false,
+      "sortOrder": 2
+    },
+    {
+      "code": "HIGH_CRITICAL",
+      "name": "High/Critical Risk",
+      "requiresAssessor": true,
+      "defaultIsGating": true,
+      "sortOrder": 3
+    }
   ],
   "trainingTypes": [
     { "code": "CERT_LICENCE", "name": "Certification / Licence", "requiresExpiry": true },
