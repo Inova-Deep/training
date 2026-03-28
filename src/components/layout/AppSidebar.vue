@@ -75,10 +75,10 @@ const handleNavClick = (to: string) => {
 // ─── All possible nav items ────────────────────────────────────────────────────
 
 const NAV_MY_COMPETENCIES: NavItem = {
-  title: 'My Competencies',
+  title: 'My Competence Profile',
   icon: UserCircle2,
   to: '/my-competencies',
-  tooltip: 'Your personal competence profile — requirements, statuses, expiry dates and required actions'
+  tooltip: 'Your readiness profile — role requirements, assessed competencies, gaps, evidence, and authorisation status'
 }
 
 const NAV_DASHBOARD: NavItem = {
@@ -92,7 +92,7 @@ const NAV_SKILLS_MATRIX: NavItem = {
   title: 'Skills Matrix',
   icon: Grid3x3,
   to: '/skills-matrix',
-  tooltip: 'Org-wide skills matrix with BU/Department/Job Title filters and Excel export'
+  tooltip: 'Organisational competence matrix — required vs. assessed vs. gap, filtered by department, role, and risk'
 }
 
 const NAV_PEOPLE: NavItem = {
@@ -117,17 +117,17 @@ const NAV_COMPETENCY_LIBRARY: NavItem = {
 }
 
 const NAV_TRAINING_NEEDS: NavItem = {
-  title: 'Training Needs',
+  title: 'Training & Gap Actions',
   icon: GraduationCap,
   to: '/training-needs',
-  tooltip: 'Track and manage training needs across the organisation; ensure gaps are closed and verified'
+  tooltip: 'Track gap-closure actions by source — NCR, audit, expiry, procedure change — and verify effectiveness'
 }
 
 const NAV_AWARENESS_TOPICS: NavItem = {
-  title: 'Awareness Topics',
+  title: 'Awareness & Communications',
   icon: Megaphone,
   to: '/awareness-topics',
-  tooltip: 'Acknowledge assigned awareness topics or manage and create topics as admin'
+  tooltip: 'Controlled awareness communications — procedure revisions, safety briefings, quality alerts — with acknowledgement tracking'
 }
 
 const NAV_REFERENCE_LISTS: NavItem = {
@@ -178,7 +178,7 @@ const navigationGroups = computed<NavGroup[]>(() => {
       items: [NAV_DASHBOARD, NAV_SKILLS_MATRIX, NAV_PEOPLE],
     },
     {
-      title: 'Build & Control',
+      title: 'Competence Framework',
       items: [NAV_ROLES, NAV_COMPETENCY_LIBRARY],
     },
     {

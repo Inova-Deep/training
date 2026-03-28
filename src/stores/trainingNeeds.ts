@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
-import type { TrainingNeed } from '@/types'
+import type { TrainingNeed, TrainingNeedSource, TrainingNeedWorkflowStatus } from '@/types'
 import templatesData from '@/data/trainingNeedTemplates.json'
 import { useEmployeesStore } from '@/stores/employees'
 
@@ -22,7 +22,7 @@ function computeDueDate(dueDaysFromNow: number): string {
   return d.toISOString().split('T')[0]!
 }
 
-export type ResolutionType = 'UPLOAD' | 'RENEWAL' | 'OJT' | 'ASSESSMENT'
+export type ResolutionType = 'UPLOAD' | 'RENEWAL' | 'OJT' | 'ASSESSMENT' | 'COACHING_OJT' | 'TOOLBOX_TALK' | 'EXTERNAL_COURSE' | 'INTERNAL_BRIEFING' | 'PROCEDURE_READ_AND_ACK' | 'CERTIFICATION_RENEWAL'
 
 export interface ResolutionData {
   type: ResolutionType
@@ -64,9 +64,21 @@ export const useTrainingNeedsStore = defineStore('trainingNeeds', () => {
       const employees = empStore.filteredEmployees.slice(0, 7)
       const now = new Date().toISOString()
 
+      const defaultSources: TrainingNeedSource[] = [
+        'COMPETENCE_GAP',
+        'EXPIRY_RENEWAL',
+        'NCR_CAPA',
+        'AUDIT_FINDING',
+        'MANAGER_REQUEST',
+        'NEW_STARTER',
+        'PROCEDURE_CHANGE',
+      ]
+
       // Assign one template per employee (deterministic by index, rotating through templates)
       trainingNeeds.value = employees.map((emp, i) => {
         const tmpl = templates[i % templates.length]!
+        const sourceType: TrainingNeedSource = defaultSources[i % defaultSources.length]!
+        const workflowStatus: TrainingNeedWorkflowStatus = 'IDENTIFIED'
         return {
           id: `tn-${emp.id}-${tmpl.id}`,
           erpEmployeeId: emp.id,
@@ -79,6 +91,9 @@ export const useTrainingNeedsStore = defineStore('trainingNeeds', () => {
           createdByUserId: 'system',
           createdAt: now,
           updatedAt: now,
+          sourceType,
+          workflowStatus,
+          priority: 'MEDIUM' as const,
         }
       })
     } catch (e) {
@@ -98,10 +113,16 @@ export const useTrainingNeedsStore = defineStore('trainingNeeds', () => {
         trainingNeeds.value[index].updatedAt = new Date().toISOString()
       }
       const messages: Record<ResolutionType, string> = {
-        UPLOAD:     'Evidence submitted for review',
-        RENEWAL:    'Training scheduled successfully',
-        OJT:        'OJT session scheduled',
-        ASSESSMENT: 'Assessment booked',
+        UPLOAD:                 'Evidence submitted for review',
+        RENEWAL:                'Training scheduled successfully',
+        OJT:                    'OJT session scheduled',
+        ASSESSMENT:             'Assessment booked',
+        COACHING_OJT:           'Coaching/OJT session scheduled',
+        TOOLBOX_TALK:           'Toolbox talk scheduled',
+        EXTERNAL_COURSE:        'External course booked',
+        INTERNAL_BRIEFING:      'Internal briefing scheduled',
+        PROCEDURE_READ_AND_ACK: 'Read & acknowledge task issued',
+        CERTIFICATION_RENEWAL:  'Certification renewal booked',
       }
       toast.success(messages[data.type])
     } catch (e) {

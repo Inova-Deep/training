@@ -7,9 +7,20 @@ import roleRequirementsData from '@/data/roleRequirements.json'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type CompetencyCategory = 'Technical' | 'Quality' | 'Mandatory'
+export type CompetencyCategory =
+  | 'Technical'
+  | 'Quality'
+  | 'Mandatory'
+  | 'HSE / Workshop Safety'
+  | 'Equipment-Specific Qualification'
+  | 'Quality & Compliance'
+  | 'Welding & Fabrication'
+  | 'Robotics & Automation'
+  | 'Additive Manufacturing Operations'
+  | 'Materials & Powder Handling'
+  | 'Materials Testing & Inspection'
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH_CRITICAL'
-export type CompetenceStatus = 'VALID' | 'REQUIRED' | 'IN_PROGRESS' | 'N_A'
+export type CompetenceStatus = 'VALID' | 'REQUIRED' | 'IN_PROGRESS' | 'N_A' | 'UNDER_SUPERVISION' | 'PARTIALLY_MET' | 'REASSESSMENT_DUE'
 export type DerivedStatus = CompetenceStatus | 'EXPIRING' | 'EXPIRED'
 
 export interface Competency {
@@ -96,6 +107,7 @@ const COMPETENCIES: Competency[] = (competenciesData as Array<{
   defaultAssessmentMethodCode: string
   defaultRequiresExpiry: boolean
   defaultValidityDays?: number
+  competencyType?: string
 }>).map(c => ({
   id: c.id,
   code: c.code,
@@ -384,7 +396,19 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
   })
 
   const viewMode = ref<'summary' | 'grid'>('grid')
-  const expandedCategories = ref<CompetencyCategory[]>(['Technical', 'Quality', 'Mandatory'])
+  const expandedCategories = ref<CompetencyCategory[]>([
+    'Technical',
+    'Quality',
+    'Mandatory',
+    'HSE / Workshop Safety',
+    'Equipment-Specific Qualification',
+    'Quality & Compliance',
+    'Welding & Fabrication',
+    'Robotics & Automation',
+    'Additive Manufacturing Operations',
+    'Materials & Powder Handling',
+    'Materials Testing & Inspection',
+  ])
   const visibleColumns = ref<string[]>(getStoredColumns())
   const sorting = ref<MatrixSorting>({
     field: 'displayName',

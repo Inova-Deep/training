@@ -59,10 +59,16 @@ const isSubmitting = ref(false)
 
 const submitLabel = computed(() => {
   const labels: Record<ResolutionType, string> = {
-    UPLOAD:     'Submit Evidence',
-    RENEWAL:    'Schedule Training',
-    OJT:        'Schedule OJT',
-    ASSESSMENT: 'Book Assessment',
+    UPLOAD:                 'Submit Evidence',
+    RENEWAL:                'Schedule Training',
+    OJT:                    'Schedule OJT',
+    ASSESSMENT:             'Book Assessment',
+    COACHING_OJT:           'Schedule Coaching/OJT',
+    TOOLBOX_TALK:           'Schedule Toolbox Talk',
+    EXTERNAL_COURSE:        'Book External Course',
+    INTERNAL_BRIEFING:      'Schedule Internal Briefing',
+    PROCEDURE_READ_AND_ACK: 'Issue Read & Acknowledge',
+    CERTIFICATION_RENEWAL:  'Book Certification Renewal',
   }
   return labels[selectedPath.value]
 })

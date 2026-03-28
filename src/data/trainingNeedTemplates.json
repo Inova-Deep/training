@@ -1,58 +1,112 @@
 [
   {
     "id": "tmpl-001",
-    "competencyLibraryItemId": "comp-002",
+    "competencyLibraryItemId": "comp-loto",
     "trainingTypeCode": "CERT_LICENCE",
     "createdReason": "EXPIRED_RENEWAL",
     "dueDaysFromNow": -5,
-    "description": "LOTO certification has expired and must be renewed before returning to independent work"
+    "description": "LOTO certification renewal overdue — employee must not perform isolation tasks until renewed",
+    "sourceType": "EXPIRY_RENEWAL",
+    "sourceReference": ""
   },
   {
     "id": "tmpl-002",
-    "competencyLibraryItemId": "comp-015",
+    "competencyLibraryItemId": "comp-fa",
     "trainingTypeCode": "CERT_LICENCE",
     "createdReason": "EXPIRING_RENEWAL",
     "dueDaysFromNow": 12,
-    "description": "First Aid certificate is expiring within 30 days — renewal required"
+    "description": "First Aid certificate expiring within 30 days — renewal booking required",
+    "sourceType": "EXPIRY_RENEWAL",
+    "sourceReference": ""
   },
   {
     "id": "tmpl-003",
-    "competencyLibraryItemId": "comp-008",
-    "trainingTypeCode": "AWARENESS",
-    "createdReason": "NEW_REQUIREMENT",
-    "dueDaysFromNow": 30,
-    "description": "Document control awareness newly added as a role requirement"
+    "competencyLibraryItemId": "comp-flt",
+    "trainingTypeCode": "CERT_LICENCE",
+    "createdReason": "NCR_CAPA",
+    "dueDaysFromNow": 14,
+    "description": "Forklift near-miss — competence gap identified in root cause analysis; retraining and re-assessment required",
+    "sourceType": "NCR_CAPA",
+    "sourceReference": "NCR-2026-047"
   },
   {
     "id": "tmpl-004",
-    "competencyLibraryItemId": "comp-011",
-    "trainingTypeCode": "INDUCTION",
-    "createdReason": "NEW_HIRE",
+    "competencyLibraryItemId": "comp-abr",
+    "trainingTypeCode": "PRACTICAL",
+    "createdReason": "INCIDENT_NEAR_MISS",
     "dueDaysFromNow": 7,
-    "description": "Site HSE induction required for new hire within first week"
+    "description": "Abrasive wheel breakage incident — operator retraining and practical re-assessment required before returning to task",
+    "sourceType": "INCIDENT_NEAR_MISS",
+    "sourceReference": "IR-2026-012"
   },
   {
     "id": "tmpl-005",
-    "competencyLibraryItemId": "comp-003",
-    "trainingTypeCode": "CERT_LICENCE",
-    "createdReason": "NEW_REQUIREMENT",
-    "dueDaysFromNow": 45,
-    "description": "Working at Height certification required — role requirement newly published"
+    "competencyLibraryItemId": "comp-rca",
+    "trainingTypeCode": "TRAINING_COURSE",
+    "createdReason": "AUDIT_FINDING",
+    "dueDaysFromNow": 30,
+    "description": "Internal audit finding — RCA capability gap identified; structured root cause analysis training required",
+    "sourceType": "AUDIT_FINDING",
+    "sourceReference": "AF-2026-003"
   },
   {
     "id": "tmpl-006",
-    "competencyLibraryItemId": "comp-004",
+    "competencyLibraryItemId": "comp-weld",
     "trainingTypeCode": "CERT_LICENCE",
     "createdReason": "EXPIRING_RENEWAL",
-    "dueDaysFromNow": 5,
-    "description": "Confined Space entry authorisation expiring — renewal booking required urgently"
+    "dueDaysFromNow": 21,
+    "description": "Coded welder qualification renewal due — welding procedure test must be completed before expiry",
+    "sourceType": "EXPIRY_RENEWAL",
+    "sourceReference": ""
   },
   {
     "id": "tmpl-007",
-    "competencyLibraryItemId": "comp-001",
+    "competencyLibraryItemId": "comp-robot-op",
+    "trainingTypeCode": "EQUIPMENT_QUALIFICATION",
+    "createdReason": "NEW_EQUIPMENT",
+    "dueDaysFromNow": 30,
+    "description": "New robot cell installation — operator qualification required before independent operation of EC-2026-001",
+    "sourceType": "NEW_EQUIPMENT",
+    "sourceReference": "EC-2026-001"
+  },
+  {
+    "id": "tmpl-008",
+    "competencyLibraryItemId": "comp-powder",
     "trainingTypeCode": "AWARENESS",
-    "createdReason": "EXPIRED_RENEWAL",
-    "dueDaysFromNow": -2,
-    "description": "Permit to Work awareness overdue — manager sign-off to be re-confirmed"
+    "createdReason": "PROCEDURE_CHANGE",
+    "dueDaysFromNow": 21,
+    "description": "Material handling procedure revised — retraining required on updated powder handling controls per CTA-PRO-004 v2.0",
+    "sourceType": "PROCEDURE_CHANGE",
+    "sourceReference": "CTA-PRO-004 v2.0"
+  },
+  {
+    "id": "tmpl-009",
+    "competencyLibraryItemId": "comp-hse-ind",
+    "trainingTypeCode": "INDUCTION",
+    "createdReason": "NEW_HIRE",
+    "dueDaysFromNow": 5,
+    "description": "New starter site HSE induction — must be completed within the first week of employment",
+    "sourceType": "NEW_STARTER",
+    "sourceReference": ""
+  },
+  {
+    "id": "tmpl-010",
+    "competencyLibraryItemId": "comp-ptw",
+    "trainingTypeCode": "AWARENESS",
+    "createdReason": "MANAGER_REQUEST",
+    "dueDaysFromNow": 14,
+    "description": "Manager-requested PTW refresher following near-miss event — permit to work awareness to be re-confirmed",
+    "sourceType": "MANAGER_REQUEST",
+    "sourceReference": ""
+  },
+  {
+    "id": "tmpl-011",
+    "competencyLibraryItemId": "comp-weld",
+    "trainingTypeCode": "TRAINING_COURSE",
+    "createdReason": "COMPETENCE_GAP",
+    "dueDaysFromNow": 28,
+    "description": "Competence gap identified during skills matrix review — welding operator below required standard for current role",
+    "sourceType": "COMPETENCE_GAP",
+    "sourceReference": ""
   }
 ]

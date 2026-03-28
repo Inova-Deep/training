@@ -105,7 +105,7 @@ function navigateToRole(id: string) {
 <template>
   <div class="page-header">
     <h1 class="page-title">Roles</h1>
-    <p class="page-subtitle">Configure Job Title applicability and role requirements</p>
+    <p class="page-subtitle">Job title competence profiles — applicability decisions, requirements, and team readiness</p>
   </div>
 
   <Card class="data-card">

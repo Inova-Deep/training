@@ -13,6 +13,16 @@ export const useReferenceListsStore = defineStore('referenceLists', () => {
   const isLoading = ref(false)
   const expiringThreshold = ref<number>(refData.expiringThresholdDays)
 
+  // New reference lists
+  const supervisionStatuses = ref<string[]>(refData.supervisionStatuses)
+  const gapSeverityLevels = ref<string[]>(refData.gapSeverityLevels)
+  const trainingNeedSources = ref<string[]>(refData.trainingNeedSources)
+  const awarenessTopicTypes = ref<string[]>(refData.awarenessTopicTypes)
+  const awarenessDeliveryMethods = ref<string[]>(refData.awarenessDeliveryMethods)
+  const competencyTypes = ref<string[]>(refData.competencyTypes)
+  const interventionTypes = ref<string[]>(refData.interventionTypes)
+  const reassessmentTriggers = ref<string[]>(refData.reassessmentTriggers)
+
   const riskLevelByCode = computed(() => {
     return (code: string) => riskLevels.value.find(r => r.code === code)
   })
@@ -46,6 +56,14 @@ export const useReferenceListsStore = defineStore('referenceLists', () => {
     responsibleParties,
     isLoading,
     expiringThreshold,
+    supervisionStatuses,
+    gapSeverityLevels,
+    trainingNeedSources,
+    awarenessTopicTypes,
+    awarenessDeliveryMethods,
+    competencyTypes,
+    interventionTypes,
+    reassessmentTriggers,
     riskLevelByCode,
     trainingTypeByCode,
     assessmentMethodByCode,

@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 
-type Status = 'VALID' | 'REQUIRED' | 'IN_PROGRESS' | 'N_A' | 'EXPIRING' | 'EXPIRED'
+type Status = 'VALID' | 'REQUIRED' | 'IN_PROGRESS' | 'N_A' | 'EXPIRING' | 'EXPIRED' | 'UNDER_SUPERVISION' | 'PARTIALLY_MET' | 'REASSESSMENT_DUE'
 
 interface Props {
   status: Status
@@ -19,12 +19,15 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const statusConfig: Record<Status, { label: string; chipClass: string }> = {
-  VALID:       { label: 'Valid',        chipClass: 'chip-valid' },
-  EXPIRING:    { label: 'Expiring',     chipClass: 'chip-expiring' },
-  EXPIRED:     { label: 'Expired',      chipClass: 'chip-expired' },
-  REQUIRED:    { label: 'Required',     chipClass: 'chip-required' },
-  IN_PROGRESS: { label: 'In Progress',  chipClass: 'chip-in-progress' },
-  N_A:         { label: 'N/A',          chipClass: 'chip-na' },
+  VALID:              { label: 'Valid',              chipClass: 'chip-valid' },
+  EXPIRING:           { label: 'Expiring',           chipClass: 'chip-expiring' },
+  EXPIRED:            { label: 'Expired',            chipClass: 'chip-expired' },
+  REQUIRED:           { label: 'Required',           chipClass: 'chip-required' },
+  IN_PROGRESS:        { label: 'In Progress',        chipClass: 'chip-in-progress' },
+  N_A:                { label: 'N/A',                chipClass: 'chip-na' },
+  UNDER_SUPERVISION:  { label: 'Under Supervision',  chipClass: 'chip-under-supervision' },
+  PARTIALLY_MET:      { label: 'Partially Met',      chipClass: 'chip-partially-met' },
+  REASSESSMENT_DUE:   { label: 'Reassessment Due',   chipClass: 'chip-reassessment-due' },
 }
 
 const config = computed(() => statusConfig[props.status])

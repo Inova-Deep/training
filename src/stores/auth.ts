@@ -25,39 +25,39 @@ export interface DemoPersona {
 export const DEMO_PERSONAS: Record<DemoPersonaKey, DemoPersona> = {
   employee: {
     key: 'employee',
-    displayName: 'Alex Morgan',
+    displayName: 'James Fletcher',
     roleLabel: 'Employee',
     role: 'EMPLOYEE',
-    email: 'alex.morgan@demo.com',
-    initials: 'AM',
-    linkedJobTitle: 'Maintenance Technician',
+    email: 'james.fletcher@demo.com',
+    initials: 'JF',
+    linkedJobTitle: 'Welding / Fabrication Technician',
     defaultRoute: '/training-needs',
   },
   manager: {
     key: 'manager',
-    displayName: 'Sarah Ahmed',
+    displayName: 'David Clarke',
     roleLabel: 'Manager',
     role: 'MANAGER',
-    email: 'sarah.ahmed@demo.com',
-    initials: 'SA',
-    linkedJobTitle: 'Maintenance Supervisor',
+    email: 'david.clarke@demo.com',
+    initials: 'DC',
+    linkedJobTitle: 'Production Supervisor',
     defaultRoute: '/dashboard',
   },
   hr_admin: {
     key: 'hr_admin',
-    displayName: 'Demo Admin',
+    displayName: 'Sarah Bennett',
     roleLabel: 'HR Admin',
     role: 'HR_ADMIN',
-    email: 'admin@inova.krd',
-    initials: 'DA',
-    linkedJobTitle: null,
+    email: 'sarah.bennett@demo.com',
+    initials: 'SB',
+    linkedJobTitle: 'HR / Training Coordinator',
     defaultRoute: '/dashboard',
   },
 }
 
 // ─── Hardcoded demo credentials ────────────────────────────────────────────────
 
-const DEMO_EMAIL = 'hemish.patel@inova.krd'
+const DEMO_EMAIL = 'hemish.patel@inova.krd' // matches hr_admin persona email
 const DEMO_PASSWORD = 'Testing123!'
 
 // ─── Store ─────────────────────────────────────────────────────────────────────

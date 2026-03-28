@@ -80,7 +80,7 @@ onMounted(async () => {
 <template>
   <div class="page-header">
     <h1 class="page-title">Dashboard</h1>
-    <p class="page-subtitle">Organisation view of competence compliance, gating risks, and upcoming expiries</p>
+    <p class="page-subtitle">Operational readiness — competence gaps, authorisation status, expiring certifications, and outstanding actions</p>
   </div>
 
   <!-- KPI Grid -->

@@ -39,7 +39,7 @@ const pendingCount = computed(
   <template v-if="isEmployee">
     <div class="page-header">
       <h1 class="page-title">Awareness Topics</h1>
-      <p class="page-subtitle">Topics assigned to you that require acknowledgement</p>
+      <p class="page-subtitle">Awareness communications assigned to you — procedure changes, safety briefings, quality alerts</p>
     </div>
 
     <div v-if="pendingCount > 0" class="pending-banner">
@@ -115,7 +115,7 @@ const pendingCount = computed(
   <template v-else>
     <div class="page-header">
       <h1 class="page-title">Awareness Topics</h1>
-      <p class="page-subtitle">Create and target awareness topics to employees</p>
+      <p class="page-subtitle">Controlled awareness communications — issue, track delivery, verify acknowledgement</p>
     </div>
 
     <Card class="data-card">

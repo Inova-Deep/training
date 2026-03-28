@@ -90,7 +90,7 @@ const newHireCount = computed(() => {
   <div class="page-header">
     <div class="header-content">
       <h1 class="page-title">Training Needs & Competence Actions</h1>
-      <p class="page-subtitle">Queue of gaps, renewals, and actions required to maintain compliance.</p>
+      <p class="page-subtitle">Gap-closure actions — tracked by source, assigned with due dates, closed with evidence</p>
     </div>
     <div class="header-actions">
       <Button variant="outline" size="sm">

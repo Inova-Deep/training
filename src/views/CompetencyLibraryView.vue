@@ -70,7 +70,7 @@ onMounted(() => {
 <template>
   <div class="page-header">
     <h1 class="page-title">Competency Library</h1>
-    <p class="page-subtitle">Manage reusable competency requirements and defaults</p>
+    <p class="page-subtitle">Controlled library of competence requirements — skills, certifications, qualifications, and procedure awareness</p>
   </div>
 
   <Card class="data-card">

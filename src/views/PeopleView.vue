@@ -108,7 +108,7 @@ onMounted(async () => {
 <template>
   <div class="page-header">
     <h1 class="page-title">People</h1>
-    <p class="page-subtitle">Browse and search employees from ERP</p>
+    <p class="page-subtitle">Employee directory — competence status, authorisation, gaps, and expiring certifications</p>
   </div>
 
   <Card class="data-card">

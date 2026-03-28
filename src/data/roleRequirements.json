@@ -16,7 +16,8 @@
       { "id": "req-9", "competencyLibraryItemId": "comp-014", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "OBSERVATION", "requiresExpiry": false, "sortOrder": 9 },
       { "id": "req-10", "competencyLibraryItemId": "comp-009", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 10 },
       { "id": "req-11", "competencyLibraryItemId": "comp-012", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": true, "validityDays": 365, "sortOrder": 11 },
-      { "id": "req-12", "competencyLibraryItemId": "comp-013", "mandatory": true, "riskLevelCode": "LOW", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 12 }
+      { "id": "req-12", "competencyLibraryItemId": "comp-013", "mandatory": true, "riskLevelCode": "LOW", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 12 },
+      { "id": "req-13", "competencyLibraryItemId": "comp-024", "mandatory": false, "riskLevelCode": "HIGH_CRITICAL", "isGating": false, "trainingTypeCode": "CERT_LICENCE", "assessmentMethodCode": "PRACTICAL_DEMONSTRATION", "requiresExpiry": true, "validityDays": 365, "sortOrder": 13 }
     ]
   },
   "Maintenance Supervisor": {
@@ -51,7 +52,9 @@
       { "id": "req-q5", "competencyLibraryItemId": "comp-008", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 5 },
       { "id": "req-q6", "competencyLibraryItemId": "comp-009", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "RECORD_REVIEW", "requiresExpiry": false, "sortOrder": 6 },
       { "id": "req-q7", "competencyLibraryItemId": "comp-010", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 7 },
-      { "id": "req-q8", "competencyLibraryItemId": "comp-013", "mandatory": true, "riskLevelCode": "LOW", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 8 }
+      { "id": "req-q8", "competencyLibraryItemId": "comp-013", "mandatory": true, "riskLevelCode": "LOW", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 8 },
+      { "id": "req-q9", "competencyLibraryItemId": "comp-026", "mandatory": false, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "INDUCTION", "assessmentMethodCode": "RECORD_REVIEW", "requiresExpiry": false, "sortOrder": 9 },
+      { "id": "req-q10", "competencyLibraryItemId": "comp-017", "mandatory": false, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 10 }
     ]
   },
   "Shift Lead": {
@@ -67,7 +70,8 @@
       { "id": "req-sl5", "competencyLibraryItemId": "comp-014", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": true, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "OBSERVATION", "requiresExpiry": false, "sortOrder": 5 },
       { "id": "req-sl6", "competencyLibraryItemId": "comp-001", "mandatory": true, "riskLevelCode": "HIGH_CRITICAL", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 6 },
       { "id": "req-sl7", "competencyLibraryItemId": "comp-009", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 7 },
-      { "id": "req-sl8", "competencyLibraryItemId": "comp-013", "mandatory": true, "riskLevelCode": "LOW", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 8 }
+      { "id": "req-sl8", "competencyLibraryItemId": "comp-013", "mandatory": true, "riskLevelCode": "LOW", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 8 },
+      { "id": "req-sl9", "competencyLibraryItemId": "comp-018", "mandatory": false, "riskLevelCode": "HIGH_CRITICAL", "isGating": false, "trainingTypeCode": "CERT_LICENCE", "assessmentMethodCode": "PRACTICAL_DEMONSTRATION", "requiresExpiry": true, "validityDays": 365, "sortOrder": 9 }
     ]
   },
   "Electrical Technician": {
@@ -102,6 +106,64 @@
       { "id": "req-i7", "competencyLibraryItemId": "comp-001", "mandatory": true, "riskLevelCode": "HIGH_CRITICAL", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 7 },
       { "id": "req-i8", "competencyLibraryItemId": "comp-007", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "OJT_COACHING", "assessmentMethodCode": "OBSERVATION", "requiresExpiry": false, "sortOrder": 8 },
       { "id": "req-i9", "competencyLibraryItemId": "comp-013", "mandatory": true, "riskLevelCode": "LOW", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 9 }
+    ]
+  },
+  "Additive Manufacturing Technician": {
+    "setId": "set-jt-8",
+    "status": "PUBLISHED",
+    "publishedAt": "2024-01-15T08:00:00Z",
+    "gatingCompetencyIds": ["comp-020", "comp-002", "comp-011"],
+    "requirements": [
+      { "id": "req-am1", "competencyLibraryItemId": "comp-020", "mandatory": true, "riskLevelCode": "HIGH_CRITICAL", "isGating": true, "trainingTypeCode": "CERT_LICENCE", "assessmentMethodCode": "PRACTICAL_DEMONSTRATION", "requiresExpiry": true, "validityDays": 365, "sortOrder": 1 },
+      { "id": "req-am2", "competencyLibraryItemId": "comp-002", "mandatory": true, "riskLevelCode": "HIGH_CRITICAL", "isGating": true, "trainingTypeCode": "CERT_LICENCE", "assessmentMethodCode": "OBSERVATION", "requiresExpiry": true, "validityDays": 365, "sortOrder": 2 },
+      { "id": "req-am3", "competencyLibraryItemId": "comp-011", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": true, "trainingTypeCode": "INDUCTION", "assessmentMethodCode": "RECORD_REVIEW", "requiresExpiry": false, "sortOrder": 3 },
+      { "id": "req-am4", "competencyLibraryItemId": "comp-021", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "INDUCTION", "assessmentMethodCode": "OBSERVATION", "requiresExpiry": false, "sortOrder": 4 },
+      { "id": "req-am5", "competencyLibraryItemId": "comp-022", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 5 },
+      { "id": "req-am6", "competencyLibraryItemId": "comp-014", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "OBSERVATION", "requiresExpiry": false, "sortOrder": 6 },
+      { "id": "req-am7", "competencyLibraryItemId": "comp-012", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": true, "validityDays": 365, "sortOrder": 7 }
+    ]
+  },
+  "Welding / Fabrication Technician": {
+    "setId": "set-jt-9",
+    "status": "PUBLISHED",
+    "publishedAt": "2024-01-15T08:00:00Z",
+    "gatingCompetencyIds": ["comp-016", "comp-025", "comp-002", "comp-011"],
+    "requirements": [
+      { "id": "req-wf1", "competencyLibraryItemId": "comp-016", "mandatory": true, "riskLevelCode": "HIGH_CRITICAL", "isGating": true, "trainingTypeCode": "CERT_LICENCE", "assessmentMethodCode": "RECORD_REVIEW", "requiresExpiry": true, "validityDays": 730, "sortOrder": 1 },
+      { "id": "req-wf2", "competencyLibraryItemId": "comp-025", "mandatory": true, "riskLevelCode": "HIGH_CRITICAL", "isGating": true, "trainingTypeCode": "CERT_LICENCE", "assessmentMethodCode": "PRACTICAL_DEMONSTRATION", "requiresExpiry": true, "validityDays": 365, "sortOrder": 2 },
+      { "id": "req-wf3", "competencyLibraryItemId": "comp-002", "mandatory": true, "riskLevelCode": "HIGH_CRITICAL", "isGating": true, "trainingTypeCode": "CERT_LICENCE", "assessmentMethodCode": "OBSERVATION", "requiresExpiry": true, "validityDays": 365, "sortOrder": 3 },
+      { "id": "req-wf4", "competencyLibraryItemId": "comp-011", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": true, "trainingTypeCode": "INDUCTION", "assessmentMethodCode": "RECORD_REVIEW", "requiresExpiry": false, "sortOrder": 4 },
+      { "id": "req-wf5", "competencyLibraryItemId": "comp-017", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 5 },
+      { "id": "req-wf6", "competencyLibraryItemId": "comp-001", "mandatory": true, "riskLevelCode": "HIGH_CRITICAL", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 6 },
+      { "id": "req-wf7", "competencyLibraryItemId": "comp-014", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "OBSERVATION", "requiresExpiry": false, "sortOrder": 7 },
+      { "id": "req-wf8", "competencyLibraryItemId": "comp-012", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": true, "validityDays": 365, "sortOrder": 8 }
+    ]
+  },
+  "Robotics Operator": {
+    "setId": "set-jt-10",
+    "status": "PUBLISHED",
+    "publishedAt": "2024-01-15T08:00:00Z",
+    "gatingCompetencyIds": ["comp-018", "comp-002", "comp-011"],
+    "requirements": [
+      { "id": "req-ro1", "competencyLibraryItemId": "comp-018", "mandatory": true, "riskLevelCode": "HIGH_CRITICAL", "isGating": true, "trainingTypeCode": "CERT_LICENCE", "assessmentMethodCode": "PRACTICAL_DEMONSTRATION", "requiresExpiry": true, "validityDays": 365, "sortOrder": 1 },
+      { "id": "req-ro2", "competencyLibraryItemId": "comp-002", "mandatory": true, "riskLevelCode": "HIGH_CRITICAL", "isGating": true, "trainingTypeCode": "CERT_LICENCE", "assessmentMethodCode": "OBSERVATION", "requiresExpiry": true, "validityDays": 365, "sortOrder": 2 },
+      { "id": "req-ro3", "competencyLibraryItemId": "comp-011", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": true, "trainingTypeCode": "INDUCTION", "assessmentMethodCode": "RECORD_REVIEW", "requiresExpiry": false, "sortOrder": 3 },
+      { "id": "req-ro4", "competencyLibraryItemId": "comp-019", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "OJT_COACHING", "assessmentMethodCode": "OBSERVATION", "requiresExpiry": false, "sortOrder": 4 },
+      { "id": "req-ro5", "competencyLibraryItemId": "comp-014", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "OBSERVATION", "requiresExpiry": false, "sortOrder": 5 }
+    ]
+  },
+  "Materials Testing Technician": {
+    "setId": "set-jt-11",
+    "status": "PUBLISHED",
+    "publishedAt": "2024-01-15T08:00:00Z",
+    "gatingCompetencyIds": ["comp-023", "comp-007", "comp-011"],
+    "requirements": [
+      { "id": "req-mt1", "competencyLibraryItemId": "comp-023", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": true, "trainingTypeCode": "INDUCTION", "assessmentMethodCode": "RECORD_REVIEW", "requiresExpiry": false, "sortOrder": 1 },
+      { "id": "req-mt2", "competencyLibraryItemId": "comp-007", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": true, "trainingTypeCode": "OJT_COACHING", "assessmentMethodCode": "OBSERVATION", "requiresExpiry": false, "sortOrder": 2 },
+      { "id": "req-mt3", "competencyLibraryItemId": "comp-011", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": true, "trainingTypeCode": "INDUCTION", "assessmentMethodCode": "RECORD_REVIEW", "requiresExpiry": false, "sortOrder": 3 },
+      { "id": "req-mt4", "competencyLibraryItemId": "comp-022", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 4 },
+      { "id": "req-mt5", "competencyLibraryItemId": "comp-008", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 5 },
+      { "id": "req-mt6", "competencyLibraryItemId": "comp-014", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "OBSERVATION", "requiresExpiry": false, "sortOrder": 6 }
     ]
   }
 }

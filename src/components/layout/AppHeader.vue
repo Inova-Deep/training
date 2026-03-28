@@ -24,7 +24,7 @@ import { useAuthStore, DEMO_PERSONAS, type DemoPersonaKey } from '@/stores/auth'
 const authStore = useAuthStore()
 
 const isSyncing = ref(false)
-const notificationCount = ref(2)
+const notificationCount = ref(3)
 
 const SYNC_DURATION_MS = 2000
 
@@ -104,7 +104,7 @@ const handleSync = async () => {
             <div class="notification-item">
               <div class="notification-dot" />
               <div class="notification-content">
-                <span class="notification-title">Training assigned</span>
+                <span class="notification-title">Welding qualification renewal scheduled — due 15 Apr</span>
                 <span class="notification-time">2 hours ago</span>
               </div>
             </div>
@@ -113,7 +113,16 @@ const handleSync = async () => {
             <div class="notification-item">
               <div class="notification-dot" />
               <div class="notification-content">
-                <span class="notification-title">Certificate expiring</span>
+                <span class="notification-title">Additive Manufacturing Process Control Briefing — awaiting your acknowledgement</span>
+                <span class="notification-time">3 hours ago</span>
+              </div>
+            </div>
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <div class="notification-item">
+              <div class="notification-dot" />
+              <div class="notification-content">
+                <span class="notification-title">Robot cell operation authorisation expiring in 12 days — James Fletcher</span>
                 <span class="notification-time">1 day ago</span>
               </div>
             </div>

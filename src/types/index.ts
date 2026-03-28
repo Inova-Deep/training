@@ -70,6 +70,14 @@ export interface CompetencyLibraryItem {
   archivedAt?: string
   createdAt: string
   updatedAt: string
+  competencyType?: CompetencyType
+  applicableDepartments?: string[]
+  applicableRoles?: string[]
+  safetyCritical?: boolean
+  qualityCritical?: boolean
+  provider?: string
+  linkedDocumentRef?: string
+  internalExternal?: 'INTERNAL' | 'EXTERNAL'
 }
 
 export interface RoleRequirementSet {
@@ -98,8 +106,63 @@ export interface RoleRequirement {
   sortOrder: number
 }
 
-export type BaseStatusCode = 'N_A' | 'REQUIRED' | 'IN_PROGRESS' | 'VALID'
+export type BaseStatusCode = 'N_A' | 'REQUIRED' | 'IN_PROGRESS' | 'VALID' | 'UNDER_SUPERVISION' | 'PARTIALLY_MET' | 'REASSESSMENT_DUE'
 export type DerivedStatusCode = BaseStatusCode | 'EXPIRING' | 'EXPIRED'
+
+export type TrainingNeedSource =
+  | 'COMPETENCE_GAP'
+  | 'NCR_CAPA'
+  | 'AUDIT_FINDING'
+  | 'PROCEDURE_CHANGE'
+  | 'NEW_EQUIPMENT'
+  | 'NEW_STARTER'
+  | 'EXPIRY_RENEWAL'
+  | 'MANAGER_REQUEST'
+  | 'INCIDENT_NEAR_MISS'
+
+export type TrainingNeedWorkflowStatus =
+  | 'IDENTIFIED'
+  | 'APPROVED'
+  | 'SCHEDULED'
+  | 'IN_PROGRESS'
+  | 'EVIDENCE_SUBMITTED'
+  | 'EFFECTIVENESS_REVIEW'
+  | 'CLOSED'
+
+export type AwarenessTopicType =
+  | 'PROCEDURE_REVISION'
+  | 'SAFETY_BRIEFING'
+  | 'QUALITY_ALERT'
+  | 'CUSTOMER_REQUIREMENT'
+  | 'MANAGEMENT_SYSTEM_UPDATE'
+  | 'TOOLBOX_TALK'
+  | 'NEW_EQUIPMENT_INTRO'
+  | 'INCIDENT_LEARNING'
+
+export type AwarenessDeliveryMethod =
+  | 'READ_AND_ACKNOWLEDGE'
+  | 'TEAM_BRIEFING'
+  | 'TOOLBOX_TALK'
+  | 'SUPERVISOR_CASCADE'
+  | 'FORMAL_RETRAINING'
+
+export type AwarenessWorkflowStatus =
+  | 'DRAFTED'
+  | 'ISSUED'
+  | 'IN_COMMUNICATION'
+  | 'AWAITING_ACKNOWLEDGEMENT'
+  | 'VERIFICATION_PENDING'
+  | 'CLOSED'
+
+export type CompetencyType =
+  | 'SKILL'
+  | 'TRAINING'
+  | 'CERTIFICATION'
+  | 'AWARENESS_TOPIC'
+  | 'OJT_COACHING'
+  | 'PROCEDURE_BRIEFING'
+  | 'EXTERNAL_QUALIFICATION'
+  | 'EQUIPMENT_QUALIFICATION'
 
 export interface EmployeeCompetenceItem {
   id: string
@@ -174,6 +237,12 @@ export interface TrainingNeed {
   createdByUserId: string
   createdAt: string
   updatedAt: string
+  sourceType?: TrainingNeedSource
+  sourceReference?: string
+  interventionType?: string
+  effectivenessCheckMethod?: string
+  workflowStatus?: TrainingNeedWorkflowStatus
+  priority?: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
 }
 
 export interface TrainingCompletion {
@@ -203,6 +272,15 @@ export interface AwarenessTopic {
   createdByUserId: string
   createdAt: string
   updatedAt: string
+  topicType?: AwarenessTopicType
+  deliveryMethod?: AwarenessDeliveryMethod
+  trigger?: string
+  relatedDocumentRef?: string
+  effectiveDate?: string
+  acknowledgementRequired?: boolean
+  briefingRequired?: boolean
+  verificationRequired?: boolean
+  workflowStatus?: AwarenessWorkflowStatus
 }
 
 export interface AwarenessAck {

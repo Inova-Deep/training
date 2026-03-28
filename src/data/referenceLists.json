@@ -16,7 +16,10 @@
     { "code": "OBSERVATION", "name": "Observation" },
     { "code": "TEST", "name": "Test" },
     { "code": "INTERVIEW", "name": "Interview" },
-    { "code": "MANAGER_SIGNOFF", "name": "Manager Sign-off" }
+    { "code": "MANAGER_SIGNOFF", "name": "Manager Sign-off" },
+    { "code": "PRACTICAL_DEMONSTRATION", "name": "Practical Demonstration" },
+    { "code": "SUPERVISOR_OBSERVATION", "name": "Supervisor Observation" },
+    { "code": "PORTFOLIO_REVIEW", "name": "Portfolio Review" }
   ],
   "statuses": [
     { "code": "N_A", "name": "Not Applicable", "isDerived": false },
@@ -24,14 +27,21 @@
     { "code": "IN_PROGRESS", "name": "In Progress", "isDerived": false },
     { "code": "VALID", "name": "Valid", "isDerived": false },
     { "code": "EXPIRING", "name": "Expiring", "isDerived": true },
-    { "code": "EXPIRED", "name": "Expired", "isDerived": true }
+    { "code": "EXPIRED", "name": "Expired", "isDerived": true },
+    { "code": "UNDER_SUPERVISION", "name": "Under Supervision", "isDerived": false },
+    { "code": "PARTIALLY_MET", "name": "Partially Met", "isDerived": false },
+    { "code": "REASSESSMENT_DUE", "name": "Reassessment Due", "isDerived": true }
   ],
   "evidenceTypes": [
     { "code": "CERTIFICATE", "name": "Certificate" },
     { "code": "RECORD", "name": "Record" },
     { "code": "OBSERVATION_NOTE", "name": "Observation Note" },
     { "code": "SIGNOFF", "name": "Sign-off" },
-    { "code": "EXTERNAL_REFERENCE", "name": "External Reference" }
+    { "code": "EXTERNAL_REFERENCE", "name": "External Reference" },
+    { "code": "WELDING_QUALIFICATION_RECORD", "name": "Welding Qualification Record" },
+    { "code": "MATERIALS_TEST_REPORT", "name": "Materials Test Report" },
+    { "code": "ROBOT_OPERATION_SIGNOFF", "name": "Robot Operation Sign-off" },
+    { "code": "TOOLBOX_TALK_ATTENDANCE", "name": "Toolbox Talk Attendance" }
   ],
   "responsibleParties": [
     { "code": "EMPLOYEE", "name": "Employee" },
@@ -40,5 +50,63 @@
     { "code": "ASSESSOR", "name": "Assessor" },
     { "code": "QHSE", "name": "QHSE" }
   ],
-  "expiringThresholdDays": 30
+  "expiringThresholdDays": 30,
+  "supervisionStatuses": ["SUPERVISED", "INDEPENDENT", "RESTRICTED_SCOPE"],
+  "gapSeverityLevels": ["CRITICAL", "HIGH", "MODERATE", "LOW"],
+  "trainingNeedSources": [
+    "COMPETENCE_GAP",
+    "NCR_CAPA",
+    "AUDIT_FINDING",
+    "PROCEDURE_CHANGE",
+    "NEW_EQUIPMENT",
+    "NEW_STARTER",
+    "EXPIRY_RENEWAL",
+    "MANAGER_REQUEST",
+    "INCIDENT_NEAR_MISS"
+  ],
+  "awarenessTopicTypes": [
+    "PROCEDURE_REVISION",
+    "SAFETY_BRIEFING",
+    "QUALITY_ALERT",
+    "CUSTOMER_REQUIREMENT",
+    "MANAGEMENT_SYSTEM_UPDATE",
+    "TOOLBOX_TALK",
+    "NEW_EQUIPMENT_INTRO",
+    "INCIDENT_LEARNING"
+  ],
+  "awarenessDeliveryMethods": [
+    "READ_AND_ACKNOWLEDGE",
+    "TEAM_BRIEFING",
+    "TOOLBOX_TALK",
+    "SUPERVISOR_CASCADE",
+    "FORMAL_RETRAINING"
+  ],
+  "competencyTypes": [
+    "SKILL",
+    "TRAINING",
+    "CERTIFICATION",
+    "AWARENESS_TOPIC",
+    "OJT_COACHING",
+    "PROCEDURE_BRIEFING",
+    "EXTERNAL_QUALIFICATION",
+    "EQUIPMENT_QUALIFICATION"
+  ],
+  "interventionTypes": [
+    "COACHING_OJT",
+    "TOOLBOX_TALK",
+    "EXTERNAL_COURSE",
+    "INTERNAL_BRIEFING",
+    "PROCEDURE_READ_AND_ACK",
+    "SUPERVISOR_OBSERVATION",
+    "CERTIFICATION_RENEWAL"
+  ],
+  "reassessmentTriggers": [
+    "EXPIRY",
+    "NCR",
+    "AUDIT",
+    "INCIDENT",
+    "PROCEDURE_CHANGE",
+    "MANAGER_REQUEST",
+    "ROLE_CHANGE"
+  ]
 }
