@@ -165,5 +165,19 @@
       { "id": "req-mt5", "competencyLibraryItemId": "comp-008", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 5 },
       { "id": "req-mt6", "competencyLibraryItemId": "comp-014", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "OBSERVATION", "requiresExpiry": false, "sortOrder": 6 }
     ]
+  },
+  "QA Inspector": {
+    "setId": "set-jt-12",
+    "status": "PUBLISHED",
+    "publishedAt": "2024-01-15T08:00:00Z",
+    "gatingCompetencyIds": ["comp-009", "comp-010", "comp-011"],
+    "requirements": [
+      { "id": "req-qa1", "competencyLibraryItemId": "comp-009", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": true, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "RECORD_REVIEW", "requiresExpiry": false, "sortOrder": 1 },
+      { "id": "req-qa2", "competencyLibraryItemId": "comp-010", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": true, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 2 },
+      { "id": "req-qa3", "competencyLibraryItemId": "comp-026", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "INDUCTION", "assessmentMethodCode": "RECORD_REVIEW", "requiresExpiry": false, "sortOrder": 3 },
+      { "id": "req-qa4", "competencyLibraryItemId": "comp-008", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "MANAGER_SIGNOFF", "requiresExpiry": false, "sortOrder": 4 },
+      { "id": "req-qa5", "competencyLibraryItemId": "comp-011", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": true, "trainingTypeCode": "INDUCTION", "assessmentMethodCode": "RECORD_REVIEW", "requiresExpiry": false, "sortOrder": 5 },
+      { "id": "req-qa6", "competencyLibraryItemId": "comp-014", "mandatory": true, "riskLevelCode": "MEDIUM", "isGating": false, "trainingTypeCode": "AWARENESS", "assessmentMethodCode": "OBSERVATION", "requiresExpiry": false, "sortOrder": 6 }
+    ]
   }
 }

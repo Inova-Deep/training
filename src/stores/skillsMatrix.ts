@@ -19,6 +19,11 @@ export type CompetencyCategory =
   | 'Additive Manufacturing Operations'
   | 'Materials & Powder Handling'
   | 'Materials Testing & Inspection'
+  | 'Health & Safety'
+  | 'Regulatory Compliance'
+  | 'Workshop'
+  | 'Plant & Machinery'
+  | 'Business / Systems'
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH_CRITICAL'
 export type CompetenceStatus = 'VALID' | 'REQUIRED' | 'IN_PROGRESS' | 'N_A' | 'UNDER_SUPERVISION' | 'PARTIALLY_MET' | 'REASSESSMENT_DUE'
 export type DerivedStatus = CompetenceStatus | 'EXPIRING' | 'EXPIRED'
@@ -84,6 +89,7 @@ export interface MatrixFilters {
   gatingOnly: boolean
   issuesOnly: boolean
   supervisionOnly: boolean
+  criticalOnly: boolean
   jobTitle: string
   department: string
   businessUnit: string
@@ -100,10 +106,12 @@ export interface MatrixSorting {
 type RoleRequirementsJson = Record<string, {
   setId: string
   gatingCompetencyIds: string[]
-  requirements: Array<{ competencyLibraryItemId: string; isGating: boolean }>
+  requirements: Array<{ competencyLibraryItemId: string; isGating: boolean; mandatory: boolean }>
 }>
 
 const requirementsJson = roleRequirementsData as RoleRequirementsJson
+
+export { requirementsJson }
 
 // Map JSON competency items to the Competency interface used by the matrix
 const COMPETENCIES: Competency[] = (competenciesData as Array<{
@@ -458,6 +466,7 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
     gatingOnly: false,
     issuesOnly: false,
     supervisionOnly: false,
+    criticalOnly: false,
     jobTitle: '',
     department: '',
     businessUnit: '',
@@ -466,17 +475,23 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
 
   const viewMode = ref<'summary' | 'grid'>('grid')
   const expandedCategories = ref<CompetencyCategory[]>([
-    'Technical',
-    'Quality',
     'Mandatory',
+    'Additive Manufacturing Operations',
+    'Welding & Fabrication',
+    'Robotics & Automation',
+    'Materials & Powder Handling',
+    'Materials Testing & Inspection',
+    'Quality',
+    'Health & Safety',
+    'Regulatory Compliance',
+    'Workshop',
+    'Plant & Machinery',
+    'Business / Systems',
+    // legacy / alternate category names kept for data compatibility
+    'Technical',
     'HSE / Workshop Safety',
     'Equipment-Specific Qualification',
     'Quality & Compliance',
-    'Welding & Fabrication',
-    'Robotics & Automation',
-    'Additive Manufacturing Operations',
-    'Materials & Powder Handling',
-    'Materials Testing & Inspection',
   ])
   const visibleColumns = ref<string[]>(getStoredColumns())
   const sorting = ref<MatrixSorting>({
@@ -645,6 +660,64 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
     return groups
   })
 
+  /** IDs of competencies considered safety-critical or HIGH_CRITICAL risk */
+  const criticalActivityIds = computed(() =>
+    COMPETENCIES
+      .filter(c => c.riskLevel === 'HIGH_CRITICAL' || c.isGatingDefault)
+      .map(c => c.id)
+  )
+
+  /**
+   * Vacancy rows — one per role requirement set that has NO employees assigned.
+   * The row shape is a minimal EmployeeMatrixRow-like object with isVacancy marker.
+   */
+  const vacancyRows = computed((): (EmployeeMatrixRow & { isVacancy: true; estStart?: string })[] => {
+    const assignedTitles = new Set(mockEmployeeRows.value.map(r => r.jobTitle))
+
+    return Object.entries(requirementsJson)
+      .filter(([title, reqSet]) => !assignedTitles.has(title) && reqSet != null)
+      .map(([title, reqSet]) => {
+        const rs = reqSet!
+        const competenceItems = new Map<string, EmployeeCompetenceItem>()
+        const reqCompIds = new Set(rs.requirements.map(r => r.competencyLibraryItemId))
+        const gatingIds = new Set(rs.gatingCompetencyIds)
+
+        COMPETENCIES.forEach(comp => {
+          const isRequired = reqCompIds.has(comp.id)
+          competenceItems.set(comp.id, {
+            employeeId: `vacancy-${title}`,
+            competencyId: comp.id,
+            status: isRequired ? 'REQUIRED' : 'N_A',
+            derivedStatus: isRequired ? 'REQUIRED' : 'N_A',
+            isGating: gatingIds.has(comp.id),
+          })
+        })
+
+        return {
+          isVacancy: true as const,
+          employeeId: `vacancy-${title}`,
+          employeeNo: '—',
+          firstName: 'Vacancy',
+          lastName: `— ${title}`,
+          displayName: `Vacancy — ${title}`,
+          jobTitle: title,
+          department: '—',
+          businessUnit: '—',
+          managerName: undefined,
+          isAuthorised: false,
+          requiredCount: rs.requirements.length,
+          expiringCount: 0,
+          expiredCount: 0,
+          validCount: 0,
+          supervisedCount: 0,
+          supervisionStatus: 'NON_COMPLIANT_MANDATORY' as const,
+          gatingFailed: rs.gatingCompetencyIds,
+          topAction: 'Unfilled',
+          competenceItems,
+        }
+      })
+  })
+
   function toggleCategory(category: CompetencyCategory) {
     const index = expandedCategories.value.indexOf(category)
     if (index === -1) {
@@ -666,6 +739,7 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
       gatingOnly: false,
       issuesOnly: false,
       supervisionOnly: false,
+      criticalOnly: false,
       jobTitle: '',
       department: '',
       businessUnit: '',
@@ -757,6 +831,8 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
     groupedByJobTitle,
     summaryStats,
     competenciesByCategory,
+    criticalActivityIds,
+    vacancyRows,
     fetchAndBuildMatrix,
     toggleCategory,
     setFilter,

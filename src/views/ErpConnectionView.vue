@@ -32,10 +32,17 @@ const connectionStatus = ref({
 })
 
 const syncMetrics = ref([
-  { label: 'Employees Synced', value: '1,247', icon: Users, trend: '+12 this week' },
+  { label: 'Employee Master Synced', value: '1,247', icon: Users, trend: '+12 this week' },
   { label: 'Response Time', value: '142ms', icon: Zap, trend: 'Within threshold' },
   { label: 'Uptime', value: '99.97%', icon: Activity, trend: 'Last 30 days' },
   { label: 'Data Integrity', value: '100%', icon: Shield, trend: 'All checks passed' }
+])
+
+const syncScope = ref([
+  { label: 'Employee & Organisation Data', status: 'synced', lastSync: '2026-02-21 14:32' },
+  { label: 'Department & Cost Centre Structure', status: 'synced', lastSync: '2026-02-21 14:32' },
+  { label: 'Job Titles & Roles', status: 'synced', lastSync: '2026-02-21 14:32' },
+  { label: 'Reporting Lines (Manager Hierarchy)', status: 'synced', lastSync: '2026-02-21 08:32' },
 ])
 
 const syncHistory = ref([
@@ -138,6 +145,28 @@ const handleConfigureEndpoint = () => {
       <div class="kpi-card-change">{{ metric.trend }}</div>
     </div>
   </div>
+
+  <!-- Sync Scope Summary -->
+  <Card class="erp-card erp-scope-card">
+    <CardHeader class="erp-card-header">
+      <div>
+        <CardTitle class="erp-card-title">Sync Scope</CardTitle>
+        <CardDescription class="erp-card-description">Data entities currently synchronised from ERP</CardDescription>
+      </div>
+    </CardHeader>
+    <CardContent class="erp-card-content">
+      <div class="sync-scope-grid">
+        <div v-for="scope in syncScope" :key="scope.label" class="scope-item">
+          <CheckCircle2 class="scope-icon" />
+          <div class="scope-content">
+            <span class="scope-label">{{ scope.label }}</span>
+            <span class="scope-meta">Last synced {{ scope.lastSync }}</span>
+          </div>
+          <span class="badge badge-success scope-badge">Synced</span>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
 
   <!-- Main Content Grid -->
   <div class="erp-content-grid">
@@ -568,6 +597,68 @@ const handleConfigureEndpoint = () => {
 .sync-event-duration {
   font-size: 0.75rem;
   color: var(--text-caption);
+}
+
+/* Sync Scope */
+.erp-scope-card {
+  margin-bottom: var(--space-xl);
+  background: var(--bg-surface);
+  border: var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.sync-scope-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0;
+}
+
+.scope-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: var(--border-subtle);
+  border-right: var(--border-subtle);
+}
+
+.scope-item:nth-child(2n) {
+  border-right: none;
+}
+
+.scope-item:nth-last-child(-n+2) {
+  border-bottom: none;
+}
+
+.scope-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--brand-success);
+  flex-shrink: 0;
+}
+
+.scope-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.scope-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-heading);
+}
+
+.scope-meta {
+  font-size: 0.75rem;
+  color: var(--text-caption);
+}
+
+.scope-badge {
+  font-size: 0.6875rem;
+  flex-shrink: 0;
 }
 
 /* Actions Card */

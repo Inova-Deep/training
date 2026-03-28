@@ -30,8 +30,11 @@ const SYNC_DURATION_MS = 2000
 
 const personas: { key: DemoPersonaKey; label: string }[] = [
   { key: 'employee', label: 'Employee' },
+  { key: 'supervisor', label: 'Supervisor' },
   { key: 'manager', label: 'Manager' },
+  { key: 'qhse', label: 'QHSE' },
   { key: 'hr_admin', label: 'HR Admin' },
+  { key: 'leadership', label: 'Leadership' },
 ]
 
 const userInitials = computed(() => authStore.activePersona.initials)

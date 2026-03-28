@@ -1,4 +1,39 @@
 {
+  "departments": [
+    "Additive Manufacturing",
+    "Welding & Fabrication",
+    "Robotics",
+    "Materials Testing",
+    "Quality Assurance",
+    "HSE",
+    "Operations",
+    "Maintenance",
+    "Human Resources"
+  ],
+  "competencyCategories": [
+    "Mandatory",
+    "Additive Manufacturing Operations",
+    "Welding & Fabrication",
+    "Robotics & Automation",
+    "Materials & Powder Handling",
+    "Materials Testing & Inspection",
+    "Quality & Compliance",
+    "HSE / Workshop Safety"
+  ],
+  "assessmentStatuses": [
+    "Valid",
+    "Under Supervision",
+    "In Progress",
+    "Required",
+    "Expiring",
+    "Expired",
+    "N/A"
+  ],
+  "supervisionStatusLabels": [
+    "Independent",
+    "Supervised",
+    "Restricted"
+  ],
   "riskLevels": [
     { "code": "LOW", "name": "Low Risk", "requiresAssessor": false, "defaultIsGating": false, "sortOrder": 1 },
     { "code": "MEDIUM", "name": "Medium Risk", "requiresAssessor": false, "defaultIsGating": false, "sortOrder": 2 },

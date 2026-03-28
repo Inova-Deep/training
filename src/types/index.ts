@@ -71,13 +71,19 @@ export interface CompetencyLibraryItem {
   createdAt: string
   updatedAt: string
   competencyType?: CompetencyType
+  // Phase 9 expanded fields
+  mandatory?: boolean
   applicableDepartments?: string[]
   applicableRoles?: string[]
   safetyCritical?: boolean
   qualityCritical?: boolean
+  assessmentMethod?: string
+  evidenceType?: string
+  validityInterval?: string
+  internalExternal?: 'INTERNAL' | 'EXTERNAL'
   provider?: string
   linkedDocumentRef?: string
-  internalExternal?: 'INTERNAL' | 'EXTERNAL'
+  linkedDocument?: string
 }
 
 export interface RoleRequirementSet {
@@ -291,7 +297,7 @@ export interface AwarenessAck {
   acknowledgedByUserId: string
 }
 
-export type UserRole = 'EMPLOYEE' | 'MANAGER' | 'HR_ADMIN'
+export type UserRole = 'EMPLOYEE' | 'SUPERVISOR' | 'MANAGER' | 'QHSE' | 'HR_ADMIN' | 'ADMIN' | 'LEADERSHIP_VIEWER'
 
 export interface AppUser {
   id: string

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { Search, MoreHorizontal, ChevronLeft, ChevronRight, X } from 'lucide-vue-next'
+import { Search, MoreHorizontal, ChevronLeft, ChevronRight, X, Eye } from 'lucide-vue-next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/select'
 import { useEmployeesStore } from '@/stores/employees'
 import { useSkillsMatrixStore, type SupervisionStatus } from '@/stores/skillsMatrix'
+import type { Employee } from '@/api/client'
+import PersonDetailDrawer from '@/components/people/PersonDetailDrawer.vue'
 
 const store = useEmployeesStore()
 const matrixStore = useSkillsMatrixStore()
@@ -32,10 +34,23 @@ function getWorkStatusInfo(employeeId: string): { label: string; badgeClass: str
   return map[row.supervisionStatus]
 }
 
+function getMatrixRow(employeeId: string) {
+  return matrixStore.getEmployeeById(employeeId) ?? null
+}
+
 const searchQuery = ref('')
 const selectedDepartment = ref('')
 const selectedBusinessUnit = ref('')
 const selectedJobTitle = ref('')
+
+// Drawer state
+const drawerOpen = ref(false)
+const selectedEmployee = ref<Employee | null>(null)
+
+function openDrawer(employee: Employee) {
+  selectedEmployee.value = employee
+  drawerOpen.value = true
+}
 
 // Use store.employees (paginated) instead of filteredEmployees
 const employees = computed(() => store.employees)
@@ -138,15 +153,15 @@ onMounted(async () => {
         <div class="toolbar-filters">
           <div class="search-input-wrapper">
             <Search class="search-input-icon" />
-            <Input 
-              v-model="searchQuery" 
+            <Input
+              v-model="searchQuery"
               class="toolbar-search-input"
               placeholder="Search employees..."
               aria-label="Search employees"
               @keyup.enter="handleSearch"
             />
           </div>
-          
+
           <Select :model-value="selectedDepartment" @update:model-value="handleDepartmentChange">
             <SelectTrigger class="filter-select">
               <SelectValue placeholder="Department" />
@@ -158,7 +173,7 @@ onMounted(async () => {
               </SelectItem>
             </SelectContent>
           </Select>
-          
+
           <Select :model-value="selectedBusinessUnit" @update:model-value="handleBusinessUnitChange">
             <SelectTrigger class="filter-select">
               <SelectValue placeholder="Business Unit" />
@@ -170,7 +185,7 @@ onMounted(async () => {
               </SelectItem>
             </SelectContent>
           </Select>
-          
+
           <Select :model-value="selectedJobTitle" @update:model-value="handleJobTitleChange">
             <SelectTrigger class="filter-select">
               <SelectValue placeholder="Job Title" />
@@ -182,10 +197,10 @@ onMounted(async () => {
               </SelectItem>
             </SelectContent>
           </Select>
-          
-          <Button 
+
+          <Button
             v-if="searchQuery || selectedDepartment || selectedBusinessUnit || selectedJobTitle"
-            variant="ghost" 
+            variant="ghost"
             size="sm"
             class="clear-filters-btn"
             @click="clearFilters"
@@ -207,21 +222,29 @@ onMounted(async () => {
               <TableHead>Manager</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Work Status</TableHead>
+              <TableHead>Open Gaps</TableHead>
+              <TableHead>Mandatory Compliance</TableHead>
+              <TableHead>Expiring Certs</TableHead>
               <TableHead class="table-actions-header">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             <TableRow v-if="isLoading">
-              <TableCell colspan="8" class="loading-cell">
+              <TableCell colspan="11" class="loading-cell">
                 Loading employees...
               </TableCell>
             </TableRow>
             <TableRow v-else-if="employees.length === 0">
-              <TableCell colspan="8" class="empty-cell">
+              <TableCell colspan="11" class="empty-cell">
                 No employees found
               </TableCell>
             </TableRow>
-            <TableRow v-for="employee in employees" :key="employee.id">
+            <TableRow
+              v-for="employee in employees"
+              :key="employee.id"
+              class="clickable-row"
+              @click="openDrawer(employee)"
+            >
               <TableCell>
                 <div class="table-user">
                   <div class="table-avatar">{{ getInitials(employee.firstName, employee.lastName) }}</div>
@@ -237,6 +260,7 @@ onMounted(async () => {
                   {{ employee.status === 'active' ? 'Active' : 'Inactive' }}
                 </span>
               </TableCell>
+              <!-- Work Status -->
               <TableCell>
                 <template v-if="getWorkStatusInfo(employee.id)">
                   <span class="badge" :class="getWorkStatusInfo(employee.id)!.badgeClass">
@@ -245,21 +269,69 @@ onMounted(async () => {
                 </template>
                 <span v-else class="text-muted">—</span>
               </TableCell>
-              <TableCell class="table-actions-cell">
-                <DropdownMenu>
-                  <DropdownMenuTrigger as-child>
-                    <Button variant="ghost" size="icon" class="table-action-btn" :aria-label="`Actions for ${formatName(employee)}`">
-                      <MoreHorizontal class="icon-xs" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>View Profile</DropdownMenuItem>
-                    <DropdownMenuItem>View Competencies</DropdownMenuItem>
-                    <DropdownMenuItem>Training History</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>Edit Record</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+              <!-- Open Gaps -->
+              <TableCell>
+                <template v-if="getMatrixRow(employee.id)">
+                  <span
+                    class="gap-count"
+                    :class="(getMatrixRow(employee.id)!.requiredCount + getMatrixRow(employee.id)!.expiredCount) > 0 ? 'gap-count-high' : 'gap-count-zero'"
+                  >
+                    {{ getMatrixRow(employee.id)!.requiredCount + getMatrixRow(employee.id)!.expiredCount }}
+                  </span>
+                </template>
+                <span v-else class="text-muted">—</span>
+              </TableCell>
+              <!-- Mandatory Compliance -->
+              <TableCell>
+                <template v-if="getMatrixRow(employee.id)">
+                  <span
+                    class="badge"
+                    :class="getMatrixRow(employee.id)!.isAuthorised ? 'badge-success' : 'badge-critical'"
+                  >
+                    {{ getMatrixRow(employee.id)!.isAuthorised ? 'Compliant' : 'Non-Compliant' }}
+                  </span>
+                </template>
+                <span v-else class="text-muted">—</span>
+              </TableCell>
+              <!-- Expiring Certs -->
+              <TableCell>
+                <template v-if="getMatrixRow(employee.id)">
+                  <span
+                    class="gap-count"
+                    :class="getMatrixRow(employee.id)!.expiringCount > 0 ? 'gap-count-warn' : 'gap-count-zero'"
+                  >
+                    {{ getMatrixRow(employee.id)!.expiringCount }}
+                  </span>
+                </template>
+                <span v-else class="text-muted">—</span>
+              </TableCell>
+              <!-- Actions -->
+              <TableCell class="table-actions-cell" @click.stop>
+                <div class="actions-row">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    class="view-btn"
+                    @click="openDrawer(employee)"
+                  >
+                    <Eye class="icon-xs icon-mr" />
+                    View
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger as-child>
+                      <Button variant="ghost" size="icon" class="table-action-btn" :aria-label="`Actions for ${formatName(employee)}`">
+                        <MoreHorizontal class="icon-xs" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem @click="openDrawer(employee)">View Profile</DropdownMenuItem>
+                      <DropdownMenuItem>View Competencies</DropdownMenuItem>
+                      <DropdownMenuItem>Training History</DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem>Edit Record</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </TableCell>
             </TableRow>
           </TableBody>
@@ -268,13 +340,13 @@ onMounted(async () => {
 
       <div v-if="totalCount > 0" class="pagination-wrapper">
         <div class="pagination-info">
-          Showing {{ (currentPage - 1) * pagination.pageSize + 1 }} to 
-          {{ Math.min(currentPage * pagination.pageSize, totalCount) }} 
+          Showing {{ (currentPage - 1) * pagination.pageSize + 1 }} to
+          {{ Math.min(currentPage * pagination.pageSize, totalCount) }}
           of {{ totalCount }} employees
         </div>
         <div class="pagination-controls">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             class="pagination-btn"
             :disabled="currentPage === 1"
@@ -282,8 +354,8 @@ onMounted(async () => {
           >
             First
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="icon"
             class="pagination-btn"
             :disabled="currentPage === 1"
@@ -294,8 +366,8 @@ onMounted(async () => {
           <span class="pagination-page-info">
             Page {{ currentPage }} of {{ totalPages }}
           </span>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="icon"
             class="pagination-btn"
             :disabled="currentPage === totalPages"
@@ -303,8 +375,8 @@ onMounted(async () => {
           >
             <ChevronRight class="icon-sm" />
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             class="pagination-btn"
             :disabled="currentPage === totalPages"
@@ -316,6 +388,12 @@ onMounted(async () => {
       </div>
     </CardContent>
   </Card>
+
+  <!-- Person Detail Drawer -->
+  <PersonDetailDrawer
+    v-model:open="drawerOpen"
+    :employee="selectedEmployee"
+  />
 </template>
 
 <style scoped>
@@ -415,8 +493,61 @@ onMounted(async () => {
   height: 16px;
 }
 
+.icon-mr {
+  margin-right: 0.25rem;
+}
+
 .text-muted {
   font-size: 0.875rem;
   color: var(--text-caption);
+}
+
+.gap-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0 0.375rem;
+}
+
+.gap-count-zero {
+  background: var(--bg-subtle);
+  color: var(--text-caption);
+}
+
+.gap-count-high {
+  background: rgba(var(--color-red-rgb, 220, 38, 38), 0.1);
+  color: var(--color-red, #dc2626);
+}
+
+.gap-count-warn {
+  background: rgba(var(--color-amber-rgb, 245, 158, 11), 0.1);
+  color: var(--color-amber, #d97706);
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.clickable-row:hover {
+  background: var(--bg-subtle);
+}
+
+.actions-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.view-btn {
+  font-size: 0.75rem;
+  height: 1.75rem;
+  padding: 0 0.5rem;
+  display: flex;
+  align-items: center;
 }
 </style>

@@ -153,7 +153,32 @@ const navigationGroups = computed<NavGroup[]>(() => {
     return [
       {
         title: 'My Work',
-        items: [NAV_MY_COMPETENCIES, NAV_TRAINING_NEEDS, NAV_AWARENESS_TOPICS],
+        items: [NAV_DASHBOARD, NAV_MY_COMPETENCIES, NAV_AWARENESS_TOPICS],
+      },
+      {
+        title: 'Settings',
+        items: [NAV_REFERENCE_LISTS],
+      },
+    ]
+  }
+
+  if (role === 'SUPERVISOR') {
+    return [
+      {
+        title: 'My Work',
+        items: [NAV_MY_COMPETENCIES],
+      },
+      {
+        title: 'Team',
+        items: [NAV_DASHBOARD, NAV_SKILLS_MATRIX],
+      },
+      {
+        title: 'Training & Awareness',
+        items: [NAV_TRAINING_NEEDS, NAV_AWARENESS_TOPICS],
+      },
+      {
+        title: 'Settings',
+        items: [NAV_REFERENCE_LISTS],
       },
     ]
   }
@@ -161,18 +186,72 @@ const navigationGroups = computed<NavGroup[]>(() => {
   if (role === 'MANAGER') {
     return [
       {
+        title: 'My Work',
+        items: [NAV_MY_COMPETENCIES],
+      },
+      {
         title: 'Operations',
         items: [NAV_DASHBOARD, NAV_SKILLS_MATRIX, NAV_PEOPLE],
       },
       {
+        title: 'Competence Framework',
+        items: [NAV_ROLES],
+      },
+      {
         title: 'Training & Awareness',
-        items: [NAV_TRAINING_NEEDS],
+        items: [NAV_TRAINING_NEEDS, NAV_AWARENESS_TOPICS],
+      },
+      {
+        title: 'Settings',
+        items: [NAV_REFERENCE_LISTS],
       },
     ]
   }
 
-  // HR_ADMIN — full access
+  if (role === 'QHSE') {
+    return [
+      {
+        title: 'My Work',
+        items: [NAV_MY_COMPETENCIES],
+      },
+      {
+        title: 'Operations',
+        items: [NAV_DASHBOARD, NAV_SKILLS_MATRIX],
+      },
+      {
+        title: 'Competence Framework',
+        items: [NAV_ROLES, NAV_COMPETENCY_LIBRARY],
+      },
+      {
+        title: 'Training & Awareness',
+        items: [NAV_TRAINING_NEEDS, NAV_AWARENESS_TOPICS],
+      },
+      {
+        title: 'Settings',
+        items: [NAV_REFERENCE_LISTS],
+      },
+    ]
+  }
+
+  if (role === 'LEADERSHIP_VIEWER') {
+    return [
+      {
+        title: 'Overview',
+        items: [NAV_DASHBOARD, NAV_SKILLS_MATRIX],
+      },
+      {
+        title: 'Competence Framework',
+        items: [NAV_ROLES],
+      },
+    ]
+  }
+
+  // HR_ADMIN / ADMIN — full access
   return [
+    {
+      title: 'My Work',
+      items: [NAV_MY_COMPETENCIES],
+    },
     {
       title: 'Operations',
       items: [NAV_DASHBOARD, NAV_SKILLS_MATRIX, NAV_PEOPLE],

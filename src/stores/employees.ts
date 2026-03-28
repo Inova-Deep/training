@@ -16,6 +16,46 @@ const TARGET_KEYWORDS = [
   'instrumentation',
 ]
 
+// ─── Demo profiles injected for storytelling ──────────────────────────────────
+// These are not fetched from the API — they are synthetic rows for demo purposes.
+
+const DEMO_PROFILES: Employee[] = [
+  {
+    id: 'demo-emp-dk',
+    tenantId: 'demo',
+    employeeNo: 'DK-001',
+    firstName: 'Dan',
+    lastName: 'Kerrigan',
+    displayName: 'Dan Kerrigan',
+    workEmail: 'dan.kerrigan@demo.com',
+    status: 'active',
+    isActive: true,
+    createdAt: '2024-06-01T00:00:00Z',
+    updatedAt: '2024-06-01T00:00:00Z',
+    businessUnit: { id: 'bu-am', code: 'AM', name: 'Additive Manufacturing' },
+    department: { id: 'dept-am', code: 'AM', name: 'Additive Manufacturing' },
+    jobTitle: { id: 'jt-am-tech', code: 'AM-TECH', name: 'Additive Manufacturing Technician', grade: null },
+    manager: { id: 'mgr-1', employeeNo: 'MGR-001', firstName: 'David', lastName: 'Clarke', displayName: 'David Clarke' },
+  },
+  {
+    id: 'demo-emp-sn',
+    tenantId: 'demo',
+    employeeNo: 'SN-001',
+    firstName: 'Sarah',
+    lastName: 'Norris',
+    displayName: 'Sarah Norris',
+    workEmail: 'sarah.norris@demo.com',
+    status: 'active',
+    isActive: true,
+    createdAt: '2024-06-01T00:00:00Z',
+    updatedAt: '2024-06-01T00:00:00Z',
+    businessUnit: { id: 'bu-qa', code: 'QA', name: 'Quality Assurance' },
+    department: { id: 'dept-qa', code: 'QA', name: 'Quality Assurance' },
+    jobTitle: { id: 'jt-mat-test', code: 'MAT-TEST', name: 'Materials Testing Technician', grade: null },
+    manager: { id: 'mgr-2', employeeNo: 'MGR-002', firstName: 'Sarah', lastName: 'Bennett', displayName: 'Sarah Bennett' },
+  },
+]
+
 const EMPLOYEE_CAP = 50
 const PAGE_SIZE = 20
 
@@ -101,7 +141,13 @@ export const useEmployeesStore = defineStore('employees', () => {
     try {
       // Fetch all employees (up to 200) - we'll filter locally
       const response = await employeesApi.getAll({ size: 200 })
-      allEmployees.value = response.data || []
+      const apiEmployees = response.data || []
+
+      // Inject demo profiles if not already present (by employeeNo)
+      const existingNos = new Set(apiEmployees.map((e: Employee) => e.employeeNo))
+      const profilesToInject = DEMO_PROFILES.filter(p => !existingNos.has(p.employeeNo))
+
+      allEmployees.value = [...apiEmployees, ...profilesToInject]
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to fetch employees'
       toast.error(error.value)

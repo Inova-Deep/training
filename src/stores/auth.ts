@@ -7,7 +7,7 @@ import type { AppUser, User, UserRole } from '@/types'
 
 // ─── Demo persona types ────────────────────────────────────────────────────────
 
-export type DemoPersonaKey = 'employee' | 'manager' | 'hr_admin'
+export type DemoPersonaKey = 'employee' | 'supervisor' | 'manager' | 'qhse' | 'hr_admin' | 'leadership'
 
 export interface DemoPersona {
   key: DemoPersonaKey
@@ -31,7 +31,17 @@ export const DEMO_PERSONAS: Record<DemoPersonaKey, DemoPersona> = {
     email: 'james.fletcher@demo.com',
     initials: 'JF',
     linkedJobTitle: 'Welding / Fabrication Technician',
-    defaultRoute: '/training-needs',
+    defaultRoute: '/my-competencies',
+  },
+  supervisor: {
+    key: 'supervisor',
+    displayName: 'Tom Bradley',
+    roleLabel: 'Supervisor',
+    role: 'SUPERVISOR',
+    email: 'tom.bradley@demo.com',
+    initials: 'TB',
+    linkedJobTitle: 'Production Supervisor',
+    defaultRoute: '/dashboard',
   },
   manager: {
     key: 'manager',
@@ -43,6 +53,16 @@ export const DEMO_PERSONAS: Record<DemoPersonaKey, DemoPersona> = {
     linkedJobTitle: 'Production Supervisor',
     defaultRoute: '/dashboard',
   },
+  qhse: {
+    key: 'qhse',
+    displayName: 'Helen Marsh',
+    roleLabel: 'QHSE',
+    role: 'QHSE',
+    email: 'helen.marsh@demo.com',
+    initials: 'HM',
+    linkedJobTitle: 'QHSE Coordinator',
+    defaultRoute: '/dashboard',
+  },
   hr_admin: {
     key: 'hr_admin',
     displayName: 'Sarah Bennett',
@@ -51,6 +71,16 @@ export const DEMO_PERSONAS: Record<DemoPersonaKey, DemoPersona> = {
     email: 'sarah.bennett@demo.com',
     initials: 'SB',
     linkedJobTitle: 'HR / Training Coordinator',
+    defaultRoute: '/dashboard',
+  },
+  leadership: {
+    key: 'leadership',
+    displayName: 'Robert Ashford',
+    roleLabel: 'Leadership',
+    role: 'LEADERSHIP_VIEWER',
+    email: 'robert.ashford@demo.com',
+    initials: 'RA',
+    linkedJobTitle: null,
     defaultRoute: '/dashboard',
   },
 }

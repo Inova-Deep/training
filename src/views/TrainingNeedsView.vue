@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue'
-import { 
-  MoreHorizontal, Plus, Filter, Search, 
+import {
+  MoreHorizontal, Plus, Filter, Search,
   AlertTriangle, Clock, UserCheck, GraduationCap,
   ChevronRight, AlertCircle
 } from 'lucide-vue-next'
@@ -14,11 +14,18 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { useTrainingNeedsStore } from '@/stores/trainingNeeds'
 import { useEmployeesStore } from '@/stores/employees'
 import { useCompetencyLibraryStore } from '@/stores/competencyLibrary'
+import { useAuthStore } from '@/stores/auth'
 import TrainingNeedDetailsSheet from '@/components/training/TrainingNeedDetailsSheet.vue'
+import type { TrainingNeedSource, TrainingNeedWorkflowStatus } from '@/types'
 
 const trainingStore = useTrainingNeedsStore()
 const empStore = useEmployeesStore()
 const compStore = useCompetencyLibraryStore()
+const authStore = useAuthStore()
+
+const canCreateTrainingNeed = computed(() =>
+  ['SUPERVISOR', 'MANAGER', 'QHSE', 'HR_ADMIN', 'ADMIN'].includes(authStore.userRole)
+)
 
 const selectedNeedId = ref<string | null>(null)
 const isDetailsOpen = ref(false)
@@ -40,40 +47,96 @@ const openDetails = (id: string) => {
 const getEmployee = (id: string) => {
   const emp = empStore.employees.find(e => e.id === id)
   if (emp) return emp
-  return { 
-    id: 'unknown', 
-    displayName: 'Unknown', 
-    employeeNo: '???', 
-    jobTitle: { name: 'Unknown' } 
+  return {
+    id: 'unknown',
+    displayName: 'Unknown',
+    employeeNo: '???',
+    jobTitle: { name: 'Unknown' }
   } as any
 }
 
 const getCompetency = (id: string) => {
   const comp = compStore.competencies.find(c => c.id === id)
   if (comp) return comp
-  return { 
-    id: 'unknown', 
-    title: 'Unknown', 
+  return {
+    id: 'unknown',
+    title: 'Unknown',
     code: '???',
-    riskLevelCode: 'LOW' 
+    riskLevelCode: 'LOW'
   } as any
 }
 
-const getReasonLabel = (reason?: string) => {
-  switch (reason) {
-    case 'EXPIRED_RENEWAL': return 'Renewal (Expired)'
-    case 'EXPIRING_RENEWAL': return 'Renewal (Expiring)'
-    case 'NEW_REQUIREMENT': return 'New Requirement'
-    case 'NEW_HIRE': return 'New Hire Onboarding'
-    default: return 'System Generated'
-  }
+// Source type display helpers
+const sourceTypeLabels: Record<TrainingNeedSource, string> = {
+  NCR_CAPA:          'NCR / CAPA',
+  INCIDENT_NEAR_MISS:'Incident / Near Miss',
+  AUDIT_FINDING:     'Audit Finding',
+  EXPIRY_RENEWAL:    'Expiry / Renewal',
+  PROCEDURE_CHANGE:  'Procedure Change',
+  NEW_EQUIPMENT:     'New Equipment',
+  NEW_STARTER:       'New Starter',
+  MANAGER_REQUEST:   'Manager Request',
+  COMPETENCE_GAP:    'Competence Gap',
 }
 
-const getActionRecommendation = (need: any) => {
-  const comp = getCompetency(need.employeeCompetenceItemId || '')
-  if (need.createdReason === 'NEW_HIRE') return 'Complete Onboarding Assessment'
-  if (need.createdReason === 'EXPIRED_RENEWAL') return 'Urgent Renewal / Re-assessment'
-  return 'Review evidence or schedule training'
+const sourceTypeBadgeClass: Record<TrainingNeedSource, string> = {
+  NCR_CAPA:          'badge-critical',
+  INCIDENT_NEAR_MISS:'badge-critical',
+  AUDIT_FINDING:     'badge-warning',
+  EXPIRY_RENEWAL:    'badge-warning',
+  PROCEDURE_CHANGE:  'badge-primary',
+  NEW_EQUIPMENT:     'badge-primary',
+  NEW_STARTER:       'badge-success',
+  MANAGER_REQUEST:   'badge-neutral',
+  COMPETENCE_GAP:    'badge-neutral',
+}
+
+const getSourceLabel = (sourceType?: string) =>
+  sourceType ? (sourceTypeLabels[sourceType as TrainingNeedSource] ?? sourceType) : '—'
+
+const getSourceBadgeClass = (sourceType?: string) =>
+  sourceType ? (sourceTypeBadgeClass[sourceType as TrainingNeedSource] ?? 'badge-neutral') : 'badge-neutral'
+
+// Workflow status display helpers
+const workflowStatusLabels: Record<TrainingNeedWorkflowStatus, string> = {
+  IDENTIFIED:           'Identified',
+  APPROVED:             'Approved',
+  SCHEDULED:            'Scheduled',
+  IN_PROGRESS:          'In Progress',
+  EVIDENCE_SUBMITTED:   'Evidence Submitted',
+  EFFECTIVENESS_REVIEW: 'Effectiveness Review',
+  CLOSED:               'Closed',
+}
+
+const workflowStatusBadgeClass: Record<TrainingNeedWorkflowStatus, string> = {
+  IDENTIFIED:           'badge-neutral',
+  APPROVED:             'badge-primary',
+  SCHEDULED:            'badge-primary',
+  IN_PROGRESS:          'badge-primary',
+  EVIDENCE_SUBMITTED:   'badge-warning',
+  EFFECTIVENESS_REVIEW: 'badge-warning',
+  CLOSED:               'badge-success',
+}
+
+const getWorkflowLabel = (need: any) => {
+  const ws: TrainingNeedWorkflowStatus | undefined = need.workflowStatus
+  if (ws) return workflowStatusLabels[ws] ?? ws
+  // Fallback to old status field
+  const s = need.status
+  if (s === 'OPEN') return 'Identified'
+  if (s === 'IN_PROGRESS') return 'In Progress'
+  if (s === 'COMPLETED') return 'Closed'
+  return s
+}
+
+const getWorkflowBadgeClass = (need: any) => {
+  const ws: TrainingNeedWorkflowStatus | undefined = need.workflowStatus
+  if (ws) return workflowStatusBadgeClass[ws] ?? 'badge-neutral'
+  const s = need.status
+  if (s === 'OPEN') return 'badge-neutral'
+  if (s === 'IN_PROGRESS') return 'badge-primary'
+  if (s === 'COMPLETED') return 'badge-success'
+  return 'badge-neutral'
 }
 
 const isGating = (need: any) => {
@@ -82,7 +145,7 @@ const isGating = (need: any) => {
 }
 
 const newHireCount = computed(() => {
-  return trainingStore.trainingNeeds.filter(n => n.createdReason === 'NEW_HIRE' && n.status === 'OPEN').length
+  return trainingStore.trainingNeeds.filter(n => n.createdReason === 'NEW_HIRE' && (n.workflowStatus === 'IDENTIFIED' || n.status === 'OPEN')).length
 })
 </script>
 
@@ -93,11 +156,11 @@ const newHireCount = computed(() => {
       <p class="page-subtitle">Gap-closure actions — tracked by source, assigned with due dates, closed with evidence</p>
     </div>
     <div class="header-actions">
-      <Button variant="outline" size="sm">
+      <Button v-if="canCreateTrainingNeed" variant="outline" size="sm">
         <GraduationCap class="icon-xs icon-mr" />
         Bulk Schedule
       </Button>
-      <Button size="sm">
+      <Button v-if="canCreateTrainingNeed" size="sm">
         <Plus class="icon-xs icon-mr" />
         Create Request
       </Button>
@@ -126,9 +189,9 @@ const newHireCount = computed(() => {
       <div class="filter-group">
         <div class="search-wrapper">
           <Search class="search-icon icon-xs" />
-          <Input placeholder="Search employee or competency..." class="filter-input-search" v-model="trainingStore.filters.search" />
+          <Input placeholder="Search source or reference..." class="filter-input-search" v-model="trainingStore.filters.search" />
         </div>
-        
+
         <Select v-model="trainingStore.filters.departmentId">
           <SelectTrigger class="filter-select filter-select-wide">
             <SelectValue placeholder="Department" />
@@ -150,6 +213,41 @@ const newHireCount = computed(() => {
             <SelectItem value="CRITICAL">Critical / Gating</SelectItem>
             <SelectItem value="HIGH">High</SelectItem>
             <SelectItem value="MEDIUM">Medium</SelectItem>
+            <SelectItem value="LOW">Low</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select v-model="trainingStore.filters.status">
+          <SelectTrigger class="filter-select filter-select-narrow">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="IDENTIFIED">Identified</SelectItem>
+            <SelectItem value="APPROVED">Approved</SelectItem>
+            <SelectItem value="SCHEDULED">Scheduled</SelectItem>
+            <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+            <SelectItem value="EVIDENCE_SUBMITTED">Evidence Submitted</SelectItem>
+            <SelectItem value="EFFECTIVENESS_REVIEW">Effectiveness Review</SelectItem>
+            <SelectItem value="CLOSED">Closed</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select v-model="trainingStore.filters.sourceType">
+          <SelectTrigger class="filter-select filter-select-wide">
+            <SelectValue placeholder="Source" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Sources</SelectItem>
+            <SelectItem value="NCR_CAPA">NCR / CAPA</SelectItem>
+            <SelectItem value="AUDIT_FINDING">Audit Finding</SelectItem>
+            <SelectItem value="EXPIRY_RENEWAL">Expiry / Renewal</SelectItem>
+            <SelectItem value="PROCEDURE_CHANGE">Procedure Change</SelectItem>
+            <SelectItem value="NEW_EQUIPMENT">New Equipment</SelectItem>
+            <SelectItem value="NEW_STARTER">New Starter</SelectItem>
+            <SelectItem value="INCIDENT_NEAR_MISS">Incident / Near Miss</SelectItem>
+            <SelectItem value="MANAGER_REQUEST">Manager Request</SelectItem>
+            <SelectItem value="COMPETENCE_GAP">Competence Gap</SelectItem>
           </SelectContent>
         </Select>
 
@@ -170,9 +268,8 @@ const newHireCount = computed(() => {
               <TableHead class="col-employee">Employee</TableHead>
               <TableHead class="col-requirement">Requirement</TableHead>
               <TableHead class="col-gating">Gating</TableHead>
-              <TableHead class="col-type">Type & Risk</TableHead>
-              <TableHead class="col-reason">Reason</TableHead>
-              <TableHead>Recommended Action</TableHead>
+              <TableHead class="col-type">Type &amp; Risk</TableHead>
+              <TableHead class="col-source">Source</TableHead>
               <TableHead class="col-date">Due Date</TableHead>
               <TableHead class="col-status">Status</TableHead>
               <TableHead class="table-actions-header">Actions</TableHead>
@@ -180,11 +277,11 @@ const newHireCount = computed(() => {
           </TableHeader>
           <TableBody>
             <TableRow
-              v-for="need in trainingStore.trainingNeeds"
+              v-for="need in trainingStore.filteredNeeds"
               :key="need.id"
               class="clickable-row"
-              :class="{ 'row-inactive': need.status !== 'OPEN' }"
-              @click="need.status === 'OPEN' && openDetails(need.id)"
+              :class="{ 'row-inactive': need.workflowStatus === 'CLOSED' }"
+              @click="openDetails(need.id)"
             >
               <TableCell>
                 <div class="table-user">
@@ -197,7 +294,7 @@ const newHireCount = computed(() => {
                   </div>
                 </div>
               </TableCell>
-              
+
               <TableCell>
                 <div class="requirement-cell">
                   <span class="requirement-code">
@@ -216,13 +313,13 @@ const newHireCount = computed(() => {
                 </div>
                 <span v-else class="empty-indicator">—</span>
               </TableCell>
-              
+
               <TableCell>
                 <div class="type-risk-cell">
                   <span class="training-type-badge">{{ need.trainingTypeCode }}</span>
                   <div class="risk-level-row">
-                    <span 
-                      class="status-dot" 
+                    <span
+                      class="status-dot"
                       :class="getCompetency(need.employeeCompetenceItemId || '').riskLevelCode === 'HIGH_CRITICAL' ? 'status-dot-critical' : 'status-dot-warning'"
                     ></span>
                     <span class="risk-level-text">{{ getCompetency(need.employeeCompetenceItemId || '').riskLevelCode }}</span>
@@ -230,34 +327,28 @@ const newHireCount = computed(() => {
                 </div>
               </TableCell>
 
+              <!-- Source column (replaces Reason) -->
               <TableCell>
-                <div class="reason-cell">
-                  <Clock v-if="need.createdReason === 'EXPIRING_RENEWAL'" class="icon-xs status-warning" />
-                  <AlertTriangle v-if="need.createdReason === 'EXPIRED_RENEWAL'" class="icon-xs status-critical" />
-                  <span>{{ getReasonLabel(need.createdReason) }}</span>
+                <div class="source-cell">
+                  <span class="badge badge-compact" :class="getSourceBadgeClass(need.sourceType)">
+                    {{ getSourceLabel(need.sourceType) }}
+                  </span>
+                  <span v-if="need.sourceReference" class="source-reference">
+                    {{ need.sourceReference }}
+                  </span>
                 </div>
-              </TableCell>
-
-              <TableCell>
-                <span class="action-recommendation">
-                  {{ getActionRecommendation(need) }}
-                </span>
               </TableCell>
 
               <TableCell>
                 <div class="date-cell">
                   <span class="date-text">{{ new Date(need.dueDate || '').toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) }}</span>
-                  <span v-if="new Date(need.dueDate || '') < new Date() && need.status === 'OPEN'" class="overdue-label">Overdue</span>
+                  <span v-if="need.dueDate && new Date(need.dueDate) < new Date() && need.workflowStatus !== 'CLOSED'" class="overdue-label">Overdue</span>
                 </div>
               </TableCell>
 
               <TableCell>
-                <span class="badge" :class="{
-                  'badge-neutral':  need.status === 'OPEN',
-                  'badge-primary':  need.status === 'IN_PROGRESS',
-                  'badge-success':  need.status === 'COMPLETED',
-                }">
-                  {{ need.status === 'IN_PROGRESS' ? 'In Progress' : need.status === 'OPEN' ? 'Open' : need.status === 'COMPLETED' ? 'Completed' : need.status }}
+                <span class="badge" :class="getWorkflowBadgeClass(need)">
+                  {{ getWorkflowLabel(need) }}
                 </span>
               </TableCell>
 
@@ -286,15 +377,24 @@ const newHireCount = computed(() => {
                 </DropdownMenu>
               </TableCell>
             </TableRow>
+            <TableRow v-if="trainingStore.filteredNeeds.length === 0">
+              <TableCell colspan="8" class="training-empty-cell">
+                <div class="training-empty-state">
+                  <AlertCircle class="training-empty-icon" />
+                  <p class="training-empty-title">No training needs identified</p>
+                  <p class="training-empty-subtitle">Training needs are created when competence gaps, NCRs, or other triggers are detected.</p>
+                </div>
+              </TableCell>
+            </TableRow>
           </TableBody>
         </Table>
       </div>
     </CardContent>
   </Card>
 
-  <TrainingNeedDetailsSheet 
-    :isOpen="isDetailsOpen" 
-    :needId="selectedNeedId" 
+  <TrainingNeedDetailsSheet
+    :isOpen="isDetailsOpen"
+    :needId="selectedNeedId"
     @update:isOpen="isDetailsOpen = $event"
   />
 </template>
@@ -391,7 +491,7 @@ const newHireCount = computed(() => {
 
 .search-wrapper {
   position: relative;
-  width: 300px;
+  width: 280px;
 }
 
 .search-icon {
@@ -434,12 +534,12 @@ const newHireCount = computed(() => {
 }
 
 .col-employee { width: 200px; }
-.col-requirement { width: 240px; }
-.col-gating { width: 100px; }
-.col-type { width: 140px; }
-.col-reason { width: 160px; }
+.col-requirement { width: 220px; }
+.col-gating { width: 90px; }
+.col-type { width: 130px; }
+.col-source { width: 160px; }
 .col-date { width: 100px; }
-.col-status { width: 120px; }
+.col-status { width: 150px; }
 
 /* Table Rows */
 .clickable-row {
@@ -564,27 +664,19 @@ const newHireCount = computed(() => {
   color: var(--text-caption);
 }
 
-/* Reason Cell */
-.reason-cell {
+/* Source Cell */
+.source-cell {
   display: flex;
-  align-items: center;
-  gap: var(--space-xs);
+  flex-direction: column;
+  gap: 3px;
 }
 
-.status-warning {
-  color: var(--brand-warning);
-}
-
-.status-critical {
-  color: var(--brand-critical);
-}
-
-/* Action Recommendation */
-.action-recommendation {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--brand-primary);
-  font-style: italic;
+.source-reference {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-caption);
+  letter-spacing: 0.02em;
+  font-family: var(--font-mono, monospace);
 }
 
 /* Date Cell */
@@ -609,25 +701,60 @@ const newHireCount = computed(() => {
   width: 200px;
 }
 
+/* Empty state */
+.training-empty-cell {
+  padding: 0;
+}
+
+.training-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-2xl) var(--space-lg);
+  text-align: center;
+}
+
+.training-empty-icon {
+  width: 36px;
+  height: 36px;
+  color: var(--text-caption);
+  opacity: 0.5;
+}
+
+.training-empty-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-heading);
+  margin: 0;
+}
+
+.training-empty-subtitle {
+  font-size: 0.8125rem;
+  color: var(--text-caption);
+  max-width: 480px;
+  margin: 0;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .page-header {
     flex-direction: column;
     gap: var(--space-md);
   }
-  
+
   .header-actions {
     width: 100%;
   }
-  
+
   .search-wrapper {
     width: 100%;
   }
-  
+
   .filter-group {
     width: 100%;
   }
-  
+
   .filter-select-wide,
   .filter-select-narrow {
     width: 100%;

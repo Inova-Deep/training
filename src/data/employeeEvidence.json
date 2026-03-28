@@ -1,0 +1,72 @@
+[
+  {
+    "id": "ev-001",
+    "title": "Coded Welder Certificate — BS EN ISO 9606-1",
+    "type": "Certificate",
+    "competencyCode": "WELD",
+    "issuer": "TWI Certification",
+    "issueDate": "2025-04-10",
+    "expiryDate": "2027-04-10",
+    "reviewStatus": "Accepted"
+  },
+  {
+    "id": "ev-002",
+    "title": "Robot Cell Operation Sign-off",
+    "type": "Sign-off",
+    "competencyCode": "ROBOT-OP",
+    "issuer": "Production Supervisor",
+    "issueDate": "2025-09-15",
+    "expiryDate": "2026-09-15",
+    "reviewStatus": "Accepted"
+  },
+  {
+    "id": "ev-003",
+    "title": "LOTO Practical Observation Record",
+    "type": "Observation Record",
+    "competencyCode": "LOTO",
+    "issuer": "HSE Coordinator",
+    "issueDate": "2025-06-01",
+    "expiryDate": "2026-06-01",
+    "reviewStatus": "Accepted"
+  },
+  {
+    "id": "ev-004",
+    "title": "HSE Induction Completion",
+    "type": "Sign-off",
+    "competencyCode": "HSE-IND",
+    "issuer": "HR Coordinator",
+    "issueDate": "2025-03-10",
+    "expiryDate": null,
+    "reviewStatus": "Accepted"
+  },
+  {
+    "id": "ev-005",
+    "title": "Abrasive Wheels Certificate",
+    "type": "Certificate",
+    "competencyCode": "ABR",
+    "issuer": "External Provider",
+    "issueDate": "2025-07-20",
+    "expiryDate": "2026-07-20",
+    "reviewStatus": "Accepted"
+  },
+  {
+    "id": "ev-006",
+    "title": "Materials Handling Toolbox Talk",
+    "type": "Toolbox Talk Attendance",
+    "competencyCode": "POWDER",
+    "issuer": "Shift Supervisor",
+    "issueDate": "2026-01-15",
+    "expiryDate": null,
+    "reviewStatus": "Accepted"
+  },
+  {
+    "id": "ev-007",
+    "title": "Competence Assessment — Welding Sign-off",
+    "type": "Manager Sign-off / Verification",
+    "competencyCode": "WELD",
+    "issuer": "Line Manager",
+    "issueDate": "2025-04-12",
+    "expiryDate": null,
+    "reviewStatus": "Accepted"
+  }
+]

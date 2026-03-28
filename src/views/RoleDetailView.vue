@@ -13,7 +13,12 @@ import {
   Plus,
   ExternalLink,
   AlertTriangle,
-  MoreHorizontal
+  MoreHorizontal,
+  Users,
+  TrendingUp,
+  Bell,
+  UserCheck,
+  Flag
 } from 'lucide-vue-next'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -28,20 +33,126 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFo
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useRolesStore } from '@/stores/roles'
 import { useCompetencyLibraryStore } from '@/stores/competencyLibrary'
+import { useSkillsMatrixStore } from '@/stores/skillsMatrix'
+import { useEmployeesStore } from '@/stores/employees'
+import { useAuthStore } from '@/stores/auth'
 import { organizationApi } from '@/api/client'
 import type { JobTitle } from '@/api/client'
 import type { RoleRequirement } from '@/types'
+import roleRequirementsData from '@/data/roleRequirements.json'
+import competenciesData from '@/data/competencies.json'
+import awarenessTopicsData from '@/data/awarenessTopics.json'
 
+// ── Types ───────────────────────────────────────────────────────
+type RoleReqJson = Record<string, {
+  setId: string
+  gatingCompetencyIds: string[]
+  requirements: Array<{
+    id: string
+    competencyLibraryItemId: string
+    isGating: boolean
+    mandatory: boolean
+    riskLevelCode: string
+    requiresExpiry?: boolean
+    validityDays?: number
+    trainingTypeCode: string
+    assessmentMethodCode: string
+    sortOrder: number
+  }>
+}>
+
+interface CompetencyJson {
+  id: string
+  code: string
+  title: string
+  category: string
+  riskLevelCode: string
+  criticalityDomain?: string
+  defaultTrainingTypeCode: string
+  defaultAssessmentMethodCode: string
+  defaultRequiresExpiry: boolean
+  defaultValidityDays?: number
+  competencyType?: string
+}
+
+interface AwarenessTopic {
+  id: string
+  title: string
+  topicType: string
+  effectiveDate: string
+  completion: string
+  deliveryMethod: string
+  workflowStatus: string
+  requiredAudience: string[]
+  status: string
+  dueDate: string
+}
+
+const requirementsJson = roleRequirementsData as RoleReqJson
+const allCompetencies = competenciesData as CompetencyJson[]
+const allTopics = awarenessTopicsData as AwarenessTopic[]
+
+// ── Dept mapping ─────────────────────────────────────────────────
+const DEPT_MAP: Record<string, string> = {
+  'Additive Manufacturing Technician': 'Additive Manufacturing',
+  'Welding / Fabrication Technician': 'Welding & Fabrication',
+  'Robotics Operator': 'Robotics',
+  'Materials Testing Technician': 'Materials Testing',
+  'QA Inspector': 'Quality Assurance',
+  'QHSE Coordinator': 'HSE',
+  'Maintenance Technician': 'Operations',
+  'Maintenance Supervisor': 'Operations',
+  'Shift Lead': 'Operations',
+  'Electrical Technician': 'Operations',
+  'Instrumentation Technician': 'Operations',
+}
+
+const ROLE_PURPOSE_MAP: Record<string, string> = {
+  'Additive Manufacturing Technician': 'Operates and maintains additive manufacturing equipment; responsible for machine setup, powder handling, and process quality.',
+  'Welding / Fabrication Technician': 'Performs coded welding and fabrication tasks to approved procedures; responsible for joint quality and weld inspection sign-off.',
+  'Robotics Operator': 'Operates robotic manufacturing cells; ensures safe robot cell operation, emergency stop awareness, and qualification maintenance.',
+  'Materials Testing Technician': 'Performs tensile, hardness, and dimensional inspection activities; maintains materials traceability records.',
+  'QA Inspector': 'Conducts final inspection, raises NCRs, drives CAPA closure, and signs off product conformity documentation.',
+  'QHSE Coordinator': 'Coordinates health, safety, environmental and quality activities; manages audits, incidents and regulatory compliance.',
+  'Maintenance Technician': 'Carries out planned and reactive maintenance on plant and equipment; responsible for safe isolation and LOTO compliance.',
+  'Maintenance Supervisor': 'Supervises maintenance team activities; ensures PTW compliance, team competence and maintenance quality.',
+  'Shift Lead': 'Leads shift operations; responsible for team safety briefings, production output, and escalation of quality issues.',
+  'Electrical Technician': 'Performs electrical maintenance and fault-finding; requires LOTO, WAH and confined space authorisations as applicable.',
+  'Instrumentation Technician': 'Maintains and calibrates instrumentation and control systems; responsible for safe isolation and calibration records.',
+}
+
+const CRITICALITY_MAP: Record<string, 'Critical' | 'High' | 'Standard'> = {
+  'Additive Manufacturing Technician': 'High',
+  'Welding / Fabrication Technician': 'Critical',
+  'Robotics Operator': 'High',
+  'Materials Testing Technician': 'High',
+  'QA Inspector': 'High',
+  'QHSE Coordinator': 'High',
+  'Maintenance Technician': 'Critical',
+  'Maintenance Supervisor': 'Critical',
+  'Shift Lead': 'High',
+  'Electrical Technician': 'Critical',
+  'Instrumentation Technician': 'Critical',
+}
+
+// ── Stores ────────────────────────────────────────────────────────
 const route = useRoute()
 const router = useRouter()
 const store = useRolesStore()
 const libraryStore = useCompetencyLibraryStore()
+const matrixStore = useSkillsMatrixStore()
+const employeesStore = useEmployeesStore()
+const authStore = useAuthStore()
+
+const canEditRoleRequirements = computed(() =>
+  ['QHSE', 'HR_ADMIN', 'ADMIN'].includes(authStore.userRole)
+)
 
 const jobId = route.params.id as string
 const jobTitle = ref<JobTitle | null>(null)
 const activeTab = ref('applicability')
 
-// ── Applicability form ──────────────────────────────────────────
+// ── Applicability form ────────────────────────────────────────────
 const applicabilityForm = reactive({
   q1HandsOnOperational: false,
   q2ConformitySignOff: false,
@@ -62,11 +173,6 @@ watch(() => store.currentRole, (newRole) => {
   }
 }, { immediate: true })
 
-// ── Correct sequential decision tree matching the original matrix ──
-// Gate 1: Q1 OR Q2 must be YES (hands-on OR conformity sign-off)
-// Gate 2: Q3 must be YES (error can cause impact)
-// Gate 3: Q4 must be YES → else AWARENESS_ONLY
-// Gate 4: Q5 must be YES → else OUT_OF_SCOPE
 const computedResult = computed((): 'INCLUDED' | 'AWARENESS_ONLY' | 'OUT_OF_SCOPE' => {
   if (!applicabilityForm.q1HandsOnOperational && !applicabilityForm.q2ConformitySignOff) return 'OUT_OF_SCOPE'
   if (!applicabilityForm.q3ErrorCausesImpact) return 'OUT_OF_SCOPE'
@@ -100,13 +206,13 @@ function formatDate(date: string | null | undefined) {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
+// ── Data load ─────────────────────────────────────────────────────
 onMounted(async () => {
   try {
     const response = await organizationApi.getJobTitles({ size: 1000 })
     jobTitle.value = response.data.find((t) => t.id === jobId) || null
 
     if (jobTitle.value) {
-      // Local JSON uses job title NAME as the key, not the UUID
       await store.fetchRole(jobTitle.value.name)
       await libraryStore.fetchCompetencies()
       await store.fetchRequirementSets()
@@ -117,6 +223,16 @@ onMounted(async () => {
         await store.fetchRoleRequirements(jobSet.id)
       }
     }
+
+    // Ensure matrix is built
+    if (matrixStore.mockEmployeeRows.length === 0) {
+      if (employeesStore.allEmployees.length === 0) {
+        await employeesStore.fetchEmployees()
+      }
+      if (employeesStore.allEmployees.length > 0) {
+        await matrixStore.fetchAndBuildMatrix(employeesStore.allEmployees)
+      }
+    }
   } catch (error) {
     console.error('Failed to load role details', error)
   }
@@ -125,7 +241,6 @@ onMounted(async () => {
 async function handleSaveApplicability() {
   if (!jobTitle.value) return
   try {
-    // Local JSON uses job title NAME as the key, not the UUID
     await store.updateRole(jobTitle.value.name, {
       ...applicabilityForm,
       result: computedResult.value
@@ -140,7 +255,7 @@ function getCompetencyName(id: string) {
   return comp?.title ?? id
 }
 
-// ── Requirement edit sheet ───────────────────────────────────
+// ── Requirement edit sheet ────────────────────────────────────────
 const editingReqId = ref<string | null>(null)
 const isEditSheetOpen = ref(false)
 const editForm = reactive({
@@ -170,12 +285,287 @@ async function handleSaveRequirement() {
 function goBack() {
   router.push('/roles')
 }
+
+// ── Role summary computed ─────────────────────────────────────────
+const roleName = computed(() => jobTitle.value?.name ?? '')
+
+const assignedEmployees = computed(() => {
+  if (!roleName.value) return []
+  return matrixStore.mockEmployeeRows.filter(e =>
+    e.jobTitle.toLowerCase() === roleName.value.toLowerCase()
+  )
+})
+
+const roleSummary = computed(() => {
+  const employees = assignedEmployees.value
+  const assigned = employees.length
+  const fullyReady = employees.filter(e => e.isAuthorised).length
+  const underSupervision = employees.filter(e => e.supervisionStatus === 'SUPERVISED_ONLY').length
+  const readinessScore = assigned > 0 ? Math.round((fullyReady / assigned) * 100) : 0
+  const department = DEPT_MAP[roleName.value] ?? 'Operations'
+  const purpose = ROLE_PURPOSE_MAP[roleName.value] ?? 'Performs specialist work requiring verified competence.'
+  const criticality = CRITICALITY_MAP[roleName.value] ?? 'Standard'
+  return { assigned, fullyReady, underSupervision, readinessScore, department, purpose, criticality }
+})
+
+function criticalityClass(c: string) {
+  switch (c) {
+    case 'Critical': return 'badge-critical'
+    case 'High':     return 'badge-high'
+    default:         return 'badge-neutral'
+  }
+}
+
+// ── Enriched requirements table ───────────────────────────────────
+const enrichedRequirements = computed(() => {
+  const rn = roleName.value
+  const reqSet = requirementsJson[rn]
+  if (!reqSet) return []
+
+  const employees = assignedEmployees.value
+  const total = employees.length
+
+  return reqSet.requirements.map(req => {
+    const comp = allCompetencies.find(c => c.id === req.competencyLibraryItemId)
+    const metCount = total > 0
+      ? employees.filter(emp => {
+          const item = emp.competenceItems.get(req.competencyLibraryItemId)
+          return item && (item.derivedStatus === 'VALID' || item.derivedStatus === 'EXPIRING')
+        }).length
+      : 0
+
+    const intervalLabel = req.requiresExpiry && req.validityDays
+      ? `${Math.round(req.validityDays / 30)} months`
+      : (comp?.defaultRequiresExpiry && comp?.defaultValidityDays
+          ? `${Math.round(comp.defaultValidityDays / 30)} months`
+          : 'No expiry')
+
+    return {
+      id: req.id,
+      compId: req.competencyLibraryItemId,
+      code: comp?.code ?? req.competencyLibraryItemId,
+      title: comp?.title ?? req.competencyLibraryItemId,
+      compType: comp?.competencyType ?? '—',
+      category: comp?.category ?? '—',
+      isGating: req.isGating,
+      mandatory: req.mandatory,
+      riskLevelCode: req.riskLevelCode,
+      interval: intervalLabel,
+      metCount,
+      total,
+    }
+  })
+})
+
+function compTypeBadgeClass(t: string) {
+  switch (t) {
+    case 'CERTIFICATION':           return 'badge-primary'
+    case 'EQUIPMENT_QUALIFICATION': return 'badge-primary'
+    case 'TRAINING':                return 'badge-warning'
+    case 'OJT_COACHING':            return 'badge-neutral'
+    case 'AWARENESS_TOPIC':         return 'badge-info'
+    default:                        return 'badge-neutral'
+  }
+}
+
+function compTypeLabel(t: string) {
+  switch (t) {
+    case 'CERTIFICATION':           return 'Certification'
+    case 'EQUIPMENT_QUALIFICATION': return 'Equipment Qual.'
+    case 'TRAINING':                return 'Training'
+    case 'OJT_COACHING':            return 'OJT / Coaching'
+    case 'AWARENESS_TOPIC':         return 'Awareness'
+    default:                        return t.replace(/_/g, ' ')
+  }
+}
+
+// ── Assigned People tab ───────────────────────────────────────────
+interface AssignedPersonRow {
+  employeeId: string
+  name: string
+  status: 'Authorised' | 'Under Supervision' | 'Not Authorised'
+  gapCount: number
+  supervisedItems: number
+  expiryIssues: number
+  readiness: number
+}
+
+const assignedPeopleRows = computed((): AssignedPersonRow[] => {
+  const reqSet = requirementsJson[roleName.value]
+  if (!reqSet) return assignedEmployees.value.map(e => {
+    const reqIds = Object.values(requirementsJson)
+      .find(rs => rs.setId)?.requirements.map(r => r.competencyLibraryItemId) ?? []
+    return buildPersonRow(e, reqIds)
+  })
+
+  const reqIds = reqSet.requirements.map(r => r.competencyLibraryItemId)
+  return assignedEmployees.value.map(e => buildPersonRow(e, reqIds))
+})
+
+function buildPersonRow(e: typeof matrixStore.mockEmployeeRows[0], reqIds: string[]): AssignedPersonRow {
+  let metCount = 0
+  let gapCount = 0
+  let supervisedItems = 0
+  let expiryIssues = 0
+
+  for (const id of reqIds) {
+    const item = e.competenceItems.get(id)
+    if (!item) { gapCount++; continue }
+    const ds = item.derivedStatus
+    if (ds === 'VALID') { metCount++ }
+    else if (ds === 'EXPIRING') { metCount++; expiryIssues++ }
+    else if (ds === 'UNDER_SUPERVISION') { supervisedItems++ }
+    else if (ds === 'EXPIRED') { gapCount++; expiryIssues++ }
+    else if (ds === 'REQUIRED' || ds === 'IN_PROGRESS') { gapCount++ }
+  }
+
+  const total = reqIds.length
+  const readiness = total > 0 ? Math.round((metCount / total) * 100) : 0
+
+  let status: AssignedPersonRow['status'] = 'Not Authorised'
+  if (e.isAuthorised) status = 'Authorised'
+  else if (e.supervisionStatus === 'SUPERVISED_ONLY') status = 'Under Supervision'
+
+  return {
+    employeeId: e.employeeId,
+    name: e.displayName,
+    status,
+    gapCount,
+    supervisedItems,
+    expiryIssues,
+    readiness,
+  }
+}
+
+function statusBadgeClass(s: string) {
+  switch (s) {
+    case 'Authorised':        return 'badge-success'
+    case 'Under Supervision': return 'badge-warning'
+    default:                  return 'badge-critical'
+  }
+}
+
+// ── Risk Summary ──────────────────────────────────────────────────
+interface RiskCompItem {
+  compId: string
+  title: string
+  gapCount: number
+  total: number
+  isGating: boolean
+  isSafetyCritical: boolean
+  gapPct: number
+}
+
+const riskCompetencies = computed((): RiskCompItem[] => {
+  const reqSet = requirementsJson[roleName.value]
+  if (!reqSet) return []
+
+  const employees = assignedEmployees.value
+  const total = employees.length
+  if (total === 0) return []
+
+  return reqSet.requirements
+    .map(req => {
+      const gapCount = employees.filter(emp => {
+        const item = emp.competenceItems.get(req.competencyLibraryItemId)
+        return item && (item.derivedStatus === 'EXPIRED' || item.derivedStatus === 'REQUIRED' || item.derivedStatus === 'IN_PROGRESS')
+      }).length
+      const comp = allCompetencies.find(c => c.id === req.competencyLibraryItemId)
+      return {
+        compId: req.competencyLibraryItemId,
+        title: comp?.title ?? req.competencyLibraryItemId,
+        gapCount,
+        total,
+        isGating: req.isGating,
+        isSafetyCritical: comp?.criticalityDomain === 'Safety Critical',
+        gapPct: Math.round((gapCount / total) * 100),
+      }
+    })
+    .filter(r => r.gapCount > 0)
+    .sort((a, b) => b.gapCount - a.gapCount)
+})
+
+const highestRiskItems = computed(() => riskCompetencies.value.slice(0, 5))
+
+const commonGaps = computed(() => riskCompetencies.value.filter(r => r.gapPct >= 50))
+
+function riskSeverityBadge(item: RiskCompItem) {
+  if (item.isSafetyCritical && item.isGating) return 'badge-critical'
+  if (item.isGating) return 'badge-high'
+  return 'badge-warning'
+}
+
+function riskSeverityLabel(item: RiskCompItem) {
+  if (item.isSafetyCritical && item.isGating) return 'Critical'
+  if (item.isGating) return 'High'
+  return 'Moderate'
+}
+
+function recommendedAction(item: RiskCompItem): string {
+  if (item.isSafetyCritical) return 'Schedule immediate retraining — safety-critical gap'
+  if (item.isGating) return 'Block authorisation until resolved — gating requirement'
+  return 'Add to next training cycle'
+}
+
+// ── Linked Awareness ──────────────────────────────────────────────
+const linkedAwareness = computed(() => {
+  const rn = roleName.value
+  if (!rn) return []
+  return allTopics.filter(t =>
+    t.requiredAudience.some(a =>
+      a === 'All Employees' || a.toLowerCase() === rn.toLowerCase()
+    )
+  )
+})
+
+function topicTypeBadgeClass(t: string) {
+  switch (t) {
+    case 'SAFETY_BRIEFING':       return 'badge-critical'
+    case 'PROCEDURE_REVISION':    return 'badge-warning'
+    case 'NEW_EQUIPMENT_INTRO':   return 'badge-primary'
+    case 'MANAGEMENT_SYSTEM_UPDATE': return 'badge-info'
+    case 'CUSTOMER_REQUIREMENT':  return 'badge-neutral'
+    default:                      return 'badge-neutral'
+  }
+}
+
+function topicTypeLabel(t: string) {
+  switch (t) {
+    case 'SAFETY_BRIEFING':          return 'Safety Briefing'
+    case 'PROCEDURE_REVISION':       return 'Procedure Rev.'
+    case 'NEW_EQUIPMENT_INTRO':      return 'New Equipment'
+    case 'MANAGEMENT_SYSTEM_UPDATE': return 'System Update'
+    case 'CUSTOMER_REQUIREMENT':     return 'Customer Req.'
+    default:                         return t.replace(/_/g, ' ')
+  }
+}
+
+function workflowLabel(s: string) {
+  switch (s) {
+    case 'AWAITING_ACKNOWLEDGEMENT': return 'Awaiting Ack.'
+    case 'IN_COMMUNICATION':         return 'In Communication'
+    case 'VERIFICATION_PENDING':     return 'Verification Pending'
+    case 'ISSUED':                   return 'Issued'
+    default:                         return s.replace(/_/g, ' ')
+  }
+}
+
+function deliveryLabel(d: string) {
+  switch (d) {
+    case 'READ_AND_ACKNOWLEDGE': return 'Read & Acknowledge'
+    case 'TEAM_BRIEFING':        return 'Team Briefing'
+    case 'TOOLBOX_TALK':         return 'Toolbox Talk'
+    case 'FORMAL_RETRAINING':    return 'Formal Retraining'
+    case 'SUPERVISOR_CASCADE':   return 'Supervisor Cascade'
+    default:                     return d.replace(/_/g, ' ')
+  }
+}
 </script>
 
 <template>
   <div v-if="jobTitle">
 
-    <!-- Page Header -->
+    <!-- ── Page Header ───────────────────────────────────────── -->
     <div class="role-header">
       <Button variant="ghost" size="icon" @click="goBack" aria-label="Back to Roles">
         <ChevronLeft class="icon-sm" aria-hidden="true" />
@@ -194,15 +584,90 @@ function goBack() {
       </div>
     </div>
 
+    <!-- ── 8.3 Role Summary Card ──────────────────────────────── -->
+    <Card class="summary-card">
+      <CardContent class="summary-card-content">
+        <!-- Left: role meta -->
+        <div class="summary-meta">
+          <div class="summary-meta-top">
+            <div>
+              <p class="summary-role-name">{{ roleName }}</p>
+              <p class="summary-dept">{{ roleSummary.department }}</p>
+            </div>
+            <span class="badge summary-criticality-badge" :class="criticalityClass(roleSummary.criticality)">
+              {{ roleSummary.criticality }}
+            </span>
+          </div>
+          <p class="summary-purpose">{{ roleSummary.purpose }}</p>
+        </div>
+
+        <!-- Right: stats -->
+        <div class="summary-stats">
+          <div class="summary-stat">
+            <Users class="summary-stat-icon" />
+            <div>
+              <p class="summary-stat-value">{{ roleSummary.assigned }}</p>
+              <p class="summary-stat-label">Assigned</p>
+            </div>
+          </div>
+          <div class="summary-stat">
+            <CheckCircle2 class="summary-stat-icon stat-icon-good" />
+            <div>
+              <p class="summary-stat-value">{{ roleSummary.fullyReady }}</p>
+              <p class="summary-stat-label">Fully Ready</p>
+            </div>
+          </div>
+          <div class="summary-stat">
+            <UserCheck class="summary-stat-icon stat-icon-warn" />
+            <div>
+              <p class="summary-stat-value">{{ roleSummary.underSupervision }}</p>
+              <p class="summary-stat-label">Under Supervision</p>
+            </div>
+          </div>
+          <div class="summary-readiness">
+            <div class="readiness-header">
+              <span class="readiness-label">Readiness Score</span>
+              <span class="readiness-value">{{ roleSummary.readinessScore }}%</span>
+            </div>
+            <div class="readiness-bar-track" role="progressbar" :aria-valuenow="roleSummary.readinessScore" aria-valuemin="0" aria-valuemax="100">
+              <div
+                class="readiness-bar-fill"
+                :style="{ width: roleSummary.readinessScore + '%' }"
+                :class="{
+                  'bar-fill-good': roleSummary.readinessScore >= 75,
+                  'bar-fill-warn': roleSummary.readinessScore >= 40 && roleSummary.readinessScore < 75,
+                  'bar-fill-danger': roleSummary.readinessScore < 40
+                }"
+              />
+            </div>
+            <p class="readiness-subtext">{{ roleSummary.fullyReady }} of {{ roleSummary.assigned }} people fully authorised</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+
+    <!-- ── Tabs ───────────────────────────────────────────────── -->
     <Tabs v-model="activeTab">
       <TabsList>
         <TabsTrigger value="applicability">
           <ShieldCheck class="icon-xs" aria-hidden="true" />
-          Applicability Decision
+          Applicability
         </TabsTrigger>
         <TabsTrigger value="requirements">
           <FileText class="icon-xs" aria-hidden="true" />
-          Role Requirements
+          Competencies
+        </TabsTrigger>
+        <TabsTrigger value="people">
+          <Users class="icon-xs" aria-hidden="true" />
+          Assigned People
+        </TabsTrigger>
+        <TabsTrigger value="risk">
+          <TrendingUp class="icon-xs" aria-hidden="true" />
+          Risk Summary
+        </TabsTrigger>
+        <TabsTrigger value="awareness">
+          <Bell class="icon-xs" aria-hidden="true" />
+          Linked Awareness
         </TabsTrigger>
         <TabsTrigger value="history">
           <HistoryIcon class="icon-xs" aria-hidden="true" />
@@ -210,10 +675,9 @@ function goBack() {
         </TabsTrigger>
       </TabsList>
 
-      <!-- ── Applicability Tab ─────────────────────────────── -->
+      <!-- ── 8.3 Applicability Tab ──────────────────────────── -->
       <TabsContent value="applicability">
         <div class="applicability-layout">
-
           <!-- Questions Column -->
           <div class="questions-column">
             <Card>
@@ -223,7 +687,6 @@ function goBack() {
               </CardHeader>
               <CardContent class="questions-content">
 
-                <!-- Q1 -->
                 <div class="question-item">
                   <div class="question-meta">
                     <span class="question-badge" aria-hidden="true">Q1</span>
@@ -238,15 +701,11 @@ function goBack() {
                       </div>
                     </div>
                   </div>
-                  <Switch
-                    v-model:checked="applicabilityForm.q1HandsOnOperational"
-                    aria-label="Q1: Does this role perform hands-on operational work?"
-                  />
+                  <Switch v-model:checked="applicabilityForm.q1HandsOnOperational" aria-label="Q1: Does this role perform hands-on operational work?" />
                 </div>
 
                 <Separator />
 
-                <!-- Q2 -->
                 <div class="question-item">
                   <div class="question-meta">
                     <span class="question-badge" aria-hidden="true">Q2</span>
@@ -261,15 +720,11 @@ function goBack() {
                       </div>
                     </div>
                   </div>
-                  <Switch
-                    v-model:checked="applicabilityForm.q2ConformitySignOff"
-                    aria-label="Q2: Does this role approve or sign off work affecting conformity?"
-                  />
+                  <Switch v-model:checked="applicabilityForm.q2ConformitySignOff" aria-label="Q2: Does this role approve or sign off work affecting conformity?" />
                 </div>
 
                 <Separator />
 
-                <!-- Q3 -->
                 <div class="question-item">
                   <div class="question-meta">
                     <span class="question-badge" aria-hidden="true">Q3</span>
@@ -284,15 +739,11 @@ function goBack() {
                       </div>
                     </div>
                   </div>
-                  <Switch
-                    v-model:checked="applicabilityForm.q3ErrorCausesImpact"
-                    aria-label="Q3: Can an error in this role cause safety or quality impact?"
-                  />
+                  <Switch v-model:checked="applicabilityForm.q3ErrorCausesImpact" aria-label="Q3: Can an error in this role cause safety or quality impact?" />
                 </div>
 
                 <Separator />
 
-                <!-- Q4 -->
                 <div class="question-item">
                   <div class="question-meta">
                     <span class="question-badge" aria-hidden="true">Q4</span>
@@ -307,15 +758,11 @@ function goBack() {
                       </div>
                     </div>
                   </div>
-                  <Switch
-                    v-model:checked="applicabilityForm.q4SpecificCompetenceRequired"
-                    aria-label="Q4: Is specific competence required, not just general awareness?"
-                  />
+                  <Switch v-model:checked="applicabilityForm.q4SpecificCompetenceRequired" aria-label="Q4: Is specific competence required, not just general awareness?" />
                 </div>
 
                 <Separator />
 
-                <!-- Q5 -->
                 <div class="question-item">
                   <div class="question-meta">
                     <span class="question-badge" aria-hidden="true">Q5</span>
@@ -330,43 +777,29 @@ function goBack() {
                       </div>
                     </div>
                   </div>
-                  <Switch
-                    v-model:checked="applicabilityForm.q5ObjectiveEvidenceRequired"
-                    aria-label="Q5: Is objective evidence required to prove competence?"
-                  />
+                  <Switch v-model:checked="applicabilityForm.q5ObjectiveEvidenceRequired" aria-label="Q5: Is objective evidence required to prove competence?" />
                 </div>
 
                 <Separator />
 
-                <!-- Notes -->
                 <div class="question-notes">
                   <Label for="decision-notes">Notes & Justification</Label>
-                  <Input
-                    id="decision-notes"
-                    v-model="applicabilityForm.notes"
-                    placeholder="Provide reasoning for the decision above..."
-                  />
+                  <Input id="decision-notes" v-model="applicabilityForm.notes" placeholder="Provide reasoning for the decision above..." />
                 </div>
 
-                <!-- Escalation tip -->
                 <div class="escalation-tip" role="note">
                   <AlertTriangle class="icon-xs" aria-hidden="true" />
                   <p>
                     If you answer NO on Q3, Q4, or Q5, this role should not be tracked in the Skills Matrix.
-                    Escalate borderline cases to QHSE/HR. Only roles where role-specific competence must be
-                    evidenced are included; company-wide policies (e.g. ethics, anti-bribery) are managed via
-                    induction/awareness records.
+                    Escalate borderline cases to QHSE/HR.
                   </p>
                 </div>
-
               </CardContent>
             </Card>
           </div>
 
           <!-- Result Column -->
           <div class="result-column">
-
-            <!-- Determination Card -->
             <Card class="result-card">
               <CardHeader>
                 <CardTitle class="result-card-title">Matrix Applicability Determination</CardTitle>
@@ -387,12 +820,7 @@ function goBack() {
                   <span>{{ getStatusLabel(computedResult) }}</span>
                 </div>
                 <p class="result-hint">Based on the answers provided above.</p>
-                <Button
-                  class="result-save-btn"
-                  :disabled="store.isSaving"
-                  @click="handleSaveApplicability"
-                  aria-label="Save applicability decision"
-                >
+                <Button v-if="canEditRoleRequirements" class="result-save-btn" :disabled="store.isSaving" @click="handleSaveApplicability" aria-label="Save applicability decision">
                   <Save v-if="!store.isSaving" class="icon-xs" aria-hidden="true" />
                   <span v-else class="result-spinner" aria-hidden="true" />
                   {{ store.isSaving ? 'Saving…' : 'Save Decision' }}
@@ -400,7 +828,6 @@ function goBack() {
               </CardContent>
             </Card>
 
-            <!-- Audit Trail -->
             <Card v-if="store.currentRole">
               <CardHeader>
                 <CardTitle class="audit-title">Audit Trail</CardTitle>
@@ -422,18 +849,17 @@ function goBack() {
                 </div>
               </CardContent>
             </Card>
-
           </div>
         </div>
       </TabsContent>
 
-      <!-- ── Requirements Tab ─────────────────────────────── -->
+      <!-- ── 8.4 Enhanced Requirements Tab ─────────────────── -->
       <TabsContent value="requirements">
         <div class="requirements-section">
           <div class="requirements-header">
             <div>
-              <h2 class="requirements-title">Requirement Pack</h2>
-              <p class="requirements-subtitle">Competencies required for this job title to be considered authorised.</p>
+              <h2 class="requirements-title">Required Competencies</h2>
+              <p class="requirements-subtitle">Competencies required for this role to be considered authorised. Team status shows how many people currently meet each requirement.</p>
             </div>
             <Button size="sm" aria-label="Add competency requirement">
               <Plus class="icon-xs" aria-hidden="true" />
@@ -446,36 +872,55 @@ function goBack() {
               <Table class="dense-table">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Competency</TableHead>
-                    <TableHead>Risk Level</TableHead>
-                    <TableHead>Mandatory</TableHead>
-                    <TableHead>Gating</TableHead>
-                    <TableHead>Training Type</TableHead>
-                    <TableHead>Assessment</TableHead>
+                    <TableHead style="width: 70px">Code</TableHead>
+                    <TableHead>Item</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Level</TableHead>
+                    <TableHead class="col-center">Mandatory</TableHead>
+                    <TableHead>Interval</TableHead>
+                    <TableHead class="col-center">Team Status</TableHead>
                     <TableHead class="table-actions-header">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow v-for="req in store.roleRequirements" :key="req.id">
-                    <TableCell class="req-name">{{ getCompetencyName(req.competencyLibraryItemId) }}</TableCell>
+                  <TableRow v-for="req in enrichedRequirements" :key="req.id">
+                    <TableCell class="code-cell">{{ req.code }}</TableCell>
+                    <TableCell class="req-name">{{ req.title }}</TableCell>
                     <TableCell>
-                      <span
-                        class="badge"
-                        :class="req.riskLevelCode === 'HIGH_CRITICAL' ? 'badge-critical' : req.riskLevelCode === 'MEDIUM' ? 'badge-warning' : 'badge-neutral'"
-                      >
-                        {{ req.riskLevelCode.replace('_', '/') }}
+                      <span class="badge" :class="compTypeBadgeClass(req.compType)">
+                        {{ compTypeLabel(req.compType) }}
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span v-if="req.mandatory" class="badge badge-primary">Yes</span>
-                      <span v-else class="req-empty">—</span>
+                      <span class="category-text">{{ req.category }}</span>
                     </TableCell>
                     <TableCell>
                       <span v-if="req.isGating" class="badge badge-critical">Gating</span>
+                      <span v-else class="badge badge-neutral">Required</span>
+                    </TableCell>
+                    <TableCell class="col-center">
+                      <Flag v-if="req.mandatory" class="icon-xs flag-icon" aria-label="Mandatory" />
                       <span v-else class="req-empty">—</span>
                     </TableCell>
-                    <TableCell class="req-code">{{ req.trainingTypeCode.replace(/_/g, ' ') }}</TableCell>
-                    <TableCell class="req-code">{{ req.assessmentMethodCode.replace(/_/g, ' ') }}</TableCell>
+                    <TableCell>
+                      <span class="interval-text">{{ req.interval }}</span>
+                    </TableCell>
+                    <TableCell class="col-center">
+                      <div v-if="req.total > 0" class="team-status">
+                        <span class="team-status-text" :class="req.metCount === req.total ? 'stat-good' : 'stat-warn'">
+                          {{ req.metCount }}/{{ req.total }}
+                        </span>
+                        <div class="team-bar-track">
+                          <div
+                            class="team-bar-fill"
+                            :style="{ width: (req.total > 0 ? (req.metCount / req.total) * 100 : 0) + '%' }"
+                            :class="req.metCount === req.total ? 'bar-fill-good' : 'bar-fill-warn'"
+                          />
+                        </div>
+                      </div>
+                      <span v-else class="req-empty">—</span>
+                    </TableCell>
                     <TableCell class="table-actions-cell">
                       <DropdownMenu>
                         <DropdownMenuTrigger as-child>
@@ -484,13 +929,16 @@ function goBack() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem @click="openEditSheet(req)">Edit</DropdownMenuItem>
+                          <DropdownMenuItem @click="() => {
+                            const r = store.roleRequirements.find(x => x.id === req.id)
+                            if (r) openEditSheet(r)
+                          }">Edit</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                  <TableRow v-if="store.roleRequirements.length === 0">
-                    <TableCell colspan="7" class="req-empty-state">
+                  <TableRow v-if="enrichedRequirements.length === 0">
+                    <TableCell colspan="9" class="req-empty-state">
                       No requirements configured for this role yet.
                     </TableCell>
                   </TableRow>
@@ -501,7 +949,239 @@ function goBack() {
         </div>
       </TabsContent>
 
-      <!-- ── History Tab ──────────────────────────────────── -->
+      <!-- ── 8.5 Assigned People Tab ────────────────────────── -->
+      <TabsContent value="people">
+        <div class="requirements-section">
+          <div class="requirements-header">
+            <div>
+              <h2 class="requirements-title">Assigned People</h2>
+              <p class="requirements-subtitle">All employees with the job title "{{ roleName }}" and their current competence status.</p>
+            </div>
+          </div>
+
+          <Card>
+            <CardContent class="requirements-table-wrap">
+              <Table class="dense-table">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Current Status</TableHead>
+                    <TableHead class="col-center">Gap Count</TableHead>
+                    <TableHead class="col-center">Supervised Items</TableHead>
+                    <TableHead class="col-center">Expiry Issues</TableHead>
+                    <TableHead class="col-center">Readiness</TableHead>
+                    <TableHead class="table-actions-header">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow v-for="person in assignedPeopleRows" :key="person.employeeId">
+                    <TableCell class="req-name">{{ person.name }}</TableCell>
+                    <TableCell>
+                      <span class="badge" :class="statusBadgeClass(person.status)">
+                        {{ person.status }}
+                      </span>
+                    </TableCell>
+                    <TableCell class="col-center">
+                      <span v-if="person.gapCount > 0" class="stat-count stat-warn">{{ person.gapCount }}</span>
+                      <span v-else class="stat-count stat-good">0</span>
+                    </TableCell>
+                    <TableCell class="col-center">
+                      <span v-if="person.supervisedItems > 0" class="stat-count stat-info">{{ person.supervisedItems }}</span>
+                      <span v-else class="empty-value">0</span>
+                    </TableCell>
+                    <TableCell class="col-center">
+                      <span v-if="person.expiryIssues > 0" class="stat-count stat-warn">{{ person.expiryIssues }}</span>
+                      <span v-else class="empty-value">0</span>
+                    </TableCell>
+                    <TableCell class="col-center">
+                      <div class="readiness-cell">
+                        <span class="readiness-pct" :class="person.readiness >= 75 ? 'stat-good' : person.readiness >= 40 ? 'stat-warn' : 'stat-danger'">
+                          {{ person.readiness }}%
+                        </span>
+                        <div class="team-bar-track">
+                          <div
+                            class="team-bar-fill"
+                            :style="{ width: person.readiness + '%' }"
+                            :class="{
+                              'bar-fill-good': person.readiness >= 75,
+                              'bar-fill-warn': person.readiness >= 40 && person.readiness < 75,
+                              'bar-fill-danger': person.readiness < 40
+                            }"
+                          />
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell class="table-actions-cell">
+                      <Button variant="ghost" size="sm" class="link-btn" aria-label="View employee profile">
+                        <ExternalLink class="icon-xxs" aria-hidden="true" />
+                        Profile
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow v-if="assignedPeopleRows.length === 0">
+                    <TableCell colspan="7" class="req-empty-state">
+                      <div class="role-empty-state">
+                        <Users class="role-empty-icon" />
+                        <p class="role-empty-message">No employees currently assigned to this role.</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+      </TabsContent>
+
+      <!-- ── 8.6 Risk Summary Tab ───────────────────────────── -->
+      <TabsContent value="risk">
+        <div class="requirements-section">
+          <div class="requirements-header">
+            <div>
+              <h2 class="requirements-title">Role Risk Summary</h2>
+              <p class="requirements-subtitle">Highest-risk competency gaps and common deficiencies across the assigned team.</p>
+            </div>
+          </div>
+
+          <div v-if="assignedEmployees.length === 0" class="empty-panel">
+            <AlertTriangle class="empty-panel-icon" />
+            <p>No employee data available. Ensure the skills matrix has been built.</p>
+          </div>
+
+          <template v-else>
+            <!-- Highest-Risk Missing Requirements -->
+            <Card>
+              <CardHeader>
+                <CardTitle class="section-title">Highest-Risk Missing Requirements</CardTitle>
+                <CardDescription>Competencies where the most assigned people have gaps, ordered by gap count.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div v-if="highestRiskItems.length === 0" class="req-empty-state">
+                  No gaps found — all requirements are met across the team.
+                </div>
+                <Table v-else class="dense-table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Competency</TableHead>
+                      <TableHead class="col-center">Gap Count</TableHead>
+                      <TableHead class="col-center">Gap Rate</TableHead>
+                      <TableHead>Gating</TableHead>
+                      <TableHead>Severity</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow v-for="item in highestRiskItems" :key="item.compId">
+                      <TableCell class="req-name">{{ item.title }}</TableCell>
+                      <TableCell class="col-center">
+                        <span class="gap-count-text">{{ item.gapCount }} of {{ item.total }} people missing</span>
+                      </TableCell>
+                      <TableCell class="col-center">
+                        <span class="stat-count" :class="item.gapPct >= 50 ? 'stat-warn' : 'stat-info'">{{ item.gapPct }}%</span>
+                      </TableCell>
+                      <TableCell>
+                        <span v-if="item.isGating" class="badge badge-critical">Gating</span>
+                        <span v-else class="badge badge-neutral">Non-Gating</span>
+                      </TableCell>
+                      <TableCell>
+                        <span class="badge" :class="riskSeverityBadge(item)">{{ riskSeverityLabel(item) }}</span>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            <!-- Common Gaps -->
+            <Card>
+              <CardHeader>
+                <CardTitle class="section-title">Common Gaps Across Team</CardTitle>
+                <CardDescription>Competencies where ≥ 50% of assigned people have a gap. These indicate systemic training needs.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div v-if="commonGaps.length === 0" class="req-empty-state">
+                  No common gaps — no competency has a gap rate ≥ 50%.
+                </div>
+                <Table v-else class="dense-table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Competency</TableHead>
+                      <TableHead class="col-center">% Missing</TableHead>
+                      <TableHead>Recommended Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow v-for="item in commonGaps" :key="item.compId">
+                      <TableCell class="req-name">{{ item.title }}</TableCell>
+                      <TableCell class="col-center">
+                        <span class="stat-count stat-warn">{{ item.gapPct }}%</span>
+                      </TableCell>
+                      <TableCell class="action-text">{{ recommendedAction(item) }}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </template>
+        </div>
+      </TabsContent>
+
+      <!-- ── 8.7 Linked Awareness Tab ───────────────────────── -->
+      <TabsContent value="awareness">
+        <div class="requirements-section">
+          <div class="requirements-header">
+            <div>
+              <h2 class="requirements-title">Linked Awareness & Mandatory Communications</h2>
+              <p class="requirements-subtitle">Active awareness topics and communications targeted at this role or all employees.</p>
+            </div>
+          </div>
+
+          <Card>
+            <CardContent class="requirements-table-wrap">
+              <Table class="dense-table">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Topic</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Effective Date</TableHead>
+                    <TableHead>Completion</TableHead>
+                    <TableHead>Delivery Method</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow v-for="topic in linkedAwareness" :key="topic.id">
+                    <TableCell class="req-name">{{ topic.title }}</TableCell>
+                    <TableCell>
+                      <span class="badge" :class="topicTypeBadgeClass(topic.topicType)">
+                        {{ topicTypeLabel(topic.topicType) }}
+                      </span>
+                    </TableCell>
+                    <TableCell class="date-cell">{{ formatDate(topic.effectiveDate) }}</TableCell>
+                    <TableCell>
+                      <div class="completion-cell">
+                        <span class="completion-pct">{{ topic.completion }}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell class="req-code">{{ deliveryLabel(topic.deliveryMethod) }}</TableCell>
+                    <TableCell>
+                      <span class="badge" :class="topic.status === 'Completed' ? 'badge-success' : topic.status === 'Active' ? 'badge-primary' : 'badge-neutral'">
+                        {{ workflowLabel(topic.workflowStatus) }}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow v-if="linkedAwareness.length === 0">
+                    <TableCell colspan="6" class="req-empty-state">
+                      No awareness topics are currently targeted at this role.
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+      </TabsContent>
+
+      <!-- ── History Tab ────────────────────────────────────── -->
       <TabsContent value="history">
         <Card>
           <CardHeader>
@@ -543,14 +1223,10 @@ function goBack() {
       <SheetContent class="sheet-panel">
         <SheetHeader class="sheet-header">
           <SheetTitle>Edit Requirement</SheetTitle>
-          <SheetDescription>
-            Update the risk classification and assessment parameters for this competency.
-          </SheetDescription>
+          <SheetDescription>Update the risk classification and assessment parameters for this competency.</SheetDescription>
         </SheetHeader>
-
         <div class="sheet-body">
           <div class="form-grid">
-            <!-- Risk Level -->
             <div class="form-field form-field-full">
               <Label for="edit-risk-level">Risk Level</Label>
               <Select v-model="editForm.riskLevelCode">
@@ -564,8 +1240,6 @@ function goBack() {
                 </SelectContent>
               </Select>
             </div>
-
-            <!-- Training Type -->
             <div class="form-field form-field-full">
               <Label for="edit-training-type">Training Type</Label>
               <Select v-model="editForm.trainingTypeCode">
@@ -580,8 +1254,6 @@ function goBack() {
                 </SelectContent>
               </Select>
             </div>
-
-            <!-- Assessment Method -->
             <div class="form-field form-field-full">
               <Label for="edit-assessment-method">Assessment Method</Label>
               <Select v-model="editForm.assessmentMethodCode">
@@ -595,11 +1267,7 @@ function goBack() {
                 </SelectContent>
               </Select>
             </div>
-
-            <!-- Divider -->
             <div class="form-divider" />
-
-            <!-- Mandatory toggle -->
             <div class="form-field form-field-full">
               <div class="form-toggle-row">
                 <div>
@@ -609,8 +1277,6 @@ function goBack() {
                 <Switch v-model:checked="editForm.mandatory" aria-label="Toggle mandatory" />
               </div>
             </div>
-
-            <!-- Gating toggle -->
             <div class="form-field form-field-full">
               <div class="form-toggle-row">
                 <div>
@@ -622,10 +1288,9 @@ function goBack() {
             </div>
           </div>
         </div>
-
         <SheetFooter class="sheet-footer">
           <Button variant="ghost" @click="isEditSheetOpen = false">Cancel</Button>
-          <Button :disabled="store.isSaving" @click="handleSaveRequirement">
+          <Button v-if="canEditRoleRequirements" :disabled="store.isSaving" @click="handleSaveRequirement">
             <span v-if="store.isSaving">Saving…</span>
             <span v-else>Save Changes</span>
           </Button>
@@ -643,7 +1308,7 @@ function goBack() {
 </template>
 
 <style scoped>
-/* ─── Header ───────────────────────────────────────────────── */
+/* ─── Header ───────────────────────────────────────────── */
 .role-header {
   display: flex;
   align-items: center;
@@ -651,16 +1316,146 @@ function goBack() {
   margin-bottom: var(--space-lg);
 }
 
-.role-header-text {
-  flex: 1;
+.role-header-text { flex: 1; }
+.role-header-badge { display: flex; align-items: center; }
+
+/* ─── 8.3 Summary Card ─────────────────────────────────── */
+.summary-card {
+  margin-bottom: var(--space-lg);
+  border-left: 4px solid var(--brand-primary);
 }
 
-.role-header-badge {
+.summary-card-content {
+  display: flex;
+  gap: var(--space-2xl);
+  padding: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.summary-meta {
+  flex: 1;
+  min-width: 220px;
+}
+
+.summary-meta-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-sm);
+}
+
+.summary-role-name {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-heading);
+  margin: 0 0 var(--space-xs) 0;
+}
+
+.summary-dept {
+  font-size: 0.8125rem;
+  color: var(--text-caption);
+  margin: 0;
+}
+
+.summary-criticality-badge {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.summary-purpose {
+  font-size: 0.8125rem;
+  color: var(--text-body);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.summary-stats {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-xl);
+  flex-wrap: wrap;
+}
+
+.summary-stat {
   display: flex;
   align-items: center;
+  gap: var(--space-sm);
 }
 
-/* ─── Applicability layout ─────────────────────────────────── */
+.summary-stat-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--text-caption);
+  flex-shrink: 0;
+}
+
+.stat-icon-good { color: var(--brand-success); }
+.stat-icon-warn { color: var(--brand-warning); }
+
+.summary-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-heading);
+  margin: 0;
+  line-height: 1;
+}
+
+.summary-stat-label {
+  font-size: 0.75rem;
+  color: var(--text-caption);
+  margin: 2px 0 0 0;
+}
+
+/* Readiness block */
+.summary-readiness {
+  min-width: 160px;
+}
+
+.readiness-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.readiness-label {
+  font-size: 0.75rem;
+  color: var(--text-caption);
+}
+
+.readiness-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.readiness-bar-track {
+  height: 8px;
+  background: var(--bg-subtle);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.readiness-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.4s ease;
+}
+
+.readiness-subtext {
+  font-size: 0.6875rem;
+  color: var(--text-caption);
+  margin: 0;
+}
+
+/* ─── Progress bar fills ───────────────────────────────── */
+.bar-fill-good   { background: var(--brand-success); }
+.bar-fill-warn   { background: var(--brand-warning); }
+.bar-fill-danger { background: oklch(0.5 0.2 25); }
+
+/* ─── Applicability layout ─────────────────────────────── */
 .applicability-layout {
   display: grid;
   grid-template-columns: 1fr 300px;
@@ -669,9 +1464,7 @@ function goBack() {
   align-items: start;
 }
 
-.questions-column {
-  min-width: 0;
-}
+.questions-column { min-width: 0; }
 
 .result-column {
   display: flex;
@@ -681,7 +1474,7 @@ function goBack() {
   top: var(--space-lg);
 }
 
-/* ─── Questions card content ───────────────────────────────── */
+/* ─── Questions ────────────────────────────────────────── */
 .questions-content {
   display: flex;
   flex-direction: column;
@@ -689,16 +1482,13 @@ function goBack() {
   padding: var(--space-md);
 }
 
-/* ─── Question row ─────────────────────────────────────────── */
 .question-item {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-lg);
   padding: var(--space-md) 0;
-  transition: opacity 0.2s ease;
 }
-
 
 .question-meta {
   display: flex;
@@ -723,65 +1513,18 @@ function goBack() {
   margin-top: 2px;
 }
 
+.question-text { flex: 1; min-width: 0; }
+.question-label { font-size: 0.875rem; font-weight: 600; color: var(--text-heading); margin: 0 0 var(--space-xs) 0; }
+.question-desc { font-size: 0.8125rem; color: var(--text-body); margin: 0 0 var(--space-xs) 0; line-height: 1.5; }
+.question-examples { font-size: 0.75rem; color: var(--text-caption); font-style: italic; margin: 0 0 var(--space-xs) 0; }
 
-.question-text {
-  flex: 1;
-  min-width: 0;
-}
+.question-flow { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
+.flow-yes { font-size: 0.6875rem; font-weight: 600; color: var(--brand-success); }
+.flow-sep { font-size: 0.6875rem; color: var(--text-caption); }
+.flow-no  { font-size: 0.6875rem; color: var(--text-caption); }
 
-.question-label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-heading);
-  margin: 0 0 var(--space-xs) 0;
-}
+.question-notes { padding: var(--space-md) 0 var(--space-sm); display: flex; flex-direction: column; gap: var(--space-xs); }
 
-.question-desc {
-  font-size: 0.8125rem;
-  color: var(--text-body);
-  margin: 0 0 var(--space-xs) 0;
-  line-height: 1.5;
-}
-
-.question-examples {
-  font-size: 0.75rem;
-  color: var(--text-caption);
-  font-style: italic;
-  margin: 0 0 var(--space-xs) 0;
-}
-
-.question-flow {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  flex-wrap: wrap;
-}
-
-.flow-yes {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  color: var(--brand-success);
-}
-
-.flow-sep {
-  font-size: 0.6875rem;
-  color: var(--text-caption);
-}
-
-.flow-no {
-  font-size: 0.6875rem;
-  color: var(--text-caption);
-}
-
-/* ─── Notes field ──────────────────────────────────────────── */
-.question-notes {
-  padding: var(--space-md) 0 var(--space-sm);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-}
-
-/* ─── Escalation tip ───────────────────────────────────────── */
 .escalation-tip {
   display: flex;
   align-items: flex-start;
@@ -793,29 +1536,12 @@ function goBack() {
   margin-top: var(--space-xs);
 }
 
-.escalation-tip svg {
-  color: var(--brand-warning);
-  flex-shrink: 0;
-  margin-top: 2px;
-}
+.escalation-tip svg { color: var(--brand-warning); flex-shrink: 0; margin-top: 2px; }
+.escalation-tip p { font-size: 0.75rem; color: var(--text-body); margin: 0; line-height: 1.5; }
 
-.escalation-tip p {
-  font-size: 0.75rem;
-  color: var(--text-body);
-  margin: 0;
-  line-height: 1.5;
-}
-
-/* ─── Result card ──────────────────────────────────────────── */
-.result-card-title {
-  font-size: 0.8125rem;
-}
-
-.result-label {
-  font-size: 0.75rem;
-  color: var(--text-caption);
-  margin: 0 0 var(--space-sm) 0;
-}
+/* ─── Result card ──────────────────────────────────────── */
+.result-card-title { font-size: 0.8125rem; }
+.result-label { font-size: 0.75rem; color: var(--text-caption); margin: 0 0 var(--space-sm) 0; }
 
 .result-outcome {
   display: flex;
@@ -828,54 +1554,26 @@ function goBack() {
   margin-bottom: var(--space-xs);
 }
 
-.result-outcome-included {
-  background: oklch(0.62 0.14 162 / 0.1);
-  color: var(--brand-success);
-}
+.result-outcome-included      { background: oklch(0.62 0.14 162 / 0.1); color: var(--brand-success); }
+.result-outcome-awareness-only { background: oklch(0.72 0.15 58 / 0.1); color: var(--brand-warning); }
+.result-outcome-out-of-scope   { background: var(--bg-subtle); color: var(--text-caption); }
 
-.result-outcome-awareness-only {
-  background: oklch(0.72 0.15 58 / 0.1);
-  color: var(--brand-warning);
-}
-
-.result-outcome-out-of-scope {
-  background: var(--bg-subtle);
-  color: var(--text-caption);
-}
-
-
-.result-hint {
-  font-size: 0.75rem;
-  color: var(--text-caption);
-  margin: 0 0 var(--space-md) 0;
-}
-
-.result-save-btn {
-  width: 100%;
-}
+.result-hint { font-size: 0.75rem; color: var(--text-caption); margin: 0 0 var(--space-md) 0; }
+.result-save-btn { width: 100%; }
 
 .result-spinner {
   display: inline-block;
-  width: 14px;
-  height: 14px;
+  width: 14px; height: 14px;
   border: 2px solid currentColor;
   border-top-color: transparent;
   border-radius: var(--radius-full);
   animation: spin 0.6s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-/* ─── Audit card ───────────────────────────────────────────── */
-.audit-title {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-caption);
-}
+/* ─── Audit card ───────────────────────────────────────── */
+.audit-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-caption); }
 
 .audit-row {
   display: flex;
@@ -886,20 +1584,11 @@ function goBack() {
   border-bottom: var(--border-subtle);
 }
 
-.audit-row:last-child {
-  border-bottom: none;
-}
+.audit-row:last-child { border-bottom: none; }
+.audit-label { color: var(--text-caption); }
+.audit-value { font-weight: 500; color: var(--text-body); }
 
-.audit-label {
-  color: var(--text-caption);
-}
-
-.audit-value {
-  font-weight: 500;
-  color: var(--text-body);
-}
-
-/* ─── Requirements tab ─────────────────────────────────────── */
+/* ─── Requirements / People / Risk / Awareness sections ── */
 .requirements-section {
   display: flex;
   flex-direction: column;
@@ -914,59 +1603,107 @@ function goBack() {
   gap: var(--space-md);
 }
 
-.requirements-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-heading);
-  margin: 0 0 var(--space-xs) 0;
+.requirements-title { font-size: 1rem; font-weight: 600; color: var(--text-heading); margin: 0 0 var(--space-xs) 0; }
+.requirements-subtitle { font-size: 0.8125rem; color: var(--text-caption); margin: 0; }
+.requirements-table-wrap { padding: 0; }
+
+.section-title { font-size: 0.9375rem; }
+
+/* ─── Table helpers ────────────────────────────────────── */
+.col-center { text-align: center; }
+.code-cell { font-family: var(--font-mono); font-size: 0.75rem; }
+.req-name { font-weight: 500; color: var(--text-heading); }
+.req-code { font-size: 0.75rem; text-transform: uppercase; color: var(--text-caption); letter-spacing: 0.02em; }
+.req-empty { color: var(--text-caption); }
+.req-empty-state { text-align: center; padding: var(--space-2xl); color: var(--text-caption); font-style: italic; }
+
+.role-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xl) 0;
+  font-style: normal;
 }
 
-.requirements-subtitle {
-  font-size: 0.8125rem;
+.role-empty-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--text-caption);
+  opacity: 0.4;
+}
+
+.role-empty-message {
+  font-size: 0.875rem;
   color: var(--text-caption);
   margin: 0;
 }
+.date-cell { font-size: 0.8125rem; white-space: nowrap; }
+.category-text { font-size: 0.75rem; color: var(--text-caption); }
+.interval-text { font-size: 0.8125rem; white-space: nowrap; }
+.action-text { font-size: 0.8125rem; color: var(--text-body); }
+.gap-count-text { font-size: 0.8125rem; color: var(--text-body); }
+.completion-pct { font-size: 0.875rem; font-weight: 600; color: var(--text-body); }
 
-.requirements-table-wrap {
-  padding: 0;
+/* ─── Team status mini bar ─────────────────────────────── */
+.team-status { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.team-status-text { font-size: 0.75rem; font-weight: 600; }
+.team-bar-track { width: 48px; height: 4px; background: var(--bg-subtle); border-radius: var(--radius-full); overflow: hidden; }
+.team-bar-fill { height: 100%; border-radius: var(--radius-full); transition: width 0.3s ease; }
+
+/* ─── Readiness cell ───────────────────────────────────── */
+.readiness-cell { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.readiness-pct { font-size: 0.8125rem; font-weight: 600; }
+
+/* ─── Stat counts ──────────────────────────────────────── */
+.stat-count { font-size: 0.875rem; font-weight: 600; display: inline-block; min-width: 24px; text-align: center; }
+.stat-good   { color: var(--brand-success); }
+.stat-warn   { color: var(--brand-warning); }
+.stat-info   { color: var(--brand-primary); }
+.stat-danger { color: oklch(0.5 0.2 25); }
+.empty-value { font-size: 0.75rem; color: var(--text-caption); }
+
+/* ─── Flag icon ────────────────────────────────────────── */
+.flag-icon { color: var(--brand-primary); }
+
+/* ─── Link button ──────────────────────────────────────── */
+.link-btn { font-size: 0.75rem; gap: 4px; }
+
+/* ─── Risk badges ──────────────────────────────────────── */
+.badge-critical {
+  background-color: oklch(0.5 0.2 25 / 0.15);
+  color: oklch(0.45 0.2 25);
+  border: 1px solid oklch(0.5 0.2 25 / 0.3);
 }
 
-.req-name {
-  font-weight: 500;
-  color: var(--text-heading);
+.badge-high {
+  background-color: oklch(0.65 0.18 50 / 0.15);
+  color: oklch(0.5 0.18 50);
+  border: 1px solid oklch(0.65 0.18 50 / 0.3);
 }
 
-.req-code {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  color: var(--text-caption);
-  letter-spacing: 0.02em;
+.badge-info {
+  background-color: oklch(0.55 0.15 255 / 0.12);
+  color: oklch(0.45 0.15 255);
+  border: 1px solid oklch(0.55 0.15 255 / 0.25);
 }
 
-.req-empty {
-  color: var(--text-caption);
-}
-
-.req-empty-state {
-  text-align: center;
-  padding: var(--space-2xl);
-  color: var(--text-caption);
-  font-style: italic;
-}
-
-/* ─── History tab ──────────────────────────────────────────── */
-.history-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-md);
-}
-
-.history-list {
+/* ─── Empty panel ──────────────────────────────────────── */
+.empty-panel {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--space-sm);
+  padding: var(--space-2xl);
+  color: var(--text-caption);
+  text-align: center;
 }
+
+.empty-panel-icon { width: 32px; height: 32px; color: var(--brand-warning); }
+
+/* ─── History tab ──────────────────────────────────────── */
+.history-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-md); }
+.history-list { display: flex; flex-direction: column; gap: var(--space-sm); }
 
 .history-item {
   display: flex;
@@ -978,85 +1715,55 @@ function goBack() {
   transition: background 0.15s ease;
 }
 
-.history-item:hover {
-  background: var(--bg-subtle);
-}
+.history-item:hover { background: var(--bg-subtle); }
 
 .history-version {
-  width: 40px;
-  height: 40px;
+  width: 40px; height: 40px;
   border-radius: var(--radius-full);
   background: oklch(0.38 0.14 266 / 0.1);
   color: var(--brand-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 700;
-  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
 }
 
-.history-info {
-  flex: 1;
-}
+.history-info { flex: 1; }
+.history-status { font-size: 0.875rem; font-weight: 600; color: var(--text-heading); display: flex; align-items: center; gap: var(--space-xs); margin-bottom: 2px; }
+.history-date { font-size: 0.75rem; color: var(--text-caption); }
+.history-empty { text-align: center; padding: var(--space-2xl); color: var(--text-caption); font-style: italic; }
 
-.history-status {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-heading);
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  margin-bottom: 2px;
-}
+/* ─── Sheet panel ──────────────────────────────────────── */
+.sheet-body { padding: var(--space-lg); overflow-y: auto; flex: 1; }
+.form-grid { display: flex; flex-direction: column; gap: var(--space-md); }
+.form-field { display: flex; flex-direction: column; gap: var(--space-xs); }
+.form-field-full { width: 100%; }
+.form-divider { border-top: var(--border-subtle); margin: var(--space-xs) 0; }
+.form-toggle-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-md); }
+.form-toggle-label { font-size: 0.875rem; font-weight: 500; color: var(--text-heading); margin: 0 0 2px 0; }
+.form-toggle-desc { font-size: 0.75rem; color: var(--text-caption); margin: 0; }
 
-.history-date {
-  font-size: 0.75rem;
-  color: var(--text-caption);
-}
-
-.history-empty {
-  text-align: center;
-  padding: var(--space-2xl);
-  color: var(--text-caption);
-  font-style: italic;
-}
-
-/* ─── Icon helper ──────────────────────────────────────────── */
-.icon-xxs {
-  width: 12px;
-  height: 12px;
-}
-
-/* ─── Loading ──────────────────────────────────────────────── */
+/* ─── Loading ──────────────────────────────────────────── */
 .role-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-md);
-  padding: var(--space-2xl);
-  color: var(--text-caption);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--space-md); padding: var(--space-2xl); color: var(--text-caption);
 }
 
 .role-loading-spinner {
   display: inline-block;
-  width: 24px;
-  height: 24px;
+  width: 24px; height: 24px;
   border: 2px solid var(--brand-primary);
   border-top-color: transparent;
   border-radius: var(--radius-full);
   animation: spin 0.6s linear infinite;
 }
 
-/* ─── Responsive ───────────────────────────────────────────── */
-@media (max-width: 1024px) {
-  .applicability-layout {
-    grid-template-columns: 1fr;
-  }
+/* ─── Icon sizes ───────────────────────────────────────── */
+.icon-xxs { width: 12px; height: 12px; }
 
-  .result-column {
-    position: static;
-  }
+/* ─── Responsive ───────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .applicability-layout { grid-template-columns: 1fr; }
+  .result-column { position: static; }
+  .summary-card-content { flex-direction: column; }
+  .summary-stats { gap: var(--space-lg); }
 }
 </style>

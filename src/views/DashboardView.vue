@@ -1,242 +1,637 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useEmployeesStore } from '@/stores/employees'
 import { useSkillsMatrixStore } from '@/stores/skillsMatrix'
 import { useTrainingNeedsStore } from '@/stores/trainingNeeds'
-import { CheckCircle, AlertTriangle, XCircle, UserX, Clock, ShieldAlert, FileText, Users, Eye } from 'lucide-vue-next'
+import {
+  AlertTriangle,
+  Eye,
+  UserX,
+  Clock,
+  FileWarning,
+  Megaphone,
+  ShieldAlert,
+  RefreshCw,
+  FileText,
+  SlidersHorizontal,
+  Users,
+  UserCircle2,
+} from 'lucide-vue-next'
 import activityData from '@/data/dashboardActivity.json'
+import awarenessData from '@/data/awarenessTopics.json'
+import GapByDepartmentChart from '@/components/dashboard/GapByDepartmentChart.vue'
+import GapByCategoryChart from '@/components/dashboard/GapByCategoryChart.vue'
+import SourceBreakdownChart from '@/components/dashboard/SourceBreakdownChart.vue'
+import RoleReadinessChart from '@/components/dashboard/RoleReadinessChart.vue'
+import ExpiryTrendChart from '@/components/dashboard/ExpiryTrendChart.vue'
 
+// ─── Stores & router ──────────────────────────────────────────────────────────
+
+const router = useRouter()
 const authStore = useAuthStore()
 const employeesStore = useEmployeesStore()
 const matrixStore = useSkillsMatrixStore()
 const trainingStore = useTrainingNeedsStore()
 
+// ─── Static data ──────────────────────────────────────────────────────────────
+
 const recentActivity = ref(activityData)
 
+interface AwarenessTopicRaw {
+  id: string
+  title: string
+  completion: string
+  status: string
+  targetAudience: string
+}
+
+const awarenessTopics = awarenessData as AwarenessTopicRaw[]
+
+// ─── Dashboard filters ────────────────────────────────────────────────────────
+
+const filterDepartment = ref('')
+const filterRole = ref('')
+const filterMyTeam = ref(false)
+
+// ─── Derived: available filter options ────────────────────────────────────────
+
+const availableDepartments = computed(() => {
+  const depts = new Set<string>()
+  for (const emp of matrixStore.mockEmployeeRows) {
+    if (emp.department) depts.add(emp.department)
+  }
+  return Array.from(depts).sort()
+})
+
+const availableRoles = computed(() => {
+  const roles = new Set<string>()
+  for (const emp of matrixStore.mockEmployeeRows) {
+    if (emp.jobTitle) roles.add(emp.jobTitle)
+  }
+  return Array.from(roles).sort()
+})
+
+// ─── Filtered employees (respects dashboard filter bar) ───────────────────────
+
+const filteredEmployees = computed(() => {
+  let result = matrixStore.mockEmployeeRows
+
+  if (filterDepartment.value) {
+    result = result.filter(e => e.department === filterDepartment.value)
+  }
+  if (filterRole.value) {
+    result = result.filter(e => e.jobTitle === filterRole.value)
+  }
+  // "My Team" toggle: narrow to the manager's direct reports if we have manager info
+  if (filterMyTeam.value) {
+    const myName = authStore.user?.displayName
+    if (myName) {
+      result = result.filter(e => e.managerName === myName)
+    }
+  }
+  return result
+})
+
+// ─── KPIs computed from filtered employees ────────────────────────────────────
+
+const today = new Date().toISOString().split('T')[0]!
+
 const kpis = computed(() => {
-  const stats = matrixStore.summaryStats
-  const today = new Date().toISOString().split('T')[0]!
-  const openNeeds = trainingStore.trainingNeeds.filter(n => n.status === 'OPEN').length
-  const overdueNeeds = trainingStore.trainingNeeds.filter(
+  const employees = filteredEmployees.value
+
+  const totalRequired = employees.reduce((s, e) => s + e.requiredCount, 0)
+  const totalExpired  = employees.reduce((s, e) => s + e.expiredCount, 0)
+  const totalExpiring = employees.reduce((s, e) => s + e.expiringCount, 0)
+  const totalSupervised = employees.filter(e => e.supervisionStatus === 'SUPERVISED_ONLY').length
+  const notAuthorised = employees.filter(e => !e.isAuthorised).length
+
+  // NCR/CAPA-linked open needs (filter by employee set if possible)
+  const employeeIds = new Set(employees.map(e => e.employeeId))
+  const filteredNeeds = trainingStore.trainingNeeds.filter(
+    n => employeeIds.size === 0 || employeeIds.has(n.erpEmployeeId)
+  )
+  const ncrCapaCount = filteredNeeds.filter(
+    n => n.sourceType === 'NCR_CAPA' && n.status === 'OPEN'
+  ).length
+
+  // Awareness pending: active topics with completion < 100%
+  const awarenessPending = awarenessTopics.filter(t => {
+    const pct = parseInt(t.completion, 10)
+    return t.status === 'Active' && pct < 100
+  }).length
+
+  // Critical roles at risk: roles where >50% employees are not authorised
+  const roleMap = new Map<string, { total: number; notAuth: number }>()
+  for (const emp of employees) {
+    const r = emp.jobTitle || 'Unknown'
+    if (!roleMap.has(r)) roleMap.set(r, { total: 0, notAuth: 0 })
+    const entry = roleMap.get(r)!
+    entry.total++
+    if (!emp.isAuthorised) entry.notAuth++
+  }
+  const criticalRoles = Array.from(roleMap.values()).filter(
+    v => v.total > 0 && v.notAuth / v.total > 0.5
+  ).length
+
+  // Overdue reassessments: open needs past due date
+  const overdueReassessments = filteredNeeds.filter(
     n => n.status === 'OPEN' && n.dueDate != null && n.dueDate < today
   ).length
+
   return {
-    required: stats.totalRequired,
-    expiring: stats.totalExpiring,
-    expired: stats.totalExpired,
-    notAuthorised: stats.notAuthorised,
-    totalSupervised: stats.totalSupervised,
-    openTrainingNeeds: openNeeds,
-    overdueTrainingNeeds: overdueNeeds,
+    openGaps: totalRequired + totalExpired,
+    totalSupervised,
+    notAuthorised,
+    totalExpiring,
+    ncrCapaCount,
+    awarenessPending,
+    criticalRoles,
+    overdueReassessments,
   }
 })
 
-const supervisedList = computed(() =>
-  matrixStore.mockEmployeeRows
-    .filter(emp => emp.supervisionStatus === 'SUPERVISED_ONLY')
-    .slice(0, 4)
-    .map(emp => ({
-      id: emp.employeeId,
-      name: emp.displayName,
-      jobTitle: emp.jobTitle,
-      supervisedCount: emp.supervisedCount,
-    }))
-)
+// ─── List sections ────────────────────────────────────────────────────────────
 
-const notAuthorisedList = computed(() =>
-  matrixStore.mockEmployeeRows
-    .filter(emp => !emp.isAuthorised)
-    .slice(0, 4)
-    .map(emp => {
-      const missingItem = emp.gatingFailed[0] ?? 'Unknown'
-      const failedItem = [...emp.competenceItems.values()].find(
-        item => item.isGating && (item.derivedStatus === 'EXPIRED' || item.derivedStatus === 'REQUIRED')
-      )
-      const daysExpired = failedItem?.expiryDate
-        ? Math.max(0, Math.ceil((Date.now() - new Date(failedItem.expiryDate).getTime()) / 86400000))
-        : 0
-      return { id: emp.employeeId, name: emp.displayName, jobTitle: emp.jobTitle, missingItem, daysExpired }
-    })
-)
+/** 3.5.1 — Highest-risk open gaps (top 5 gating EXPIRED or REQUIRED) */
+const highestRiskGaps = computed(() => {
+  const results: Array<{
+    id: string
+    name: string
+    jobTitle: string
+    competency: string
+    riskLevel: string
+    daysOverdue: number
+  }> = []
 
-const expiringSoonList = computed(() => {
-  const results: Array<{ id: string; name: string; requirement: string; expiryDate: string; daysRemaining: number; responsible: string }> = []
-  const now = Date.now()
-  for (const emp of matrixStore.mockEmployeeRows) {
+  for (const emp of filteredEmployees.value) {
     for (const item of emp.competenceItems.values()) {
-      if (item.derivedStatus === 'EXPIRING' && item.expiryDate) {
-        const daysRemaining = Math.max(0, Math.ceil((new Date(item.expiryDate).getTime() - now) / 86400000))
+      if (item.isGating && (item.derivedStatus === 'EXPIRED' || item.derivedStatus === 'REQUIRED')) {
         const comp = matrixStore.getCompetencyById(item.competencyId)
+        const daysOverdue = item.expiryDate
+          ? Math.max(0, Math.ceil((Date.now() - new Date(item.expiryDate).getTime()) / 86400000))
+          : 30 // mock fallback
         results.push({
           id: `${emp.employeeId}-${item.competencyId}`,
           name: emp.displayName,
-          requirement: comp?.title ?? 'Unknown',
-          expiryDate: item.expiryDate,
-          daysRemaining,
-          responsible: 'Employee',
+          jobTitle: emp.jobTitle,
+          competency: comp?.title ?? 'Unknown',
+          riskLevel: comp?.riskLevel ?? 'MEDIUM',
+          daysOverdue,
         })
+        if (results.length >= 5) break
       }
     }
-    if (results.length >= 4) break
+    if (results.length >= 5) break
   }
-  return results.slice(0, 4)
+
+  return results.slice(0, 5)
 })
+
+/** 3.5.2 — People under supervised work (top 4 SUPERVISED_ONLY) */
+const supervisedPeople = computed(() =>
+  filteredEmployees.value
+    .filter(e => e.supervisionStatus === 'SUPERVISED_ONLY')
+    .slice(0, 4)
+    .map(e => ({
+      id: e.employeeId,
+      name: e.displayName,
+      jobTitle: e.jobTitle,
+      supervisedCount: e.supervisedCount,
+    }))
+)
+
+/** 3.5.3 — Procedure changes awaiting acknowledgement (Active, <100% complete) */
+const pendingAwareness = computed(() =>
+  awarenessTopics
+    .filter(t => t.status === 'Active' && parseInt(t.completion, 10) < 100)
+    .slice(0, 5)
+    .map(t => ({
+      id: t.id,
+      title: t.title,
+      completion: parseInt(t.completion, 10),
+      audience: t.targetAudience,
+    }))
+)
+
+/** 3.5.4 — Overdue competence reviews (top 4 training needs past due) */
+const overdueReviews = computed(() => {
+  const employeeIds = new Set(filteredEmployees.value.map(e => e.employeeId))
+  return trainingStore.trainingNeeds
+    .filter(n => {
+      const inScope = employeeIds.size === 0 || employeeIds.has(n.erpEmployeeId)
+      return inScope && n.status === 'OPEN' && n.dueDate != null && n.dueDate < today
+    })
+    .slice(0, 4)
+    .map(n => {
+      const emp = matrixStore.getEmployeeById(n.erpEmployeeId)
+      const daysOverdue = n.dueDate
+        ? Math.max(0, Math.ceil((Date.now() - new Date(n.dueDate).getTime()) / 86400000))
+        : 0
+      return {
+        id: n.id,
+        employeeName: emp?.displayName ?? 'Unknown',
+        competency: n.employeeCompetenceItemId ?? n.trainingTypeCode,
+        source: n.sourceType ?? '—',
+        daysOverdue,
+      }
+    })
+})
+
+// ─── Lifecycle ────────────────────────────────────────────────────────────────
 
 onMounted(async () => {
   await employeesStore.fetchEmployees()
   await matrixStore.fetchAndBuildMatrix(employeesStore.filteredEmployees)
   await trainingStore.fetchTrainingNeeds()
 })
+
+// ─── Navigation helpers ───────────────────────────────────────────────────────
+
+function navigate(path: string, query?: Record<string, string>) {
+  router.push({ path, query })
+}
+
+// ─── Employee-specific view ───────────────────────────────────────────────────
+
+const isEmployee = computed(() => authStore.userRole === 'EMPLOYEE')
+
+/** Personal gap count for the current employee persona */
+const myGapCount = computed(() => {
+  const linkedTitle = authStore.activePersona?.linkedJobTitle
+  if (!linkedTitle) return 0
+  const myRow = matrixStore.mockEmployeeRows.find(r => r.jobTitle === linkedTitle)
+  if (!myRow) return 0
+  return myRow.expiredCount + myRow.requiredCount
+})
+
+/** Expiring items for current employee persona */
+const myExpiringCount = computed(() => {
+  const linkedTitle = authStore.activePersona?.linkedJobTitle
+  if (!linkedTitle) return 0
+  const myRow = matrixStore.mockEmployeeRows.find(r => r.jobTitle === linkedTitle)
+  return myRow?.expiringCount ?? 0
+})
+
+/** Pending awareness topics for current employee */
+const myPendingAwareness = computed(() =>
+  awarenessTopics
+    .filter(t => t.status === 'Active' && parseInt(t.completion, 10) < 100)
+    .slice(0, 3)
+    .map(t => ({ id: t.id, title: t.title, completion: parseInt(t.completion, 10) }))
+)
 </script>
 
 <template>
+  <!-- ── Employee personal view ─────────────────────────────────────────────── -->
+  <template v-if="isEmployee">
+    <div class="page-header">
+      <h1 class="page-title">My Dashboard</h1>
+      <p class="page-subtitle">Your personal competence status — gaps, expiring items, and pending awareness topics</p>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-card-clickable" role="button" tabindex="0" @click="navigate('/my-competencies')" @keyup.enter="navigate('/my-competencies')">
+        <div class="kpi-card-header">
+          <span class="kpi-card-title">My Open Gaps</span>
+          <AlertTriangle class="kpi-card-icon kpi-icon-danger" />
+        </div>
+        <div class="kpi-card-value">{{ myGapCount }}</div>
+        <div class="kpi-card-change kpi-card-change-negative">Competencies requiring action</div>
+      </div>
+
+      <div class="kpi-card kpi-card-clickable" role="button" tabindex="0" @click="navigate('/my-competencies')" @keyup.enter="navigate('/my-competencies')">
+        <div class="kpi-card-header">
+          <span class="kpi-card-title">Expiring Soon</span>
+          <Clock class="kpi-card-icon kpi-icon-warning" />
+        </div>
+        <div class="kpi-card-value">{{ myExpiringCount }}</div>
+        <div class="kpi-card-change">Expiring within 30 days</div>
+      </div>
+
+      <div class="kpi-card kpi-card-clickable" role="button" tabindex="0" @click="navigate('/awareness-topics')" @keyup.enter="navigate('/awareness-topics')">
+        <div class="kpi-card-header">
+          <span class="kpi-card-title">Pending Awareness Topics</span>
+          <Megaphone class="kpi-card-icon kpi-icon-warning" />
+        </div>
+        <div class="kpi-card-value">{{ myPendingAwareness.length }}</div>
+        <div class="kpi-card-change">Awaiting your acknowledgement</div>
+      </div>
+    </div>
+
+    <div class="employee-cta" style="margin-top: var(--space-xl);">
+      <div class="employee-cta-content">
+        <UserCircle2 class="employee-cta-icon" />
+        <div>
+          <p class="employee-cta-title">View My Readiness Profile</p>
+          <p class="employee-cta-subtitle">See your full competence profile, role requirements, evidence records, and authorisation status</p>
+        </div>
+      </div>
+      <button class="employee-cta-btn" @click="navigate('/my-competencies')">
+        View My Readiness Profile
+      </button>
+    </div>
+
+    <div v-if="myPendingAwareness.length > 0" class="dashboard-list" style="margin-top: var(--space-xl);">
+      <div class="dashboard-list-header">
+        <h2 class="dashboard-list-title">Pending Awareness Topics</h2>
+        <span class="dashboard-list-subtitle">Topics awaiting your acknowledgement</span>
+      </div>
+      <div class="dashboard-list-content">
+        <div v-for="item in myPendingAwareness" :key="item.id" class="dashboard-list-item">
+          <div class="dashboard-list-item-main">
+            <span class="dashboard-list-item-title">{{ item.title }}</span>
+          </div>
+          <div class="dashboard-list-item-meta">
+            <span class="badge badge-warning">{{ item.completion }}% done</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- ── Management dashboard ───────────────────────────────────────────────── -->
+  <template v-else>
   <div class="page-header">
     <h1 class="page-title">Dashboard</h1>
-    <p class="page-subtitle">Operational readiness — competence gaps, authorisation status, expiring certifications, and outstanding actions</p>
+    <p class="page-subtitle">
+      Operational readiness — competence gaps, authorisation status, expiring certifications, and outstanding actions
+    </p>
   </div>
 
-  <!-- KPI Grid -->
+  <!-- ── Filter Bar ─────────────────────────────────────────────────────────── -->
+  <div class="filter-bar">
+    <SlidersHorizontal class="filter-bar-icon" />
+    <select v-model="filterDepartment" class="filter-select">
+      <option value="">All Departments</option>
+      <option v-for="dept in availableDepartments" :key="dept" :value="dept">{{ dept }}</option>
+    </select>
+
+    <select v-model="filterRole" class="filter-select">
+      <option value="">All Roles</option>
+      <option v-for="role in availableRoles" :key="role" :value="role">{{ role }}</option>
+    </select>
+
+    <label class="filter-toggle">
+      <input type="checkbox" v-model="filterMyTeam" class="filter-toggle-input" />
+      <Users class="filter-toggle-icon" />
+      <span>My Team</span>
+    </label>
+
+    <button
+      v-if="filterDepartment || filterRole || filterMyTeam"
+      class="filter-clear-btn"
+      @click="filterDepartment = ''; filterRole = ''; filterMyTeam = false"
+    >
+      Clear filters
+    </button>
+  </div>
+
+  <!-- ── KPI Grid ───────────────────────────────────────────────────────────── -->
   <div class="kpi-grid">
-    <div class="kpi-card">
-      <div class="kpi-card-header">
-        <span class="kpi-card-title">Required</span>
-        <CheckCircle class="kpi-card-icon" />
-      </div>
-      <div class="kpi-card-value">{{ kpis.required }}</div>
-      <div class="kpi-card-change kpi-card-change-positive">
-        Competencies required
-      </div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-card-header">
-        <span class="kpi-card-title">Expiring</span>
-        <AlertTriangle class="kpi-card-icon" />
-      </div>
-      <div class="kpi-card-value">{{ kpis.expiring }}</div>
-      <div class="kpi-card-change kpi-card-change-negative">
-        Within 30 days
-      </div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-card-header">
-        <span class="kpi-card-title">Expired</span>
-        <XCircle class="kpi-card-icon" />
-      </div>
-      <div class="kpi-card-value">{{ kpis.expired }}</div>
-      <div class="kpi-card-change kpi-card-change-negative">
-        Requires attention
-      </div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-card-header">
-        <span class="kpi-card-title">Not Authorised</span>
-        <UserX class="kpi-card-icon" />
-      </div>
-      <div class="kpi-card-value">{{ kpis.notAuthorised }}</div>
-      <div class="kpi-card-change">
-        Missing qualifications
-      </div>
-    </div>
-  </div>
 
-  <!-- Additional KPIs -->
-  <div class="kpi-grid" style="margin-top: var(--space-lg);">
-    <div class="kpi-card">
+    <!-- 1. Open Competence Gaps -->
+    <div
+      class="kpi-card kpi-card-clickable"
+      @click="navigate('/training-needs', { status: 'OPEN' })"
+      role="button"
+      tabindex="0"
+      @keyup.enter="navigate('/training-needs', { status: 'OPEN' })"
+    >
       <div class="kpi-card-header">
-        <span class="kpi-card-title">Open Training</span>
-        <Clock class="kpi-card-icon" />
+        <span class="kpi-card-title">Open Competence Gaps</span>
+        <AlertTriangle class="kpi-card-icon kpi-icon-danger" />
       </div>
-      <div class="kpi-card-value">{{ kpis.openTrainingNeeds }}</div>
-      <div class="kpi-card-change">
-        Training needs
-      </div>
+      <div class="kpi-card-value">{{ kpis.openGaps }}</div>
+      <div class="kpi-card-change kpi-card-change-negative">Requiring action</div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-card-header">
-        <span class="kpi-card-title">Overdue Training</span>
-        <ShieldAlert class="kpi-card-icon" />
-      </div>
-      <div class="kpi-card-value">{{ kpis.overdueTrainingNeeds }}</div>
-      <div class="kpi-card-change kpi-card-change-negative">
-        Past due date
-      </div>
-    </div>
-    <div class="kpi-card">
+
+    <!-- 2. Personnel Under Supervision -->
+    <div
+      class="kpi-card kpi-card-clickable"
+      @click="navigate('/skills-matrix', { underSupervisionOnly: 'true' })"
+      role="button"
+      tabindex="0"
+      @keyup.enter="navigate('/skills-matrix', { underSupervisionOnly: 'true' })"
+    >
       <div class="kpi-card-header">
         <span class="kpi-card-title">Personnel Under Supervision</span>
-        <Eye class="kpi-card-icon" />
+        <Eye class="kpi-card-icon kpi-icon-warning" />
       </div>
       <div class="kpi-card-value">{{ kpis.totalSupervised }}</div>
-      <div class="kpi-card-change">
-        Awaiting independent work sign-off
-      </div>
+      <div class="kpi-card-change">Awaiting independent work sign-off</div>
     </div>
+
+    <!-- 3. Not Authorised -->
+    <div
+      class="kpi-card kpi-card-clickable"
+      @click="navigate('/skills-matrix', { gatingOnly: 'true' })"
+      role="button"
+      tabindex="0"
+      @keyup.enter="navigate('/skills-matrix', { gatingOnly: 'true' })"
+    >
+      <div class="kpi-card-header">
+        <span class="kpi-card-title">Not Authorised</span>
+        <UserX class="kpi-card-icon kpi-icon-danger" />
+      </div>
+      <div class="kpi-card-value">{{ kpis.notAuthorised }}</div>
+      <div class="kpi-card-change kpi-card-change-negative">Gating requirements not met</div>
+    </div>
+
+    <!-- 4. Certifications Expiring -->
+    <div
+      class="kpi-card kpi-card-clickable"
+      @click="navigate('/skills-matrix', { status: 'EXPIRING' })"
+      role="button"
+      tabindex="0"
+      @keyup.enter="navigate('/skills-matrix', { status: 'EXPIRING' })"
+    >
+      <div class="kpi-card-header">
+        <span class="kpi-card-title">Certifications Expiring (30d)</span>
+        <Clock class="kpi-card-icon kpi-icon-warning" />
+      </div>
+      <div class="kpi-card-value">{{ kpis.totalExpiring }}</div>
+      <div class="kpi-card-change kpi-card-change-negative">Expiring within 30 days</div>
+    </div>
+
+    <!-- 5. NCR/CAPA-Linked Actions -->
+    <div
+      class="kpi-card kpi-card-clickable"
+      @click="navigate('/training-needs', { source: 'NCR_CAPA' })"
+      role="button"
+      tabindex="0"
+      @keyup.enter="navigate('/training-needs', { source: 'NCR_CAPA' })"
+    >
+      <div class="kpi-card-header">
+        <span class="kpi-card-title">NCR/CAPA-Linked Actions</span>
+        <FileWarning class="kpi-card-icon kpi-icon-danger" />
+      </div>
+      <div class="kpi-card-value">{{ kpis.ncrCapaCount }}</div>
+      <div class="kpi-card-change">Open corrective actions</div>
+    </div>
+
+    <!-- 6. Awareness Pending -->
+    <div
+      class="kpi-card kpi-card-clickable"
+      @click="navigate('/awareness-topics')"
+      role="button"
+      tabindex="0"
+      @keyup.enter="navigate('/awareness-topics')"
+    >
+      <div class="kpi-card-header">
+        <span class="kpi-card-title">Awareness Pending</span>
+        <Megaphone class="kpi-card-icon kpi-icon-warning" />
+      </div>
+      <div class="kpi-card-value">{{ kpis.awarenessPending }}</div>
+      <div class="kpi-card-change">Awaiting acknowledgement</div>
+    </div>
+
+    <!-- 7. Critical Roles at Risk -->
+    <div
+      class="kpi-card kpi-card-clickable"
+      @click="navigate('/roles')"
+      role="button"
+      tabindex="0"
+      @keyup.enter="navigate('/roles')"
+    >
+      <div class="kpi-card-header">
+        <span class="kpi-card-title">Critical Roles at Risk</span>
+        <ShieldAlert class="kpi-card-icon kpi-icon-danger" />
+      </div>
+      <div class="kpi-card-value">{{ kpis.criticalRoles }}</div>
+      <div class="kpi-card-change kpi-card-change-negative">Roles below readiness threshold</div>
+    </div>
+
+    <!-- 8. Overdue Reassessments -->
+    <div
+      class="kpi-card kpi-card-clickable"
+      @click="navigate('/training-needs', { overdue: 'true' })"
+      role="button"
+      tabindex="0"
+      @keyup.enter="navigate('/training-needs', { overdue: 'true' })"
+    >
+      <div class="kpi-card-header">
+        <span class="kpi-card-title">Overdue Reassessments</span>
+        <RefreshCw class="kpi-card-icon kpi-icon-danger" />
+      </div>
+      <div class="kpi-card-value">{{ kpis.overdueReassessments }}</div>
+      <div class="kpi-card-change kpi-card-change-negative">Past due date</div>
+    </div>
+
   </div>
 
-  <!-- Top Lists Section -->
+  <!-- ── Charts Grid ─────────────────────────────────────────────────────────── -->
+  <div class="charts-grid" style="margin-top: var(--space-xl);">
+    <GapByDepartmentChart :employees="filteredEmployees" />
+    <GapByCategoryChart :employees="filteredEmployees" />
+    <SourceBreakdownChart :needs="trainingStore.trainingNeeds" />
+    <RoleReadinessChart :employees="filteredEmployees" />
+  </div>
+
+  <!-- Expiry Trend — full width -->
+  <div style="margin-top: var(--space-lg);">
+    <ExpiryTrendChart :employees="filteredEmployees" />
+  </div>
+
+  <!-- ── List Sections ───────────────────────────────────────────────────────── -->
   <div class="dashboard-lists" style="margin-top: var(--space-xl);">
+
+    <!-- 1. Highest-Risk Open Gaps -->
     <div class="dashboard-list">
       <div class="dashboard-list-header">
-        <h2 class="dashboard-list-title">Not Authorised (Gating Failed)</h2>
+        <h2 class="dashboard-list-title">Highest-Risk Open Gaps</h2>
+        <span class="dashboard-list-subtitle">Top gating items — EXPIRED or REQUIRED</span>
       </div>
       <div class="dashboard-list-content">
-        <div v-for="item in notAuthorisedList" :key="item.id" class="dashboard-list-item">
+        <div v-if="highestRiskGaps.length === 0" class="dashboard-list-empty">
+          No open gating gaps found
+        </div>
+        <div v-for="item in highestRiskGaps" :key="item.id" class="dashboard-list-item">
+          <div class="dashboard-list-item-main">
+            <span class="dashboard-list-item-title">{{ item.name }}</span>
+            <span class="dashboard-list-item-subtitle">{{ item.competency }}</span>
+          </div>
+          <div class="dashboard-list-item-meta">
+            <span
+              class="badge"
+              :class="item.riskLevel === 'HIGH_CRITICAL' ? 'badge-critical' : 'badge-warning'"
+            >{{ item.riskLevel === 'HIGH_CRITICAL' ? 'HIGH' : item.riskLevel }}</span>
+            <span class="dashboard-list-item-date">{{ item.daysOverdue }}d overdue</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. People Under Supervised Work -->
+    <div class="dashboard-list">
+      <div class="dashboard-list-header">
+        <h2 class="dashboard-list-title">People Under Supervised Work</h2>
+        <span class="dashboard-list-subtitle">Awaiting sign-off for independent operation</span>
+      </div>
+      <div class="dashboard-list-content">
+        <div v-if="supervisedPeople.length === 0" class="dashboard-list-empty">
+          No employees currently under supervised work
+        </div>
+        <div v-for="item in supervisedPeople" :key="item.id" class="dashboard-list-item">
           <div class="dashboard-list-item-main">
             <span class="dashboard-list-item-title">{{ item.name }}</span>
             <span class="dashboard-list-item-subtitle">{{ item.jobTitle }}</span>
           </div>
           <div class="dashboard-list-item-meta">
-            <span class="badge badge-critical">{{ item.missingItem }}</span>
-            <span class="dashboard-list-item-date">{{ item.daysExpired }} days expired</span>
+            <span class="badge badge-supervised">{{ item.supervisedCount }} supervised</span>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- 3. Procedure Changes Awaiting Acknowledgement -->
     <div class="dashboard-list">
       <div class="dashboard-list-header">
-        <h2 class="dashboard-list-title">Expiring Soon</h2>
+        <h2 class="dashboard-list-title">Procedure Changes Awaiting Acknowledgement</h2>
+        <span class="dashboard-list-subtitle">Active awareness topics with incomplete acknowledgement</span>
       </div>
       <div class="dashboard-list-content">
-        <div v-for="item in expiringSoonList" :key="item.id" class="dashboard-list-item">
+        <div v-if="pendingAwareness.length === 0" class="dashboard-list-empty">
+          All procedure changes acknowledged
+        </div>
+        <div v-for="item in pendingAwareness" :key="item.id" class="dashboard-list-item">
           <div class="dashboard-list-item-main">
-            <span class="dashboard-list-item-title">{{ item.name }}</span>
-            <span class="dashboard-list-item-subtitle">{{ item.requirement }}</span>
+            <span class="dashboard-list-item-title">{{ item.title }}</span>
+            <span class="dashboard-list-item-subtitle">{{ item.audience }}</span>
           </div>
           <div class="dashboard-list-item-meta">
-            <span class="badge badge-warning">{{ item.daysRemaining }} days</span>
-            <span class="dashboard-list-item-date">{{ item.expiryDate }}</span>
+            <span class="badge badge-warning">{{ item.completion }}% done</span>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Supervised Work List -->
-  <div class="dashboard-lists" style="margin-top: var(--space-xl);">
+    <!-- 4. Overdue Competence Reviews -->
     <div class="dashboard-list">
       <div class="dashboard-list-header">
-        <h2 class="dashboard-list-title">People Currently Under Supervised Work</h2>
+        <h2 class="dashboard-list-title">Overdue Competence Reviews</h2>
+        <span class="dashboard-list-subtitle">Training needs past their due date</span>
       </div>
       <div class="dashboard-list-content">
-        <div v-if="supervisedList.length === 0" class="dashboard-list-item">
-          <span class="dashboard-list-item-subtitle">No employees currently under supervised work</span>
+        <div v-if="overdueReviews.length === 0" class="dashboard-list-empty">
+          No overdue competence reviews
         </div>
-        <div v-for="item in supervisedList" :key="item.id" class="dashboard-list-item">
+        <div v-for="item in overdueReviews" :key="item.id" class="dashboard-list-item">
           <div class="dashboard-list-item-main">
-            <span class="dashboard-list-item-title">{{ item.name }}</span>
-            <span class="dashboard-list-item-subtitle">{{ item.jobTitle }}</span>
+            <span class="dashboard-list-item-title">{{ item.employeeName }}</span>
+            <span class="dashboard-list-item-subtitle">{{ item.source }}</span>
           </div>
           <div class="dashboard-list-item-meta">
-            <span class="badge badge-warning">{{ item.supervisedCount }} supervised</span>
+            <span class="badge badge-critical">{{ item.daysOverdue }}d overdue</span>
           </div>
         </div>
       </div>
     </div>
+
   </div>
 
-  <!-- Recent Activity -->
+  <!-- ── Recent Activity ─────────────────────────────────────────────────────── -->
   <div class="dashboard-activity" style="margin-top: var(--space-xl);">
     <div class="dashboard-list-header">
       <h2 class="dashboard-list-title">Recent Activity</h2>
@@ -251,9 +646,115 @@ onMounted(async () => {
       </div>
     </div>
   </div>
+  </template><!-- end v-else management dashboard -->
 </template>
 
 <style scoped>
+/* ── Filter bar ───────────────────────────────────────────────────────────── */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-surface);
+  border: var(--border-subtle);
+  border-radius: var(--radius-lg);
+  flex-wrap: wrap;
+}
+
+.filter-bar-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--text-caption);
+  flex-shrink: 0;
+}
+
+.filter-select {
+  padding: 6px 10px;
+  background: var(--bg-page);
+  border: var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-body);
+  font-size: 0.875rem;
+  cursor: pointer;
+  min-width: 160px;
+}
+
+.filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  color: var(--text-body);
+  cursor: pointer;
+  padding: 6px 10px;
+  border: var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-page);
+  user-select: none;
+}
+
+.filter-toggle-input {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--brand-primary);
+  cursor: pointer;
+}
+
+.filter-toggle-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--text-caption);
+}
+
+.filter-clear-btn {
+  margin-left: auto;
+  padding: 6px 12px;
+  background: transparent;
+  border: var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-caption);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.filter-clear-btn:hover {
+  color: var(--text-body);
+}
+
+/* ── KPI cards ────────────────────────────────────────────────────────────── */
+.kpi-card-clickable {
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.1s;
+}
+
+.kpi-card-clickable:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  transform: translateY(-1px);
+}
+
+.kpi-card-clickable:active {
+  transform: translateY(0);
+}
+
+.kpi-icon-danger {
+  color: var(--color-danger, #ef4444);
+}
+
+.kpi-icon-warning {
+  color: var(--color-warning, #f59e0b);
+}
+
+/* ── Charts grid ──────────────────────────────────────────────────────────── */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+}
+
+/* ── List sections ────────────────────────────────────────────────────────── */
 .dashboard-lists {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -275,11 +776,24 @@ onMounted(async () => {
   font-size: 1rem;
   font-weight: 600;
   color: var(--text-heading);
-  margin: 0;
+  margin: 0 0 2px 0;
+}
+
+.dashboard-list-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-caption);
+  display: block;
 }
 
 .dashboard-list-content {
   padding: var(--space-sm);
+}
+
+.dashboard-list-empty {
+  padding: var(--space-md);
+  font-size: 0.875rem;
+  color: var(--text-caption);
+  text-align: center;
 }
 
 .dashboard-list-item {
@@ -297,30 +811,54 @@ onMounted(async () => {
 .dashboard-list-item-main {
   display: flex;
   flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+  margin-right: var(--space-sm);
 }
 
 .dashboard-list-item-title {
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dashboard-list-item-subtitle {
   font-size: 0.75rem;
   color: var(--text-caption);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dashboard-list-item-meta {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+  flex-shrink: 0;
 }
 
 .dashboard-list-item-date {
   font-size: 0.75rem;
   color: var(--text-caption);
+  white-space: nowrap;
 }
 
+/* badge-supervised — orange-yellow variant */
+.badge-supervised {
+  background: rgba(234, 179, 8, 0.15);
+  color: #b45309;
+  border: 1px solid rgba(234, 179, 8, 0.35);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+/* ── Recent activity ──────────────────────────────────────────────────────── */
 .dashboard-activity {
   background: var(--bg-surface);
   border: var(--border-subtle);
@@ -358,5 +896,69 @@ onMounted(async () => {
 .activity-time {
   font-size: 0.75rem;
   color: var(--text-caption);
+}
+
+/* ── Employee CTA ─────────────────────────────────────────────────────────── */
+.employee-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  padding: var(--space-lg) var(--space-xl);
+  background: var(--bg-surface);
+  border: var(--border-subtle);
+  border-radius: var(--radius-lg);
+  flex-wrap: wrap;
+}
+
+.employee-cta-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.employee-cta-icon {
+  width: 36px;
+  height: 36px;
+  color: var(--brand-primary);
+  flex-shrink: 0;
+}
+
+.employee-cta-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-heading);
+  margin: 0 0 2px 0;
+}
+
+.employee-cta-subtitle {
+  font-size: 0.8125rem;
+  color: var(--text-caption);
+  margin: 0;
+}
+
+.employee-cta-btn {
+  padding: 8px 20px;
+  background-color: var(--brand-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+
+.employee-cta-btn:hover {
+  opacity: 0.88;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .charts-grid,
+  .dashboard-lists {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
