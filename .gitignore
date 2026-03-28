@@ -51,6 +51,7 @@ __screenshots__/
 
 # Agent configurations
 .agent/
+.agents/
 .claude/
 .vscode
 

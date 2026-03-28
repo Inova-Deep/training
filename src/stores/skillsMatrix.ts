@@ -48,6 +48,13 @@ export interface EmployeeCompetenceItem {
   derivedStatus: DerivedStatus
 }
 
+export type SupervisionStatus =
+  | 'FIT_FOR_INDEPENDENT_WORK'
+  | 'SUPERVISED_ONLY'
+  | 'RESTRICTED_SCOPE'
+  | 'REASSESSMENT_REQUIRED'
+  | 'NON_COMPLIANT_MANDATORY'
+
 export interface EmployeeMatrixRow {
   employeeId: string
   employeeNo: string
@@ -63,6 +70,8 @@ export interface EmployeeMatrixRow {
   expiringCount: number
   expiredCount: number
   validCount: number
+  supervisedCount: number
+  supervisionStatus: SupervisionStatus
   gatingFailed: string[]
   topAction: string
   competenceItems: Map<string, EmployeeCompetenceItem>
@@ -74,6 +83,7 @@ export interface MatrixFilters {
   category: CompetencyCategory | ''
   gatingOnly: boolean
   issuesOnly: boolean
+  supervisionOnly: boolean
   jobTitle: string
   department: string
   businessUnit: string
@@ -148,6 +158,41 @@ function getGatingIdsForJobTitle(jobTitleName: string): string[] {
   return key ? (requirementsJson[key]?.gatingCompetencyIds ?? []) : []
 }
 
+/** Compute supervision status for a row (priority order per spec) */
+function computeSupervisionStatus(
+  competenceItems: Map<string, EmployeeCompetenceItem>,
+  gatingIds: string[]
+): SupervisionStatus {
+  const items = Array.from(competenceItems.values())
+  const gatingItems = items.filter(i => gatingIds.includes(i.competencyId))
+  const nonGatingItems = items.filter(i => !gatingIds.includes(i.competencyId))
+
+  // Find mandatory (HIGH_CRITICAL) gating items
+  const mandatoryGatingIds = COMPETENCIES
+    .filter(c => c.riskLevel === 'HIGH_CRITICAL' && gatingIds.includes(c.id))
+    .map(c => c.id)
+  const mandatoryGatingItems = items.filter(i => mandatoryGatingIds.includes(i.competencyId))
+
+  // 1. Any mandatory gating EXPIRED or REQUIRED → NON_COMPLIANT_MANDATORY
+  if (mandatoryGatingItems.some(i => i.derivedStatus === 'EXPIRED' || i.derivedStatus === 'REQUIRED')) {
+    return 'NON_COMPLIANT_MANDATORY'
+  }
+  // 2. Any (non-mandatory) gating EXPIRED or REQUIRED → REASSESSMENT_REQUIRED
+  if (gatingItems.some(i => i.derivedStatus === 'EXPIRED' || i.derivedStatus === 'REQUIRED')) {
+    return 'REASSESSMENT_REQUIRED'
+  }
+  // 3. Any gating UNDER_SUPERVISION → SUPERVISED_ONLY
+  if (gatingItems.some(i => i.derivedStatus === 'UNDER_SUPERVISION')) {
+    return 'SUPERVISED_ONLY'
+  }
+  // 4. Any non-gating UNDER_SUPERVISION → RESTRICTED_SCOPE
+  if (nonGatingItems.some(i => i.derivedStatus === 'UNDER_SUPERVISION')) {
+    return 'RESTRICTED_SCOPE'
+  }
+  // 5. Otherwise → FIT_FOR_INDEPENDENT_WORK
+  return 'FIT_FOR_INDEPENDENT_WORK'
+}
+
 function buildMatrixRow(employee: Employee): EmployeeMatrixRow {
   const jobTitleName = employee.jobTitle?.name ?? ''
   const gatingForRole = getGatingIdsForJobTitle(jobTitleName)
@@ -158,6 +203,7 @@ function buildMatrixRow(employee: Employee): EmployeeMatrixRow {
   let expiringCount = 0
   let expiredCount = 0
   let requiredCount = 0
+  let supervisedCount = 0
   const gatingFailed: string[] = []
 
   COMPETENCIES.forEach((comp) => {
@@ -179,8 +225,8 @@ function buildMatrixRow(employee: Employee): EmployeeMatrixRow {
     if (isFirstAid && !isQhseRole) {
       status = 'N_A'
       derivedStatus = 'N_A'
-    } else if (rand < 0.55) {
-      // VALID
+    } else if (rand < 0.45) {
+      // VALID (45%)
       status = 'VALID'
       lastCompletedAt = new Date(today.getTime() - hashString(employee.id + comp.id + 'lc') % (180 * 86400000)).toISOString().split('T')[0]
       evidenceRef = `EV-${employee.employeeNo}-${comp.code}`
@@ -201,8 +247,14 @@ function buildMatrixRow(employee: Employee): EmployeeMatrixRow {
         derivedStatus = 'VALID'
         validCount++
       }
-    } else if (rand < 0.70) {
-      // EXPIRED (for expiry-required) or VALID (for non-expiry)
+    } else if (rand < 0.55) {
+      // UNDER_SUPERVISION (10%)
+      status = 'UNDER_SUPERVISION'
+      derivedStatus = 'UNDER_SUPERVISION'
+      lastCompletedAt = new Date(today.getTime() - hashString(employee.id + comp.id + 'lc') % (60 * 86400000)).toISOString().split('T')[0]
+      supervisedCount++
+    } else if (rand < 0.67) {
+      // EXPIRED (for expiry-required) or VALID (for non-expiry) (12%)
       status = 'VALID'
       lastCompletedAt = new Date(today.getTime() - hashString(employee.id + comp.id + 'lc') % (180 * 86400000)).toISOString().split('T')[0]
       evidenceRef = `EV-${employee.employeeNo}-${comp.code}`
@@ -216,17 +268,19 @@ function buildMatrixRow(employee: Employee): EmployeeMatrixRow {
         derivedStatus = 'VALID'
         validCount++
       }
-    } else if (rand < 0.85) {
+    } else if (rand < 0.80) {
+      // IN_PROGRESS (13%)
       status = 'IN_PROGRESS'
       derivedStatus = 'IN_PROGRESS'
       requiredCount++
     } else {
+      // REQUIRED (12%)
       status = 'REQUIRED'
       derivedStatus = 'REQUIRED'
       requiredCount++
     }
 
-    if (isGating && (derivedStatus === 'EXPIRED' || derivedStatus === 'REQUIRED' || derivedStatus === 'IN_PROGRESS')) {
+    if (isGating && (derivedStatus === 'EXPIRED' || derivedStatus === 'REQUIRED' || derivedStatus === 'IN_PROGRESS' || derivedStatus === 'UNDER_SUPERVISION')) {
       gatingFailed.push(comp.code)
     }
 
@@ -270,6 +324,9 @@ function buildMatrixRow(employee: Employee): EmployeeMatrixRow {
     ? (employee.manager.displayName ?? (`${employee.manager.firstName ?? ''} ${employee.manager.lastName ?? ''}`.trim() || undefined))
     : undefined
 
+  // Determine supervision status (priority order)
+  const supervisionStatus = computeSupervisionStatus(competenceItems, gatingForRole)
+
   return {
     employeeId: employee.id,
     employeeNo: employee.employeeNo,
@@ -285,6 +342,8 @@ function buildMatrixRow(employee: Employee): EmployeeMatrixRow {
     expiringCount,
     expiredCount,
     validCount,
+    supervisedCount,
+    supervisionStatus,
     gatingFailed,
     topAction,
     competenceItems,
@@ -298,21 +357,27 @@ function recomputeRowStats(row: EmployeeMatrixRow) {
   let expiringCount = 0
   let expiredCount = 0
   let requiredCount = 0
+  let supervisedCount = 0
   const gatingFailed: string[] = []
+  const gatingIds = Array.from(row.competenceItems.values())
+    .filter(i => i.isGating)
+    .map(i => i.competencyId)
 
   for (const item of row.competenceItems.values()) {
     switch (item.derivedStatus) {
-      case 'VALID':       validCount++; break
-      case 'EXPIRING':    expiringCount++; break
-      case 'EXPIRED':     expiredCount++; break
+      case 'VALID':             validCount++; break
+      case 'EXPIRING':          expiringCount++; break
+      case 'EXPIRED':           expiredCount++; break
       case 'REQUIRED':
-      case 'IN_PROGRESS': requiredCount++; break
+      case 'IN_PROGRESS':       requiredCount++; break
+      case 'UNDER_SUPERVISION': supervisedCount++; break
     }
     if (
       item.isGating &&
       (item.derivedStatus === 'EXPIRED' ||
        item.derivedStatus === 'REQUIRED' ||
-       item.derivedStatus === 'IN_PROGRESS')
+       item.derivedStatus === 'IN_PROGRESS' ||
+       item.derivedStatus === 'UNDER_SUPERVISION')
     ) {
       const comp = COMPETENCIES.find(c => c.id === item.competencyId)
       if (comp) gatingFailed.push(comp.code)
@@ -323,8 +388,10 @@ function recomputeRowStats(row: EmployeeMatrixRow) {
   row.expiringCount = expiringCount
   row.expiredCount = expiredCount
   row.requiredCount = requiredCount
+  row.supervisedCount = supervisedCount
   row.gatingFailed.splice(0, row.gatingFailed.length, ...gatingFailed)
   row.isAuthorised = gatingFailed.length === 0
+  row.supervisionStatus = computeSupervisionStatus(row.competenceItems, gatingIds)
 
   // Recompute topAction
   if (gatingFailed.length > 0) {
@@ -350,11 +417,12 @@ function recomputeRowStats(row: EmployeeMatrixRow) {
 
 export function getResponsibleParty(item: EmployeeCompetenceItem): string {
   switch (item.derivedStatus) {
-    case 'REQUIRED':    return 'Employee'
-    case 'IN_PROGRESS': return 'Manager'
-    case 'EXPIRED':     return item.isGating ? 'Manager' : 'Employee'
-    case 'EXPIRING':    return 'Employee'
-    default:            return '—'
+    case 'REQUIRED':          return 'Employee'
+    case 'IN_PROGRESS':       return 'Manager'
+    case 'EXPIRED':           return item.isGating ? 'Manager' : 'Employee'
+    case 'EXPIRING':          return 'Employee'
+    case 'UNDER_SUPERVISION': return 'Line Manager'
+    default:                  return '—'
   }
 }
 
@@ -389,6 +457,7 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
     category: '',
     gatingOnly: false,
     issuesOnly: false,
+    supervisionOnly: false,
     jobTitle: '',
     department: '',
     businessUnit: '',
@@ -457,6 +526,10 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
 
     if (filters.value.issuesOnly) {
       result = result.filter(e => e.expiredCount > 0 || e.expiringCount > 0 || e.requiredCount > 0)
+    }
+
+    if (filters.value.supervisionOnly) {
+      result = result.filter(e => e.supervisionStatus === 'SUPERVISED_ONLY')
     }
 
     if (filters.value.status) {
@@ -541,6 +614,10 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
     const totalExpired = mockEmployeeRows.value.reduce((sum, e) => sum + e.expiredCount, 0)
     const totalExpiring = mockEmployeeRows.value.reduce((sum, e) => sum + e.expiringCount, 0)
     const totalRequired = mockEmployeeRows.value.reduce((sum, e) => sum + e.requiredCount, 0)
+    const totalSupervised = mockEmployeeRows.value.filter(e => e.supervisionStatus === 'SUPERVISED_ONLY').length
+    const totalRestricted = mockEmployeeRows.value.filter(e => e.supervisionStatus === 'RESTRICTED_SCOPE').length
+    const totalReassessmentRequired = mockEmployeeRows.value.filter(e => e.supervisionStatus === 'REASSESSMENT_REQUIRED').length
+    const totalNonCompliant = mockEmployeeRows.value.filter(e => e.supervisionStatus === 'NON_COMPLIANT_MANDATORY').length
 
     return {
       totalEmployees: total,
@@ -550,6 +627,10 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
       totalExpired,
       totalExpiring,
       totalRequired,
+      totalSupervised,
+      totalRestricted,
+      totalReassessmentRequired,
+      totalNonCompliant,
       complianceRate: total > 0 ? Math.round((authorised / total) * 100) : 0,
     }
   })
@@ -584,6 +665,7 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
       category: '',
       gatingOnly: false,
       issuesOnly: false,
+      supervisionOnly: false,
       jobTitle: '',
       department: '',
       businessUnit: '',

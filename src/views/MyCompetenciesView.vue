@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useEmployeesStore } from '@/stores/employees'
 import { useSkillsMatrixStore, type EmployeeCompetenceItem } from '@/stores/skillsMatrix'
 import { StatusChip } from '@/components/ui/status-chip'
-import { AlertTriangle, ShieldCheck, ShieldAlert } from 'lucide-vue-next'
+import { AlertTriangle, ShieldCheck, ShieldAlert, Eye } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const employeesStore = useEmployeesStore()
@@ -37,13 +37,27 @@ const alertItems = computed(() => {
 })
 
 const stats = computed(() => {
-  if (!myRow.value) return { valid: 0, expiring: 0, expired: 0, required: 0 }
+  if (!myRow.value) return { valid: 0, supervised: 0, expiring: 0, expired: 0, required: 0 }
   return {
     valid: myRow.value.validCount,
+    supervised: myRow.value.supervisedCount,
     expiring: myRow.value.expiringCount,
     expired: myRow.value.expiredCount,
     required: myRow.value.requiredCount,
   }
+})
+
+const iwaStatus = computed(() => {
+  if (!myRow.value) return 'not-authorised'
+  const items = [...myRow.value.competenceItems.values()]
+  const gatingItems = items.filter(i => i.isGating)
+  if (gatingItems.some(i => i.derivedStatus === 'EXPIRED' || i.derivedStatus === 'REQUIRED')) {
+    return 'not-authorised'
+  }
+  if (gatingItems.some(i => i.derivedStatus === 'UNDER_SUPERVISION')) {
+    return 'under-supervision'
+  }
+  return 'authorised'
 })
 
 function getItem(competencyId: string): EmployeeCompetenceItem | undefined {
@@ -122,8 +136,11 @@ function getExpiryClass(item: EmployeeCompetenceItem): string {
       </div>
       <div class="profile-cell">
         <span class="profile-label">IWA Status</span>
-        <span v-if="myRow.isAuthorised" class="iwa-badge iwa-authorised">
-          <ShieldCheck class="iwa-icon" /> Authorised
+        <span v-if="iwaStatus === 'authorised'" class="iwa-badge iwa-authorised">
+          <ShieldCheck class="iwa-icon" /> Authorised for Independent Work
+        </span>
+        <span v-else-if="iwaStatus === 'under-supervision'" class="iwa-badge iwa-supervised">
+          <Eye class="iwa-icon" /> Under Supervision
         </span>
         <span v-else class="iwa-badge iwa-not-authorised">
           <ShieldAlert class="iwa-icon" /> Not Authorised
@@ -146,6 +163,10 @@ function getExpiryClass(item: EmployeeCompetenceItem): string {
       <div class="stat-pill stat-valid">
         <span class="stat-value">{{ stats.valid }}</span>
         <span class="stat-label">Valid</span>
+      </div>
+      <div class="stat-pill stat-supervised">
+        <span class="stat-value">{{ stats.supervised }}</span>
+        <span class="stat-label">Supervised</span>
       </div>
       <div class="stat-pill stat-expiring">
         <span class="stat-value">{{ stats.expiring }}</span>
@@ -194,6 +215,8 @@ function getExpiryClass(item: EmployeeCompetenceItem): string {
               'row-attention':
                 getItem(comp.id)?.derivedStatus === 'EXPIRED' ||
                 getItem(comp.id)?.derivedStatus === 'EXPIRING',
+              'row-supervised':
+                getItem(comp.id)?.derivedStatus === 'UNDER_SUPERVISION',
             }"
           >
             <span class="col-code comp-code">{{ comp.code }}</span>
@@ -275,6 +298,7 @@ function getExpiryClass(item: EmployeeCompetenceItem): string {
 }
 
 .iwa-authorised { color: var(--brand-success); }
+.iwa-supervised { color: oklch(0.50 0.13 60); }
 .iwa-not-authorised { color: var(--brand-critical); }
 
 .iwa-icon {
@@ -336,10 +360,11 @@ function getExpiryClass(item: EmployeeCompetenceItem): string {
   margin-top: 2px;
 }
 
-.stat-valid    .stat-value { color: var(--brand-success); }
-.stat-expiring .stat-value { color: oklch(0.65 0.18 60); }
-.stat-expired  .stat-value { color: var(--brand-critical); }
-.stat-required .stat-value { color: var(--brand-primary); }
+.stat-valid       .stat-value { color: var(--brand-success); }
+.stat-supervised  .stat-value { color: oklch(0.50 0.13 60); }
+.stat-expiring    .stat-value { color: oklch(0.65 0.18 60); }
+.stat-expired     .stat-value { color: var(--brand-critical); }
+.stat-required    .stat-value { color: var(--brand-primary); }
 
 /* ── Category section ───────────────────────────────────────── */
 .category-section {
@@ -401,6 +426,10 @@ function getExpiryClass(item: EmployeeCompetenceItem): string {
 
 .row-attention {
   background-color: oklch(0.7 0.18 50 / 0.04);
+}
+
+.row-supervised {
+  background-color: oklch(0.85 0.10 70 / 0.08);
 }
 
 .comp-code {

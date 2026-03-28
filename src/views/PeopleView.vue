@@ -14,8 +14,23 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useEmployeesStore } from '@/stores/employees'
+import { useSkillsMatrixStore, type SupervisionStatus } from '@/stores/skillsMatrix'
 
 const store = useEmployeesStore()
+const matrixStore = useSkillsMatrixStore()
+
+function getWorkStatusInfo(employeeId: string): { label: string; badgeClass: string } | null {
+  const row = matrixStore.getEmployeeById(employeeId)
+  if (!row) return null
+  const map: Record<SupervisionStatus, { label: string; badgeClass: string }> = {
+    FIT_FOR_INDEPENDENT_WORK:   { label: 'Independent',       badgeClass: 'badge-success' },
+    SUPERVISED_ONLY:            { label: 'Supervised',         badgeClass: 'badge-warning' },
+    RESTRICTED_SCOPE:           { label: 'Restricted',         badgeClass: 'badge-warning' },
+    REASSESSMENT_REQUIRED:      { label: 'Reassessment Due',   badgeClass: 'badge-warning' },
+    NON_COMPLIANT_MANDATORY:    { label: 'Non-Compliant',      badgeClass: 'badge-critical' },
+  }
+  return map[row.supervisionStatus]
+}
 
 const searchQuery = ref('')
 const selectedDepartment = ref('')
@@ -102,6 +117,9 @@ onMounted(async () => {
     store.fetchAllReferenceData(),
     store.fetchEmployees()
   ])
+  if (matrixStore.mockEmployeeRows.length === 0) {
+    await matrixStore.fetchAndBuildMatrix(store.filteredEmployees)
+  }
 })
 </script>
 
@@ -188,17 +206,18 @@ onMounted(async () => {
               <TableHead>Business Unit</TableHead>
               <TableHead>Manager</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Work Status</TableHead>
               <TableHead class="table-actions-header">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             <TableRow v-if="isLoading">
-              <TableCell colspan="7" class="loading-cell">
+              <TableCell colspan="8" class="loading-cell">
                 Loading employees...
               </TableCell>
             </TableRow>
             <TableRow v-else-if="employees.length === 0">
-              <TableCell colspan="7" class="empty-cell">
+              <TableCell colspan="8" class="empty-cell">
                 No employees found
               </TableCell>
             </TableRow>
@@ -217,6 +236,14 @@ onMounted(async () => {
                 <span class="badge" :class="employee.status === 'active' ? 'badge-success' : 'badge-neutral'">
                   {{ employee.status === 'active' ? 'Active' : 'Inactive' }}
                 </span>
+              </TableCell>
+              <TableCell>
+                <template v-if="getWorkStatusInfo(employee.id)">
+                  <span class="badge" :class="getWorkStatusInfo(employee.id)!.badgeClass">
+                    {{ getWorkStatusInfo(employee.id)!.label }}
+                  </span>
+                </template>
+                <span v-else class="text-muted">—</span>
               </TableCell>
               <TableCell class="table-actions-cell">
                 <DropdownMenu>
@@ -386,5 +413,10 @@ onMounted(async () => {
 .icon-sm {
   width: 16px;
   height: 16px;
+}
+
+.text-muted {
+  font-size: 0.875rem;
+  color: var(--text-caption);
 }
 </style>

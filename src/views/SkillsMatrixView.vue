@@ -252,6 +252,10 @@ function handleIssuesToggle(value: boolean) {
   store.setFilter('issuesOnly', value)
 }
 
+function handleSupervisionToggle(value: boolean) {
+  store.setFilter('supervisionOnly', value)
+}
+
 function handleColumnToggle(columnId: string) {
   store.toggleColumn(columnId)
 }
@@ -469,6 +473,16 @@ onMounted(async () => {
               <span>Gating only</span>
             </div>
           </div>
+
+          <div class="toggle-wrapper">
+            <div class="toggle-label">
+              <Switch
+                :checked="filters.supervisionOnly"
+                @update:checked="handleSupervisionToggle"
+              />
+              <span>Under Supervision Only</span>
+            </div>
+          </div>
         </div>
         
         <div class="filters-right">
@@ -538,7 +552,7 @@ onMounted(async () => {
           </div>
           
           <Button
-            v-if="filters.search || filters.businessUnit || filters.department || filters.jobTitle || filters.status || filters.risk || filters.gatingOnly || filters.issuesOnly"
+            v-if="filters.search || filters.businessUnit || filters.department || filters.jobTitle || filters.status || filters.risk || filters.gatingOnly || filters.issuesOnly || filters.supervisionOnly"
             variant="ghost"
             size="sm"
             @click="handleClearFilters"
@@ -563,6 +577,10 @@ onMounted(async () => {
         <div class="summary-stat danger">
           <span class="stat-value">{{ summaryStats.notAuthorised }}</span>
           <span class="stat-label">Not Authorised</span>
+        </div>
+        <div class="summary-stat supervised">
+          <span class="stat-value">{{ summaryStats.totalSupervised }}</span>
+          <span class="stat-label">Under Supervision</span>
         </div>
         <div class="summary-stat warning">
           <span class="stat-value">{{ summaryStats.totalExpiring }}</span>
@@ -593,6 +611,9 @@ onMounted(async () => {
                     </TableHead>
                     <TableHead class="sortable" @click="handleSort('isAuthorised')">
                       Authorisation
+                    </TableHead>
+                    <TableHead class="sortable numeric" @click="handleSort('supervisedCount')">
+                      Supervised
                     </TableHead>
                     <TableHead class="sortable numeric" @click="handleSort('requiredCount')">
                       Required
@@ -636,6 +657,12 @@ onMounted(async () => {
                       <span :class="['badge', employee.isAuthorised ? 'badge-success' : 'badge-critical']">
                         {{ employee.isAuthorised ? 'Authorised' : 'Not Authorised' }}
                       </span>
+                    </TableCell>
+                    <TableCell class="numeric">
+                      <span v-if="employee.supervisedCount > 0" class="count-supervised">
+                        {{ employee.supervisedCount }}
+                      </span>
+                      <span v-else>{{ employee.supervisedCount }}</span>
                     </TableCell>
                     <TableCell class="numeric">{{ employee.requiredCount }}</TableCell>
                     <TableCell class="numeric">
@@ -686,7 +713,7 @@ onMounted(async () => {
                     </TableCell>
                   </TableRow>
                   <TableRow v-if="filteredEmployees.length === 0">
-                    <TableCell colspan="9" class="empty-cell">
+                    <TableCell colspan="10" class="empty-cell">
                       No employees match the current filters
                     </TableCell>
                   </TableRow>
@@ -1224,6 +1251,10 @@ onMounted(async () => {
   color: var(--brand-critical);
 }
 
+.summary-stat.supervised .stat-value {
+  color: oklch(0.50 0.13 60);
+}
+
 .stat-value {
   font-size: 1.25rem;
   font-weight: 600;
@@ -1330,6 +1361,11 @@ onMounted(async () => {
 
 .count-danger {
   color: var(--brand-critical);
+  font-weight: 600;
+}
+
+.count-supervised {
+  color: oklch(0.50 0.13 60);
   font-weight: 600;
 }
 

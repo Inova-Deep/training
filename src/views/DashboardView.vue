@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useEmployeesStore } from '@/stores/employees'
 import { useSkillsMatrixStore } from '@/stores/skillsMatrix'
 import { useTrainingNeedsStore } from '@/stores/trainingNeeds'
-import { CheckCircle, AlertTriangle, XCircle, UserX, Clock, ShieldAlert, FileText, Users } from 'lucide-vue-next'
+import { CheckCircle, AlertTriangle, XCircle, UserX, Clock, ShieldAlert, FileText, Users, Eye } from 'lucide-vue-next'
 import activityData from '@/data/dashboardActivity.json'
 
 const authStore = useAuthStore()
@@ -26,10 +26,23 @@ const kpis = computed(() => {
     expiring: stats.totalExpiring,
     expired: stats.totalExpired,
     notAuthorised: stats.notAuthorised,
+    totalSupervised: stats.totalSupervised,
     openTrainingNeeds: openNeeds,
     overdueTrainingNeeds: overdueNeeds,
   }
 })
+
+const supervisedList = computed(() =>
+  matrixStore.mockEmployeeRows
+    .filter(emp => emp.supervisionStatus === 'SUPERVISED_ONLY')
+    .slice(0, 4)
+    .map(emp => ({
+      id: emp.employeeId,
+      name: emp.displayName,
+      jobTitle: emp.jobTitle,
+      supervisedCount: emp.supervisedCount,
+    }))
+)
 
 const notAuthorisedList = computed(() =>
   matrixStore.mockEmployeeRows
@@ -149,6 +162,16 @@ onMounted(async () => {
         Past due date
       </div>
     </div>
+    <div class="kpi-card">
+      <div class="kpi-card-header">
+        <span class="kpi-card-title">Personnel Under Supervision</span>
+        <Eye class="kpi-card-icon" />
+      </div>
+      <div class="kpi-card-value">{{ kpis.totalSupervised }}</div>
+      <div class="kpi-card-change">
+        Awaiting independent work sign-off
+      </div>
+    </div>
   </div>
 
   <!-- Top Lists Section -->
@@ -184,6 +207,29 @@ onMounted(async () => {
           <div class="dashboard-list-item-meta">
             <span class="badge badge-warning">{{ item.daysRemaining }} days</span>
             <span class="dashboard-list-item-date">{{ item.expiryDate }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supervised Work List -->
+  <div class="dashboard-lists" style="margin-top: var(--space-xl);">
+    <div class="dashboard-list">
+      <div class="dashboard-list-header">
+        <h2 class="dashboard-list-title">People Currently Under Supervised Work</h2>
+      </div>
+      <div class="dashboard-list-content">
+        <div v-if="supervisedList.length === 0" class="dashboard-list-item">
+          <span class="dashboard-list-item-subtitle">No employees currently under supervised work</span>
+        </div>
+        <div v-for="item in supervisedList" :key="item.id" class="dashboard-list-item">
+          <div class="dashboard-list-item-main">
+            <span class="dashboard-list-item-title">{{ item.name }}</span>
+            <span class="dashboard-list-item-subtitle">{{ item.jobTitle }}</span>
+          </div>
+          <div class="dashboard-list-item-meta">
+            <span class="badge badge-warning">{{ item.supervisedCount }} supervised</span>
           </div>
         </div>
       </div>
