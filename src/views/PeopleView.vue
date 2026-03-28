@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { Search, MoreHorizontal, ChevronLeft, ChevronRight, X } from 'lucide-vue-next'
+import { Search, ChevronLeft, ChevronRight, X } from 'lucide-vue-next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,13 +13,6 @@ import {
   TableCell,
 } from '@/components/ui/table'
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu'
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -30,6 +23,8 @@ import { useEmployeesStore } from '@/stores/employees'
 import { useSkillsMatrixStore, type SupervisionStatus } from '@/stores/skillsMatrix'
 import type { Employee } from '@/api/client'
 import PersonDetailDrawer from '@/components/people/PersonDetailDrawer.vue'
+
+type PersonSheetTab = 'profile' | 'competencies' | 'training-history'
 
 const store = useEmployeesStore()
 const matrixStore = useSkillsMatrixStore()
@@ -59,9 +54,11 @@ const selectedJobTitle = ref('')
 // Drawer state
 const drawerOpen = ref(false)
 const selectedEmployee = ref<Employee | null>(null)
+const activeSheetTab = ref<PersonSheetTab>('profile')
 
-function openDrawer(employee: Employee) {
+function openDrawer(employee: Employee, tab: PersonSheetTab = 'profile') {
   selectedEmployee.value = employee
+  activeSheetTab.value = tab
   drawerOpen.value = true
 }
 
@@ -249,7 +246,7 @@ onMounted(async () => {
               <TableHead>Open Gaps</TableHead>
               <TableHead>Mandatory Compliance</TableHead>
               <TableHead>Expiring Certs</TableHead>
-              <TableHead class="table-actions-header">Actions</TableHead>
+              <TableHead class="table-actions-header">Profile</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -337,25 +334,15 @@ onMounted(async () => {
                 <span v-else class="text-muted">—</span>
               </TableCell>
               <TableCell class="table-actions-cell">
-                <DropdownMenu>
-                  <DropdownMenuTrigger as-child>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      class="table-action-btn"
-                      :aria-label="`Actions for ${formatName(employee)}`"
-                    >
-                      <MoreHorizontal class="icon-xs" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem @click="openDrawer(employee)">View Profile</DropdownMenuItem>
-                    <DropdownMenuItem>View Competencies</DropdownMenuItem>
-                    <DropdownMenuItem>Training History</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>Edit Record</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="table-open-link"
+                  :aria-label="`Open profile for ${formatName(employee)}`"
+                  @click="openDrawer(employee, 'profile')"
+                >
+                  Open
+                </Button>
               </TableCell>
             </TableRow>
           </TableBody>
@@ -412,7 +399,11 @@ onMounted(async () => {
   </Card>
 
   <!-- Person Detail Drawer -->
-  <PersonDetailDrawer v-model:open="drawerOpen" :employee="selectedEmployee" />
+  <PersonDetailDrawer
+    v-model:open="drawerOpen"
+    :employee="selectedEmployee"
+    :initial-tab="activeSheetTab"
+  />
 </template>
 
 <style scoped>
@@ -546,5 +537,16 @@ onMounted(async () => {
 .gap-count-warn {
   background: rgba(var(--color-amber-rgb, 245, 158, 11), 0.1);
   color: var(--color-amber, #d97706);
+}
+
+.table-actions-header,
+.table-actions-cell {
+  text-align: right;
+}
+
+.table-open-link {
+  min-width: 4.5rem;
+  justify-content: flex-end;
+  color: var(--brand-primary);
 }
 </style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { ChevronDown, ChevronUp, FileText, ShieldAlert, User } from 'lucide-vue-next'
 import {
@@ -23,11 +23,15 @@ import { useAuthStore } from '@/stores/auth'
 import type { Employee } from '@/api/client'
 import employeeEvidenceData from '@/data/employeeEvidence.json'
 import awarenessTopicsData from '@/data/awarenessTopics.json'
+import { matchRoleName } from '@/lib/demoDomain'
 
 // Props
+type PersonSheetTab = 'profile' | 'competencies' | 'training-history'
+
 const props = defineProps<{
   open: boolean
   employee: Employee | null
+  initialTab?: PersonSheetTab
 }>()
 
 const emit = defineEmits<{
@@ -37,6 +41,7 @@ const emit = defineEmits<{
 // Stores
 const matrixStore = useSkillsMatrixStore()
 const authStore = useAuthStore()
+const activeTab = ref<PersonSheetTab>('profile')
 
 // Access control
 const canTakeAction = computed(
@@ -244,7 +249,7 @@ interface AwarenessTopic {
 
 const relevantAwarenessTopics = computed((): { topic: AwarenessTopic; acknowledged: boolean }[] => {
   if (!props.employee) return []
-  const jobTitleName = (props.employee.jobTitle?.name ?? '').toLowerCase()
+  const jobTitleName = props.employee.jobTitle?.name ?? ''
   const deptName = (props.employee.department?.name ?? '').toLowerCase()
 
   return (awarenessTopicsData as AwarenessTopic[])
@@ -254,7 +259,7 @@ const relevantAwarenessTopics = computed((): { topic: AwarenessTopic; acknowledg
         audience.includes('all') ||
         audience.split(/[,/]/).some((a) => {
           const trimmed = a.trim()
-          return jobTitleName.includes(trimmed) || trimmed.includes(deptName)
+          return matchRoleName(trimmed, jobTitleName) || trimmed.includes(deptName)
         })
       if (!relevant) return null
       const hash = (props.employee!.id.charCodeAt(0) + topic.id.charCodeAt(topic.id.length - 1)) % 3
@@ -367,6 +372,14 @@ function scrollToAwareness() {
 function formatName(emp: Employee): string {
   return emp.displayName || `${emp.firstName} ${emp.lastName}`
 }
+
+watch(
+  () => [props.employee?.id, props.initialTab] as const,
+  ([, initialTab]) => {
+    activeTab.value = initialTab ?? 'profile'
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
