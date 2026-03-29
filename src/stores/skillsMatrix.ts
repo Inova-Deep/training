@@ -156,17 +156,22 @@ const COMPETENCIES: Competency[] = (
 // ─── Deterministic seed helpers ───────────────────────────────────────────────
 
 function hashString(str: string): number {
-  let hash = 0
+  let h1 = 0xdeadbeef
+  let h2 = 0x41c6ce57
   for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i)
-    hash |= 0
+    const ch = str.charCodeAt(i)
+    h1 = Math.imul(h1 ^ ch, 2654435761)
+    h2 = Math.imul(h2 ^ ch, 1597334677)
   }
-  return Math.abs(hash)
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507)
+  h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909)
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507)
+  h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909)
+  return h2 >>> 0
 }
 
-/** Returns a stable 0.0–1.0 float for a given employee+competency pair */
 function seededRand(employeeId: string, competencyId: string): number {
-  return (hashString(employeeId + competencyId) % 10000) / 10000
+  return (hashString(employeeId + '|' + competencyId) % 10000) / 10000
 }
 
 // ─── Matrix row builder ────────────────────────────────────────────────────────

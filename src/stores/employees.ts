@@ -316,7 +316,16 @@ export const useEmployeesStore = defineStore('employees', () => {
           emp.firstName.toLowerCase().includes(query) ||
           emp.lastName.toLowerCase().includes(query) ||
           emp.displayName?.toLowerCase().includes(query) ||
-          emp.employeeNo.toLowerCase().includes(query),
+          emp.employeeNo.toLowerCase().includes(query) ||
+          emp.department?.name?.toLowerCase().includes(query) ||
+          emp.businessUnit?.name?.toLowerCase().includes(query) ||
+          emp.jobTitle?.name?.toLowerCase().includes(query) ||
+          emp.manager?.displayName?.toLowerCase().includes(query) ||
+          (emp.manager &&
+            `${emp.manager.firstName || ''} ${emp.manager.lastName || ''}`
+              .trim()
+              .toLowerCase()
+              .includes(query)),
       )
     }
 

@@ -232,6 +232,10 @@ All tokens are defined in `:root` in `src/main.css`.
 .sheet-description { /* Sheet subtitle */ }
 .sheet-content { /* Scrollable content */ }
 .sheet-footer { /* Sticky footer with actions */ }
+.sheet-side-right { /* Right-side panel: inset-block 0, right 0, 75% width, max-width 1040px */ }
+.sheet-side-left { /* Left-side panel: inset-block 0, left 0, 75% width, max-width 1040px */ }
+.sheet-side-top { /* Top panel: inset-inline 0, top 0, height auto */ }
+.sheet-side-bottom { /* Bottom panel: inset-inline 0, bottom 0, height auto */ }
 ```
 
 ### Form Classes
@@ -389,11 +393,11 @@ const selectedDate = ref<DateValue>()
 
 ---
 
-### Sheet (800px Width)
+### Sheet (1040px Width)
 
 **Import Path:** `@/components/ui/sheet`
 
-**SheetContent has been modified:** `sm:max-w-[800px]`
+**SheetContent has been modified:** Side-specific positioning, sizing, and borders are now handled via semantic CSS classes (`.sheet-side-right`, `.sheet-side-left`, `.sheet-side-top`, `.sheet-side-bottom`) defined in `main.css`. The default max-width for left/right sides is `1040px`.
 
 **Usage:**
 ```vue
