@@ -787,7 +787,7 @@ const historyRows = computed<HistoryRow[]>(() =>
                 <span v-else class="text-muted">—</span>
               </template>
               <template v-else-if="column.field === 'derivedStatus'">
-                <StatusChip :status="row.derivedStatus" compact />
+                <StatusChip :status="row.derivedStatus as any" compact />
               </template>
               <template v-else-if="column.field === 'nextReassessment'">
                 <span class="date-cell" :class="row.expiryClass">{{ row.nextReassessment }}</span>
@@ -866,7 +866,7 @@ const historyRows = computed<HistoryRow[]>(() =>
                   <span class="severity-badge" :class="row.severityCls">{{ row.severityLabel }}</span>
                 </template>
                 <template v-else-if="column.field === 'derivedStatus'">
-                  <StatusChip :status="row.derivedStatus" compact />
+                  <StatusChip :status="row.derivedStatus as any" compact />
                 </template>
                 <template v-else-if="column.field === 'dueDate'">
                   <span class="date-cell" :class="row.isExpired ? 'expiry-expired' : ''">{{ row.dueDate }}</span>
@@ -1001,7 +1001,7 @@ const historyRows = computed<HistoryRow[]>(() =>
             </template>
             <template #cell="{ column, row }: CellSlotProps<AuthRow>">
               <template v-if="column.field === 'derivedStatus'">
-                <StatusChip :status="row.derivedStatus" compact />
+                <StatusChip :status="row.derivedStatus as any" compact />
               </template>
               <template v-else-if="column.field === 'expiryDate'">
                 <span class="date-cell" :class="row.isExpired ? 'expiry-expired' : ''">{{ row.expiryDate }}</span>
