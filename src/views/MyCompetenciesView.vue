@@ -17,6 +17,7 @@ import {
   Upload,
   RotateCcw,
   History,
+  MoreHorizontal,
 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { useAuthStore } from '@/stores/auth'
@@ -25,6 +26,7 @@ import { useSkillsMatrixStore, type EmployeeCompetenceItem } from '@/stores/skil
 import { StatusChip } from '@/components/ui/status-chip'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Sheet,
   SheetContent,
@@ -32,6 +34,21 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Table as IoiTable } from '@ioi-dev/vue-table/unstyled'
+import type { ColumnDef, CellSlotProps, SortState, HeaderFilterSlotProps } from '@ioi-dev/vue-table/unstyled'
 import AssessmentRecordSheet from '@/components/competency/AssessmentRecordSheet.vue'
 import evidenceData from '@/data/employeeEvidence.json'
 import awarenessTopicsData from '@/data/awarenessTopics.json'
@@ -408,6 +425,212 @@ const currentEmployeeName = computed(() => authStore.activePersona.displayName)
 // ─── Tab state ────────────────────────────────────────────────────────────────
 
 const activeTab = ref('requirements')
+
+// ─── IoiTable infrastructure ──────────────────────────────────────────────────
+
+interface IoiTableRef { setSortState: (s: SortState[]) => void }
+
+function makeSortable() {
+  const tableRef = ref<IoiTableRef | null>(null)
+  const sortStates = ref<SortState[]>([])
+  function getSortDir(field: string): 'asc' | 'desc' | '' {
+    return sortStates.value.find(s => s.field === field)?.direction ?? ''
+  }
+  function headerSort(field: string): void {
+    if (field === '_actions') return
+    const cur = getSortDir(field)
+    const next: SortState[] = !cur
+      ? [{ field, direction: 'asc' }]
+      : cur === 'asc' ? [{ field, direction: 'desc' }] : []
+    sortStates.value = next
+    tableRef.value?.setSortState(next)
+  }
+  return { tableRef, sortStates, getSortDir, headerSort }
+}
+
+const req  = makeSortable()
+const gap  = makeSortable()
+const evid = makeSortable()
+const auth = makeSortable()
+const awk  = makeSortable()
+const hist = makeSortable()
+
+// ─── Tab 1: My Role Requirements ─────────────────────────────────────────────
+
+type ReqRow = {
+  id: string; category: string; code: string; title: string
+  isGating: boolean; derivedStatus: string
+  lastAssessed: string; nextReassessment: string; expiryClass: string
+  actionRequired: string; responsible: string
+  canRequestReassess: boolean; canRecord: boolean
+}
+
+const reqColumns: ColumnDef<ReqRow>[] = [
+  { id: 'category',       field: 'category',       header: 'Category',       type: 'text', headerFilter: 'select'          },
+  { id: 'code',           field: 'code',           header: 'Code',           type: 'text',                         width: 70 },
+  { id: 'title',          field: 'title',          header: 'Requirement',    type: 'text'                                   },
+  { id: 'isGating',       field: 'isGating',       header: 'Gating',         type: 'text',                         width: 80 },
+  { id: 'derivedStatus',  field: 'derivedStatus',  header: 'Status',         type: 'text', headerFilter: 'select', width: 150 },
+  { id: 'lastAssessed',   field: 'lastAssessed',   header: 'Last Assessed',  type: 'text',                         width: 120 },
+  { id: 'nextReassess',   field: 'nextReassessment',header: 'Next',          type: 'text',                         width: 120 },
+  { id: 'actionRequired', field: 'actionRequired', header: 'Action Required',type: 'text'                                   },
+  { id: 'responsible',    field: 'responsible',    header: 'Responsible',    type: 'text',                         width: 130 },
+  { id: '_actions',       field: '_actions',       header: 'Actions',                                              width: 72  },
+]
+
+const reqRows = computed<ReqRow[]>(() => {
+  if (!myRow.value) return []
+  const result: ReqRow[] = []
+  for (const [category, comps] of matrixStore.competenciesByCategory) {
+    for (const comp of comps) {
+      const item = getItem(comp.id)
+      result.push({
+        id: comp.id, category, code: comp.code, title: comp.title,
+        isGating: item?.isGating ?? false,
+        derivedStatus: item?.derivedStatus ?? 'N_A',
+        lastAssessed: getLastAssessed(comp.id),
+        nextReassessment: getNextReassessment(comp.id),
+        expiryClass: item ? getExpiryClass(item) : '',
+        actionRequired: item ? getActionRequired(item, comp.code) : '—',
+        responsible: item ? getResponsible(item) : '—',
+        canRequestReassess: !!item && item.derivedStatus !== 'VALID' && item.derivedStatus !== 'N_A',
+        canRecord: canRecordAssessment.value && item?.derivedStatus === 'UNDER_SUPERVISION',
+      })
+    }
+  }
+  return result
+})
+
+// ─── Tab 2: My Open Gaps ─────────────────────────────────────────────────────
+
+type GapRow = {
+  id: string; code: string; title: string
+  severityLabel: string; severityCls: string
+  derivedStatus: string; recommendedAction: string
+  dueDate: string; isExpired: boolean
+}
+
+const gapColumns: ColumnDef<GapRow>[] = [
+  { id: 'title',             field: 'title',             header: 'Competency',         type: 'text'                                   },
+  { id: 'severityLabel',     field: 'severityLabel',     header: 'Severity',           type: 'text', headerFilter: 'select', width: 110 },
+  { id: 'derivedStatus',     field: 'derivedStatus',     header: 'Current Status',     type: 'text', headerFilter: 'select', width: 160 },
+  { id: 'recommendedAction', field: 'recommendedAction', header: 'Recommended Action', type: 'text'                                   },
+  { id: 'dueDate',           field: 'dueDate',           header: 'Due / Expiry',       type: 'text',                         width: 120 },
+]
+
+const gapRows = computed<GapRow[]>(() =>
+  openGaps.value.map(g => ({
+    id: g.competencyId, code: g.code, title: g.title,
+    severityLabel: g.severity.label, severityCls: g.severity.cls,
+    derivedStatus: g.item.derivedStatus,
+    recommendedAction: g.recommendedAction,
+    dueDate: g.dueDate,
+    isExpired: g.item.derivedStatus === 'EXPIRED',
+  }))
+)
+
+// ─── Tab 3: My Evidence ──────────────────────────────────────────────────────
+
+type EvidenceRow = {
+  id: string; title: string; type: string
+  competencyCode: string; issuer: string
+  issueDate: string; expiryDisplay: string; isExpired: boolean
+  reviewStatus: string
+}
+
+const evidenceColumns: ColumnDef<EvidenceRow>[] = [
+  { id: 'title',          field: 'title',          header: 'Evidence',        type: 'text'                                   },
+  { id: 'type',           field: 'type',           header: 'Type',            type: 'text', headerFilter: 'select'          },
+  { id: 'competencyCode', field: 'competencyCode', header: 'Competency',      type: 'text',                         width: 110 },
+  { id: 'issuer',         field: 'issuer',         header: 'Issuer / Source', type: 'text'                                   },
+  { id: 'issueDate',      field: 'issueDate',      header: 'Issue Date',      type: 'text',                         width: 110 },
+  { id: 'expiryDisplay',  field: 'expiryDisplay',  header: 'Expiry',          type: 'text',                         width: 110 },
+  { id: 'reviewStatus',   field: 'reviewStatus',   header: 'Status',          type: 'text', headerFilter: 'select', width: 120 },
+]
+
+const evidenceRows = computed<EvidenceRow[]>(() =>
+  (evidence as EvidenceRecord[]).map(ev => ({
+    id: ev.id, title: ev.title, type: ev.type,
+    competencyCode: ev.competencyCode, issuer: ev.issuer,
+    issueDate: ev.issueDate,
+    expiryDisplay: ev.expiryDate ?? 'No Expiry',
+    isExpired: isEvidenceExpired(ev),
+    reviewStatus: ev.reviewStatus,
+  }))
+)
+
+// ─── Tab 4: My Authorisations ────────────────────────────────────────────────
+
+type AuthRow = {
+  id: string; title: string; code: string
+  derivedStatus: string; evidenceRef: string
+  expiryDate: string; isExpired: boolean
+  passLabel: string; pass: boolean
+}
+
+const authColumns: ColumnDef<AuthRow>[] = [
+  { id: 'title',         field: 'title',         header: 'Competency',     type: 'text'                                   },
+  { id: 'code',          field: 'code',          header: 'Code',           type: 'text',                         width: 80 },
+  { id: 'derivedStatus', field: 'derivedStatus', header: 'Current Status', type: 'text', headerFilter: 'select', width: 150 },
+  { id: 'evidenceRef',   field: 'evidenceRef',   header: 'Evidence Ref',   type: 'text',                         width: 120 },
+  { id: 'expiryDate',    field: 'expiryDate',    header: 'Expiry Date',    type: 'text',                         width: 110 },
+  { id: 'passLabel',     field: 'passLabel',     header: 'Pass / Fail',    type: 'text', headerFilter: 'select', width: 110 },
+]
+
+const authRows = computed<AuthRow[]>(() =>
+  gatingItems.value.map(g => ({
+    id: g.competencyId, title: g.title, code: g.code,
+    derivedStatus: g.item.derivedStatus,
+    evidenceRef: g.evidenceRef,
+    expiryDate: g.expiryDate,
+    isExpired: g.item.derivedStatus === 'EXPIRED',
+    passLabel: g.pass ? 'Pass' : 'Fail',
+    pass: g.pass,
+  }))
+)
+
+// ─── Tab 5: My Awareness Actions ─────────────────────────────────────────────
+
+type AwarenessRow = {
+  id: string; title: string; topicTypeLabel: string
+  effectiveDate: string; dueDate: string
+  ackStatusLabel: string; isAcked: boolean
+}
+
+const awarenessColumns: ColumnDef<AwarenessRow>[] = [
+  { id: 'title',          field: 'title',          header: 'Topic Title',    type: 'text'                                   },
+  { id: 'topicTypeLabel', field: 'topicTypeLabel', header: 'Type',           type: 'text', headerFilter: 'select'          },
+  { id: 'effectiveDate',  field: 'effectiveDate',  header: 'Effective Date', type: 'text',                         width: 130 },
+  { id: 'dueDate',        field: 'dueDate',        header: 'Due Date',       type: 'text',                         width: 110 },
+  { id: 'ackStatusLabel', field: 'ackStatusLabel', header: 'Status',         type: 'text', headerFilter: 'select', width: 140 },
+  { id: '_actions',       field: '_actions',       header: 'Actions',                                              width: 72  },
+]
+
+const awarenessRows = computed<AwarenessRow[]>(() =>
+  myAwarenessTopics.value.map(t => ({
+    id: t.id, title: t.title,
+    topicTypeLabel: t.topicType.replace(/_/g, ' '),
+    effectiveDate: t.effectiveDate,
+    dueDate: (t as any).dueDate ?? '—',
+    ackStatusLabel: acknowledgedTopics.value.has(t.id) ? 'Acknowledged' : 'Pending',
+    isAcked: acknowledgedTopics.value.has(t.id),
+  }))
+)
+
+// ─── History Sheet rows ───────────────────────────────────────────────────────
+
+type HistoryRow = { id: number; date: string; method: string; outcome: string; assessor: string }
+
+const historyColumns: ColumnDef<HistoryRow>[] = [
+  { id: 'date',    field: 'date',    header: 'Date',    type: 'text', width: 110 },
+  { id: 'method',  field: 'method',  header: 'Method',  type: 'text'             },
+  { id: 'outcome', field: 'outcome', header: 'Outcome', type: 'text', width: 160 },
+  { id: 'assessor',field: 'assessor',header: 'Assessor',type: 'text'             },
+]
+
+const historyRows = computed<HistoryRow[]>(() =>
+  historyEntries.value.map((e, i) => ({ id: i, ...e }))
+)
 </script>
 
 <template>
@@ -524,116 +747,77 @@ const activeTab = ref('requirements')
 
       <!-- ── Tab 1: My Role Requirements ──────────────────────────────────── -->
       <TabsContent value="requirements" class="tab-content">
-        <div
-          v-for="[category, comps] in matrixStore.competenciesByCategory"
-          :key="category"
-          class="category-section"
-        >
-          <template v-if="comps.length">
-            <div class="category-header">
-              <span class="category-badge">{{ category }}</span>
-              <span class="category-count">{{ comps.length }} requirements</span>
-            </div>
-
-            <div class="req-table-wrapper">
-              <table class="req-table">
-                <thead>
-                  <tr>
-                    <th class="col-code">Code</th>
-                    <th class="col-title">Requirement</th>
-                    <th class="col-gating">Gating</th>
-                    <th class="col-status">Status</th>
-                    <th class="col-last">Last Assessed</th>
-                    <th class="col-next">Next Reassessment</th>
-                    <th class="col-action">Action Required</th>
-                    <th class="col-responsible">Responsible</th>
-                    <th class="col-acts">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    v-for="comp in comps"
-                    :key="comp.id"
-                    :class="{
-                      'row-attention':
-                        getItem(comp.id)?.derivedStatus === 'EXPIRED' ||
-                        getItem(comp.id)?.derivedStatus === 'EXPIRING',
-                      'row-supervised': getItem(comp.id)?.derivedStatus === 'UNDER_SUPERVISION',
-                    }"
-                  >
-                    <td class="col-code comp-code">{{ comp.code }}</td>
-                    <td class="col-title comp-title">{{ comp.title }}</td>
-                    <td class="col-gating">
-                      <span v-if="getItem(comp.id)?.isGating" class="gating-badge">Gating</span>
-                      <span v-else class="text-muted">—</span>
-                    </td>
-                    <td class="col-status">
-                      <StatusChip
-                        v-if="getItem(comp.id)"
-                        :status="getItem(comp.id)!.derivedStatus"
-                        :expiry-date="getItem(comp.id)?.expiryDate"
-                        compact
-                      />
-                    </td>
-                    <td class="col-last date-cell">{{ getLastAssessed(comp.id) }}</td>
-                    <td
-                      class="col-next date-cell"
-                      :class="getItem(comp.id) ? getExpiryClass(getItem(comp.id)!) : ''"
-                    >
-                      {{ getNextReassessment(comp.id) }}
-                    </td>
-                    <td class="col-action action-text">
-                      {{ getItem(comp.id) ? getActionRequired(getItem(comp.id)!, comp.code) : '—' }}
-                    </td>
-                    <td class="col-responsible responsible-text">
-                      {{ getItem(comp.id) ? getResponsible(getItem(comp.id)!) : '—' }}
-                    </td>
-                    <td class="col-acts">
-                      <div class="row-actions">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          class="row-action-btn"
-                          title="View Assessment History"
-                          @click="viewAssessmentHistory(comp.title)"
-                        >
-                          <History class="icon-xs" />
-                          History
-                        </Button>
-                        <Button
-                          v-if="
-                            getItem(comp.id)?.derivedStatus !== 'VALID' &&
-                            getItem(comp.id)?.derivedStatus !== 'N_A'
-                          "
-                          size="sm"
-                          variant="ghost"
-                          class="row-action-btn"
-                          title="Request Reassessment"
-                          @click="requestReassessment(comp.title)"
-                        >
-                          <RotateCcw class="icon-xs" />
-                          Reassess
-                        </Button>
-                        <Button
-                          v-if="
-                            canRecordAssessment &&
-                            getItem(comp.id)?.derivedStatus === 'UNDER_SUPERVISION'
-                          "
-                          size="sm"
-                          variant="outline"
-                          class="row-action-btn row-action-record"
-                          @click="openAssessmentSheet(comp.id, comp.title)"
-                        >
-                          <ClipboardList class="icon-xs" />
-                          Record
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </template>
+        <div class="table-wrapper">
+          <IoiTable
+            :ref="req.tableRef"
+            :rows="reqRows"
+            :columns="reqColumns"
+            row-key="id"
+            :page-size="10000"
+            :row-class="(row: ReqRow) => row.derivedStatus === 'EXPIRED' || row.derivedStatus === 'EXPIRING' ? 'row-attention' : row.derivedStatus === 'UNDER_SUPERVISION' ? 'row-supervised' : ''"
+            aria-label="My Role Requirements"
+          >
+            <template #header="{ column }">
+              <div class="sort-header" :class="{ 'sort-header--no-sort': column.id === '_actions', 'sort-header--right': column.id === '_actions' }" @click.stop="req.headerSort(String(column.field))">
+                <span>{{ column.header ?? column.field }}</span>
+                <ChevronUp      v-if="req.getSortDir(String(column.field)) === 'asc'"  class="sort-icon" />
+                <ChevronDown    v-else-if="req.getSortDir(String(column.field)) === 'desc'" class="sort-icon" />
+                <ChevronsUpDown v-else-if="column.id !== '_actions'" class="sort-icon sort-icon-inactive" />
+              </div>
+            </template>
+            <template #header-filter="{ column, mode, value, options, setValue }: HeaderFilterSlotProps<ReqRow>">
+              <Select v-if="mode === 'select'" :model-value="value || '__all__'" @update:model-value="(v) => setValue(!v || v === '__all__' ? '' : String(v))">
+                <SelectTrigger size="sm" class="table-filter-select" :aria-label="`Filter by ${column.header ?? column.field}`"><SelectValue placeholder="All" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All</SelectItem>
+                  <SelectItem v-for="opt in options" :key="opt" :value="opt">{{ opt }}</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input v-else-if="mode === 'text'" :model-value="value" class="table-filter-input" :placeholder="`Filter ${column.header ?? column.field}…`" :aria-label="`Filter by ${column.header ?? column.field}`" @input="(e: Event) => setValue((e.target as HTMLInputElement).value)" />
+            </template>
+            <template #cell="{ column, row }: CellSlotProps<ReqRow>">
+              <template v-if="column.field === 'code'">
+                <span class="comp-code">{{ row.code }}</span>
+              </template>
+              <template v-else-if="column.field === 'title'">
+                <span class="comp-title">{{ row.title }}</span>
+              </template>
+              <template v-else-if="column.field === 'isGating'">
+                <span v-if="row.isGating" class="gating-badge">Gating</span>
+                <span v-else class="text-muted">—</span>
+              </template>
+              <template v-else-if="column.field === 'derivedStatus'">
+                <StatusChip :status="row.derivedStatus" compact />
+              </template>
+              <template v-else-if="column.field === 'nextReassessment'">
+                <span class="date-cell" :class="row.expiryClass">{{ row.nextReassessment }}</span>
+              </template>
+              <template v-else-if="column.field === '_actions'">
+                <div class="cell-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger as-child>
+                      <Button variant="ghost" size="icon" class="table-action-btn" :aria-label="`Actions for ${row.title}`">
+                        <MoreHorizontal class="icon-xs" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem @click="viewAssessmentHistory(row.title)">
+                        <History class="icon-xs icon-mr" /> View History
+                      </DropdownMenuItem>
+                      <DropdownMenuItem v-if="row.canRequestReassess" @click="requestReassessment(row.title)">
+                        <RotateCcw class="icon-xs icon-mr" /> Request Reassessment
+                      </DropdownMenuItem>
+                      <DropdownMenuItem v-if="row.canRecord" @click="openAssessmentSheet(row.id, row.title)">
+                        <ClipboardList class="icon-xs icon-mr" /> Record Assessment
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </template>
+              <template v-else>{{ String(row[column.field as keyof ReqRow] ?? '') }}</template>
+            </template>
+            <template #empty><div class="empty-cell">No requirements found for this role.</div></template>
+          </IoiTable>
         </div>
       </TabsContent>
 
@@ -655,41 +839,42 @@ const activeTab = ref('requirements')
               action — sorted by severity.
             </p>
           </div>
-          <div class="req-table-wrapper">
-            <table class="req-table">
-              <thead>
-                <tr>
-                  <th>Competency</th>
-                  <th>Gap Severity</th>
-                  <th>Current Status</th>
-                  <th>Recommended Action</th>
-                  <th>Due / Expiry Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="gap in openGaps" :key="gap.competencyId">
-                  <td>
-                    <span class="comp-code-inline">{{ gap.code }}</span>
-                    {{ gap.title }}
-                  </td>
-                  <td>
-                    <span class="severity-badge" :class="gap.severity.cls">{{
-                      gap.severity.label
-                    }}</span>
-                  </td>
-                  <td>
-                    <StatusChip :status="gap.item.derivedStatus" compact />
-                  </td>
-                  <td class="action-text">{{ gap.recommendedAction }}</td>
-                  <td
-                    class="date-cell"
-                    :class="gap.item.derivedStatus === 'EXPIRED' ? 'expiry-expired' : ''"
-                  >
-                    {{ gap.dueDate }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="table-wrapper">
+            <IoiTable :ref="gap.tableRef" :rows="gapRows" :columns="gapColumns" row-key="id" :page-size="10000" aria-label="My Open Gaps">
+              <template #header="{ column }">
+                <div class="sort-header" :class="{ 'sort-header--no-sort': !column.field }" @click.stop="gap.headerSort(String(column.field))">
+                  <span>{{ column.header ?? column.field }}</span>
+                  <ChevronUp      v-if="gap.getSortDir(String(column.field)) === 'asc'"  class="sort-icon" />
+                  <ChevronDown    v-else-if="gap.getSortDir(String(column.field)) === 'desc'" class="sort-icon" />
+                  <ChevronsUpDown v-else class="sort-icon sort-icon-inactive" />
+                </div>
+              </template>
+              <template #header-filter="{ column, mode, value, options, setValue }: HeaderFilterSlotProps<GapRow>">
+                <Select v-if="mode === 'select'" :model-value="value || '__all__'" @update:model-value="(v) => setValue(!v || v === '__all__' ? '' : String(v))">
+                  <SelectTrigger size="sm" class="table-filter-select" :aria-label="`Filter by ${column.header ?? column.field}`"><SelectValue placeholder="All" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All</SelectItem>
+                    <SelectItem v-for="opt in options" :key="opt" :value="opt">{{ opt }}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </template>
+              <template #cell="{ column, row }: CellSlotProps<GapRow>">
+                <template v-if="column.field === 'title'">
+                  <span><span class="comp-code-inline">{{ row.code }}</span> {{ row.title }}</span>
+                </template>
+                <template v-else-if="column.field === 'severityLabel'">
+                  <span class="severity-badge" :class="row.severityCls">{{ row.severityLabel }}</span>
+                </template>
+                <template v-else-if="column.field === 'derivedStatus'">
+                  <StatusChip :status="row.derivedStatus" compact />
+                </template>
+                <template v-else-if="column.field === 'dueDate'">
+                  <span class="date-cell" :class="row.isExpired ? 'expiry-expired' : ''">{{ row.dueDate }}</span>
+                </template>
+                <template v-else>{{ String(row[column.field as keyof GapRow] ?? '') }}</template>
+              </template>
+              <template #empty><div class="empty-cell">No open gaps.</div></template>
+            </IoiTable>
           </div>
         </template>
       </TabsContent>
@@ -707,49 +892,52 @@ const activeTab = ref('requirements')
           </Button>
         </div>
 
-        <div class="req-table-wrapper">
-          <table class="req-table">
-            <thead>
-              <tr>
-                <th>Evidence</th>
-                <th>Type</th>
-                <th>Competency</th>
-                <th>Issuer / Source</th>
-                <th>Issue Date</th>
-                <th>Expiry</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="ev in evidence" :key="ev.id">
-                <td class="evidence-title-cell">
-                  <component :is="getEvidenceTypeIcon(ev.type)" class="ev-type-icon" />
-                  <span>{{ ev.title }}</span>
-                </td>
-                <td>
-                  <span class="ev-type-badge">{{ ev.type }}</span>
-                </td>
-                <td class="comp-code ev-comp-code">{{ ev.competencyCode }}</td>
-                <td class="action-text">{{ ev.issuer }}</td>
-                <td class="date-cell">{{ ev.issueDate }}</td>
-                <td class="date-cell" :class="isEvidenceExpired(ev) ? 'expiry-expired' : ''">
-                  {{ ev.expiryDate ?? 'No Expiry' }}
-                </td>
-                <td>
-                  <span
-                    class="ev-status-badge"
-                    :class="
-                      ev.reviewStatus === 'Accepted' ? 'ev-status-accepted' : 'ev-status-pending'
-                    "
-                  >
-                    <CheckCircle2 v-if="ev.reviewStatus === 'Accepted'" class="ev-status-icon" />
-                    <Clock v-else class="ev-status-icon" />
-                    {{ ev.reviewStatus }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="table-wrapper">
+          <IoiTable :ref="evid.tableRef" :rows="evidenceRows" :columns="evidenceColumns" row-key="id" :page-size="10000" aria-label="My Evidence">
+            <template #header="{ column }">
+              <div class="sort-header" :class="{ 'sort-header--no-sort': !column.field }" @click.stop="evid.headerSort(String(column.field))">
+                <span>{{ column.header ?? column.field }}</span>
+                <ChevronUp      v-if="evid.getSortDir(String(column.field)) === 'asc'"  class="sort-icon" />
+                <ChevronDown    v-else-if="evid.getSortDir(String(column.field)) === 'desc'" class="sort-icon" />
+                <ChevronsUpDown v-else class="sort-icon sort-icon-inactive" />
+              </div>
+            </template>
+            <template #header-filter="{ column, mode, value, options, setValue }: HeaderFilterSlotProps<EvidenceRow>">
+              <Select v-if="mode === 'select'" :model-value="value || '__all__'" @update:model-value="(v) => setValue(!v || v === '__all__' ? '' : String(v))">
+                <SelectTrigger size="sm" class="table-filter-select" :aria-label="`Filter by ${column.header ?? column.field}`"><SelectValue placeholder="All" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All</SelectItem>
+                  <SelectItem v-for="opt in options" :key="opt" :value="opt">{{ opt }}</SelectItem>
+                </SelectContent>
+              </Select>
+            </template>
+            <template #cell="{ column, row }: CellSlotProps<EvidenceRow>">
+              <template v-if="column.field === 'title'">
+                <div class="evidence-title-cell">
+                  <component :is="getEvidenceTypeIcon(row.type)" class="ev-type-icon" />
+                  <span>{{ row.title }}</span>
+                </div>
+              </template>
+              <template v-else-if="column.field === 'type'">
+                <span class="ev-type-badge">{{ row.type }}</span>
+              </template>
+              <template v-else-if="column.field === 'competencyCode'">
+                <span class="comp-code ev-comp-code">{{ row.competencyCode }}</span>
+              </template>
+              <template v-else-if="column.field === 'expiryDisplay'">
+                <span class="date-cell" :class="row.isExpired ? 'expiry-expired' : ''">{{ row.expiryDisplay }}</span>
+              </template>
+              <template v-else-if="column.field === 'reviewStatus'">
+                <span class="ev-status-badge" :class="row.reviewStatus === 'Accepted' ? 'ev-status-accepted' : 'ev-status-pending'">
+                  <CheckCircle2 v-if="row.reviewStatus === 'Accepted'" class="ev-status-icon" />
+                  <Clock v-else class="ev-status-icon" />
+                  {{ row.reviewStatus }}
+                </span>
+              </template>
+              <template v-else>{{ String(row[column.field as keyof EvidenceRow] ?? '') }}</template>
+            </template>
+            <template #empty><div class="empty-cell">No evidence records on file.</div></template>
+          </IoiTable>
         </div>
       </TabsContent>
 
@@ -792,41 +980,40 @@ const activeTab = ref('requirements')
           <p class="empty-tab-title">No gating competencies found</p>
           <p class="empty-tab-desc">Gating requirements are not configured for this job title.</p>
         </div>
-        <div v-else class="req-table-wrapper">
-          <table class="req-table">
-            <thead>
-              <tr>
-                <th>Competency</th>
-                <th>Code</th>
-                <th>Current Status</th>
-                <th>Evidence Ref</th>
-                <th>Expiry Date</th>
-                <th class="text-center">Pass / Fail</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="g in gatingItems" :key="g.competencyId">
-                <td class="comp-title">{{ g.title }}</td>
-                <td class="comp-code">{{ g.code }}</td>
-                <td>
-                  <StatusChip :status="g.item.derivedStatus" compact />
-                </td>
-                <td class="date-cell ev-ref-text">{{ g.evidenceRef }}</td>
-                <td
-                  class="date-cell"
-                  :class="g.item.derivedStatus === 'EXPIRED' ? 'expiry-expired' : ''"
-                >
-                  {{ g.expiryDate }}
-                </td>
-                <td class="text-center">
-                  <span v-if="g.pass" class="pass-indicator">
-                    <CheckCircle2 class="pass-icon" /> Pass
-                  </span>
-                  <span v-else class="fail-indicator"> <XCircle class="fail-icon" /> Fail </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div v-else class="table-wrapper">
+          <IoiTable :ref="auth.tableRef" :rows="authRows" :columns="authColumns" row-key="id" :page-size="10000" aria-label="My Authorisations">
+            <template #header="{ column }">
+              <div class="sort-header" :class="{ 'sort-header--no-sort': !column.field }" @click.stop="auth.headerSort(String(column.field))">
+                <span>{{ column.header ?? column.field }}</span>
+                <ChevronUp      v-if="auth.getSortDir(String(column.field)) === 'asc'"  class="sort-icon" />
+                <ChevronDown    v-else-if="auth.getSortDir(String(column.field)) === 'desc'" class="sort-icon" />
+                <ChevronsUpDown v-else class="sort-icon sort-icon-inactive" />
+              </div>
+            </template>
+            <template #header-filter="{ column, mode, value, options, setValue }: HeaderFilterSlotProps<AuthRow>">
+              <Select v-if="mode === 'select'" :model-value="value || '__all__'" @update:model-value="(v) => setValue(!v || v === '__all__' ? '' : String(v))">
+                <SelectTrigger size="sm" class="table-filter-select" :aria-label="`Filter by ${column.header ?? column.field}`"><SelectValue placeholder="All" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All</SelectItem>
+                  <SelectItem v-for="opt in options" :key="opt" :value="opt">{{ opt }}</SelectItem>
+                </SelectContent>
+              </Select>
+            </template>
+            <template #cell="{ column, row }: CellSlotProps<AuthRow>">
+              <template v-if="column.field === 'derivedStatus'">
+                <StatusChip :status="row.derivedStatus" compact />
+              </template>
+              <template v-else-if="column.field === 'expiryDate'">
+                <span class="date-cell" :class="row.isExpired ? 'expiry-expired' : ''">{{ row.expiryDate }}</span>
+              </template>
+              <template v-else-if="column.field === 'passLabel'">
+                <span v-if="row.pass" class="pass-indicator"><CheckCircle2 class="pass-icon" /> Pass</span>
+                <span v-else class="fail-indicator"><XCircle class="fail-icon" /> Fail</span>
+              </template>
+              <template v-else>{{ String(row[column.field as keyof AuthRow] ?? '') }}</template>
+            </template>
+            <template #empty><div class="empty-cell">No gating items found.</div></template>
+          </IoiTable>
         </div>
 
         <p class="gating-summary-line">
@@ -857,58 +1044,59 @@ const activeTab = ref('requirements')
               </p>
             </div>
           </div>
-          <div class="req-table-wrapper">
-            <table class="req-table">
-              <thead>
-                <tr>
-                  <th>Topic Title</th>
-                  <th>Type</th>
-                  <th>Effective Date</th>
-                  <th>Due Date</th>
-                  <th>Status</th>
-                  <th class="text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="topic in myAwarenessTopics"
-                  :key="topic.id"
-                  :class="{ 'row-acknowledged': acknowledgedTopics.has(topic.id) }"
-                >
-                  <td class="comp-title">{{ topic.title }}</td>
-                  <td>
-                    <span class="ev-type-badge">{{ topic.topicType.replace(/_/g, ' ') }}</span>
-                  </td>
-                  <td class="date-cell">{{ topic.effectiveDate }}</td>
-                  <td class="date-cell">{{ topic.dueDate }}</td>
-                  <td>
-                    <span
-                      class="ack-badge"
-                      :class="
-                        acknowledgedTopics.has(topic.id) ? 'ack-badge-done' : 'ack-badge-pending'
-                      "
-                    >
-                      <CheckCircle2
-                        v-if="acknowledgedTopics.has(topic.id)"
-                        class="ack-badge-icon"
-                      />
-                      <Clock v-else class="ack-badge-icon" />
-                      {{ acknowledgedTopics.has(topic.id) ? 'Acknowledged' : 'Pending' }}
-                    </span>
-                  </td>
-                  <td class="text-center">
-                    <Button
-                      v-if="!acknowledgedTopics.has(topic.id)"
-                      size="sm"
-                      @click="acknowledgeAwarenessTopic(topic.id, topic.title)"
-                    >
-                      Acknowledge
-                    </Button>
-                    <span v-else class="ack-done-label">Done</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="table-wrapper">
+            <IoiTable :ref="awk.tableRef" :rows="awarenessRows" :columns="awarenessColumns" row-key="id" :page-size="10000" :row-class="(row: AwarenessRow) => row.isAcked ? 'row-acknowledged' : ''" aria-label="My Awareness Actions">
+              <template #header="{ column }">
+                <div class="sort-header" :class="{ 'sort-header--no-sort': column.id === '_actions', 'sort-header--right': column.id === '_actions' }" @click.stop="awk.headerSort(String(column.field))">
+                  <span>{{ column.header ?? column.field }}</span>
+                  <ChevronUp      v-if="awk.getSortDir(String(column.field)) === 'asc'"  class="sort-icon" />
+                  <ChevronDown    v-else-if="awk.getSortDir(String(column.field)) === 'desc'" class="sort-icon" />
+                  <ChevronsUpDown v-else-if="column.id !== '_actions'" class="sort-icon sort-icon-inactive" />
+                </div>
+              </template>
+              <template #header-filter="{ column, mode, value, options, setValue }: HeaderFilterSlotProps<AwarenessRow>">
+                <Select v-if="mode === 'select'" :model-value="value || '__all__'" @update:model-value="(v) => setValue(!v || v === '__all__' ? '' : String(v))">
+                  <SelectTrigger size="sm" class="table-filter-select" :aria-label="`Filter by ${column.header ?? column.field}`"><SelectValue placeholder="All" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All</SelectItem>
+                    <SelectItem v-for="opt in options" :key="opt" :value="opt">{{ opt }}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </template>
+              <template #cell="{ column, row }: CellSlotProps<AwarenessRow>">
+                <template v-if="column.field === 'topicTypeLabel'">
+                  <span class="ev-type-badge">{{ row.topicTypeLabel }}</span>
+                </template>
+                <template v-else-if="column.field === 'ackStatusLabel'">
+                  <span class="ack-badge" :class="row.isAcked ? 'ack-badge-done' : 'ack-badge-pending'">
+                    <CheckCircle2 v-if="row.isAcked" class="ack-badge-icon" />
+                    <Clock v-else class="ack-badge-icon" />
+                    {{ row.ackStatusLabel }}
+                  </span>
+                </template>
+                <template v-else-if="column.field === '_actions'">
+                  <div class="cell-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger as-child>
+                        <Button variant="ghost" size="icon" class="table-action-btn" :aria-label="`Actions for ${row.title}`">
+                          <MoreHorizontal class="icon-xs" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem v-if="!row.isAcked" @click="acknowledgeAwarenessTopic(row.id, row.title)">
+                          <CheckCircle2 class="icon-xs icon-mr" /> Acknowledge
+                        </DropdownMenuItem>
+                        <DropdownMenuItem v-else disabled>
+                          <CheckCircle2 class="icon-xs icon-mr" /> Acknowledged
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </template>
+                <template v-else>{{ String(row[column.field as keyof AwarenessRow] ?? '') }}</template>
+              </template>
+              <template #empty><div class="empty-cell">No awareness topics assigned.</div></template>
+            </IoiTable>
           </div>
         </template>
       </TabsContent>
@@ -925,34 +1113,46 @@ const activeTab = ref('requirements')
           <div v-if="historyEntries.length === 0" class="empty-tab-state">
             <p class="empty-tab-desc">No assessment history found for this competency.</p>
           </div>
-          <table v-else class="req-table history-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Method</th>
-                <th>Outcome</th>
-                <th>Assessor</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(entry, i) in historyEntries" :key="i">
-                <td class="date-cell">{{ entry.date }}</td>
-                <td class="action-text">{{ entry.method }}</td>
-                <td>
-                  <span
-                    class="outcome-chip"
-                    :class="{
-                      'outcome-competent': entry.outcome === 'Competent',
-                      'outcome-not-yet': entry.outcome === 'Not Yet Competent',
-                      'outcome-partial': entry.outcome === 'Partially Competent',
-                    }"
-                    >{{ entry.outcome }}</span
-                  >
-                </td>
-                <td class="action-text">{{ entry.assessor }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <IoiTable
+            v-else
+            :ref="hist.tableRef"
+            :rows="historyRows"
+            :columns="historyColumns"
+            row-key="id"
+            :page-size="10000"
+            aria-label="Assessment History"
+            class="history-table"
+          >
+            <template #header="{ column }">
+              <div
+                class="sort-header"
+                @click.stop="hist.headerSort(String(column.field))"
+              >
+                <span>{{ column.header ?? column.field }}</span>
+                <ChevronUp      v-if="hist.getSortDir(String(column.field)) === 'asc'"  class="sort-icon" />
+                <ChevronDown    v-else-if="hist.getSortDir(String(column.field)) === 'desc'" class="sort-icon" />
+                <ChevronsUpDown v-else class="sort-icon sort-icon-inactive" />
+              </div>
+            </template>
+
+            <template #cell="{ column, row }: CellSlotProps<HistoryRow>">
+              <template v-if="column.field === 'outcome'">
+                <span
+                  class="outcome-chip"
+                  :class="{
+                    'outcome-competent': row.outcome === 'Competent',
+                    'outcome-not-yet':   row.outcome === 'Not Yet Competent',
+                    'outcome-partial':   row.outcome === 'Partially Competent',
+                  }"
+                >{{ row.outcome }}</span>
+              </template>
+              <template v-else>{{ String(row[column.field as keyof HistoryRow] ?? '') }}</template>
+            </template>
+
+            <template #empty>
+              <div class="empty-tab-state">No history entries.</div>
+            </template>
+          </IoiTable>
         </div>
       </SheetContent>
     </Sheet>

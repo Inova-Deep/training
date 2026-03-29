@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Plus, CheckCircle2, Clock, Send, XCircle, Eye } from 'lucide-vue-next'
+import { Plus, CheckCircle2, Clock, Send, XCircle, Eye, MoreHorizontal, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-vue-next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Table as IoiTable } from '@ioi-dev/vue-table/unstyled'
+import type { ColumnDef, CellSlotProps, SortState, HeaderFilterSlotProps } from '@ioi-dev/vue-table/unstyled'
 import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@/components/ui/table'
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu'
 import {
   Select,
   SelectContent,
@@ -85,39 +86,6 @@ const DELIVERY_LABELS: Record<string, string> = {
   FORMAL_RETRAINING: 'Formal Retraining',
 }
 
-// ─── Admin filters ─────────────────────────────────────────────────────────────
-
-const filterType = ref('__all__')
-const filterStatus = ref('__all__')
-const filterDelivery = ref('__all__')
-
-const filteredTopics = computed(() => {
-  return topics.value.filter((t) => {
-    const matchType = filterType.value === '__all__' || t.topicType === filterType.value
-    const matchStatus = filterStatus.value === '__all__' || t.workflowStatus === filterStatus.value
-    const matchDelivery =
-      filterDelivery.value === '__all__' || t.deliveryMethod === filterDelivery.value
-    return matchType && matchStatus && matchDelivery
-  })
-})
-
-// ─── Employee filters ──────────────────────────────────────────────────────────
-
-const empFilterType = ref('__all__')
-const empFilterStatus = ref('__all__')
-const empFilterDelivery = ref('__all__')
-
-const empFilteredTopics = computed(() => {
-  return assignedTopics.value.filter((t) => {
-    const matchType = empFilterType.value === '__all__' || t.topicType === empFilterType.value
-    const matchStatus =
-      empFilterStatus.value === '__all__' || t.workflowStatus === empFilterStatus.value
-    const matchDelivery =
-      empFilterDelivery.value === '__all__' || t.deliveryMethod === empFilterDelivery.value
-    return matchType && matchStatus && matchDelivery
-  })
-})
-
 // ─── Admin action handlers ─────────────────────────────────────────────────────
 
 function issueTopic(topic: AwarenessTopic) {
@@ -178,6 +146,78 @@ const briefingCount = computed(
   () =>
     assignedTopics.value.filter((t) => t.briefingRequired && !acknowledged.value.has(t.id)).length,
 )
+
+// ── Shared helpers ────────────────────────────────────────────────────────────
+
+function buildTopicRow(t: AwarenessTopic, isAcked: boolean) {
+  return {
+    id: t.id,
+    title: t.title,
+    topicTypeBadgeClass: TOPIC_TYPE_BADGE[t.topicType] ?? 'badge badge-neutral',
+    topicTypeLabel: TOPIC_TYPE_LABELS[t.topicType] ?? t.topicType,
+    trigger: t.trigger,
+    deliveryMethodLabel: DELIVERY_LABELS[t.deliveryMethod] ?? t.deliveryMethod,
+    effectiveDate: t.effectiveDate,
+    requiredAudience: t.requiredAudience,
+    workflowBadgeClass: WORKFLOW_BADGE[t.workflowStatus] ?? 'badge badge-neutral',
+    workflowStatusLabel: WORKFLOW_LABELS[t.workflowStatus] ?? t.workflowStatus,
+    workflowStatus: t.workflowStatus,
+    completionAcknowledged: (t as any).completionAcknowledged ?? (isAcked ? 1 : 0),
+    completionTotal: (t as any).completionTotal ?? 1,
+    isAcked,
+    _raw: t,
+  }
+}
+
+type TopicRow = ReturnType<typeof buildTopicRow>
+
+const empRows = computed<TopicRow[]>(() =>
+  assignedTopics.value.map((t) => buildTopicRow(t, acknowledged.value.has(t.id))),
+)
+
+const adminRows = computed<TopicRow[]>(() =>
+  topics.value.map((t) => buildTopicRow(t, false)),
+)
+
+// ── Sort ──────────────────────────────────────────────────────────────────────
+
+interface IoiTableRef { setSortState: (s: SortState[]) => void }
+const empTableRef   = ref<IoiTableRef | null>(null)
+const adminTableRef = ref<IoiTableRef | null>(null)
+const empSortStates   = ref<SortState[]>([])
+const adminSortStates = ref<SortState[]>([])
+
+function getSortDir(states: SortState[], field: string): 'asc' | 'desc' | '' {
+  return states.find(s => s.field === field)?.direction ?? ''
+}
+
+function headerSortEmp(field: string) {
+  if (field === '_actions') return
+  const cur = getSortDir(empSortStates.value, field)
+  const next: SortState[] = !cur ? [{ field, direction: 'asc' }] : cur === 'asc' ? [{ field, direction: 'desc' }] : []
+  empSortStates.value = next
+  empTableRef.value?.setSortState(next)
+}
+
+function headerSortAdmin(field: string) {
+  if (field === '_actions') return
+  const cur = getSortDir(adminSortStates.value, field)
+  const next: SortState[] = !cur ? [{ field, direction: 'asc' }] : cur === 'asc' ? [{ field, direction: 'desc' }] : []
+  adminSortStates.value = next
+  adminTableRef.value?.setSortState(next)
+}
+
+const topicColumns: ColumnDef<TopicRow>[] = [
+  { id: 'title',               field: 'title',               header: 'Title',            type: 'text', headerFilter: 'text'            },
+  { id: 'topicTypeLabel',      field: 'topicTypeLabel',      header: 'Topic Type',       type: 'text', headerFilter: 'select'          },
+  { id: 'trigger',             field: 'trigger',             header: 'Trigger',          type: 'text'                                  },
+  { id: 'deliveryMethodLabel', field: 'deliveryMethodLabel', header: 'Delivery Method',  type: 'text', headerFilter: 'select'          },
+  { id: 'effectiveDate',       field: 'effectiveDate',       header: 'Effective Date',   type: 'text',                         width: 130 },
+  { id: 'requiredAudience',    field: 'requiredAudience',    header: 'Audience',         type: 'text'                                  },
+  { id: 'workflowStatusLabel', field: 'workflowStatusLabel', header: 'Workflow Status',  type: 'text', headerFilter: 'select', width: 150 },
+  { id: 'completion',          field: 'completion',          header: 'Completion',       type: 'text',                         width: 120 },
+  { id: '_actions',            field: '_actions',            header: 'Actions',                                                width: 72  },
+]
 </script>
 
 <template>
@@ -216,166 +256,115 @@ const briefingCount = computed(
         <span class="topic-count">{{ assignedTopics.length }} assigned</span>
       </CardHeader>
 
-      <!-- Filters toolbar -->
-      <div class="filter-toolbar">
-        <Select v-model="empFilterType">
-          <SelectTrigger class="filter-select">
-            <SelectValue placeholder="Topic Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All Types</SelectItem>
-            <SelectItem v-for="(label, key) in TOPIC_TYPE_LABELS" :key="key" :value="key">
-              {{ label }}
-            </SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select v-model="empFilterStatus">
-          <SelectTrigger class="filter-select">
-            <SelectValue placeholder="Workflow Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All Statuses</SelectItem>
-            <SelectItem v-for="(label, key) in WORKFLOW_LABELS" :key="key" :value="key">
-              {{ label }}
-            </SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select v-model="empFilterDelivery">
-          <SelectTrigger class="filter-select">
-            <SelectValue placeholder="Delivery Method" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All Methods</SelectItem>
-            <SelectItem value="READ_AND_ACKNOWLEDGE">Read & Acknowledge</SelectItem>
-            <SelectItem value="TEAM_BRIEFING">Team Briefing</SelectItem>
-            <SelectItem value="TOOLBOX_TALK">Toolbox Talk</SelectItem>
-            <SelectItem value="SUPERVISOR_CASCADE">Supervisor Cascade</SelectItem>
-            <SelectItem value="FORMAL_RETRAINING">Formal Retraining</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <span class="filter-count"
-          >{{ empFilteredTopics.length }} result{{
-            empFilteredTopics.length !== 1 ? 's' : ''
-          }}</span
-        >
-      </div>
-
       <CardContent class="data-card-content">
         <div class="table-wrapper">
-          <Table class="dense-table">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Topic Type</TableHead>
-                <TableHead>Trigger</TableHead>
-                <TableHead>Delivery Method</TableHead>
-                <TableHead>Effective Date</TableHead>
-                <TableHead>Audience</TableHead>
-                <TableHead>Workflow Status</TableHead>
-                <TableHead>Completion</TableHead>
-                <TableHead class="table-actions-header">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow
-                v-for="topic in empFilteredTopics"
-                :key="topic.id"
-                :class="{ 'row-acknowledged': acknowledged.has(topic.id) }"
+          <IoiTable
+            ref="empTableRef"
+            :rows="empRows"
+            :columns="topicColumns"
+            row-key="id"
+            :page-size="10000"
+            :row-class="(row: TopicRow) => row.isAcked ? 'row-acknowledged' : ''"
+            aria-label="My Awareness Topics"
+          >
+            <template #header="{ column }">
+              <div
+                class="sort-header"
+                :class="{ 'sort-header--no-sort': column.id === '_actions', 'sort-header--right': column.id === '_actions' }"
+                @click.stop="headerSortEmp(String(column.field))"
               >
-                <TableCell class="table-name-cell">{{ topic.title }}</TableCell>
+                <span>{{ column.header ?? column.field }}</span>
+                <ChevronUp      v-if="getSortDir(empSortStates, String(column.field)) === 'asc'"  class="sort-icon" />
+                <ChevronDown    v-else-if="getSortDir(empSortStates, String(column.field)) === 'desc'" class="sort-icon" />
+                <ChevronsUpDown v-else-if="column.id !== '_actions'" class="sort-icon sort-icon-inactive" />
+              </div>
+            </template>
 
-                <TableCell>
-                  <span class="badge" :class="TOPIC_TYPE_BADGE[topic.topicType]">
-                    {{ TOPIC_TYPE_LABELS[topic.topicType] ?? topic.topicType }}
-                  </span>
-                </TableCell>
+            <template #header-filter="{ column, mode, value, options, setValue }: HeaderFilterSlotProps<TopicRow>">
+              <Select
+                v-if="mode === 'select'"
+                :model-value="value || '__all__'"
+                @update:model-value="(v) => setValue(!v || v === '__all__' ? '' : String(v))"
+              >
+                <SelectTrigger size="sm" class="table-filter-select" :aria-label="`Filter by ${column.header ?? column.field}`">
+                  <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All</SelectItem>
+                  <SelectItem v-for="opt in options" :key="opt" :value="opt">{{ opt }}</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                v-else-if="mode === 'text'"
+                :model-value="value"
+                class="table-filter-input"
+                :placeholder="`Filter ${column.header ?? column.field}…`"
+                :aria-label="`Filter by ${column.header ?? column.field}`"
+                @input="(e: Event) => setValue((e.target as HTMLInputElement).value)"
+              />
+            </template>
 
-                <TableCell class="trigger-cell">{{ topic.trigger }}</TableCell>
-
-                <TableCell>
-                  <span class="badge badge-neutral">
-                    {{ DELIVERY_LABELS[topic.deliveryMethod] ?? topic.deliveryMethod }}
-                  </span>
-                </TableCell>
-
-                <TableCell class="date-cell">{{ topic.effectiveDate }}</TableCell>
-
-                <TableCell>
-                  <div class="audience-tags">
-                    <span
-                      v-for="aud in topic.requiredAudience.slice(0, 2)"
-                      :key="aud"
-                      class="audience-tag"
-                      >{{ aud }}</span
-                    >
-                    <span
-                      v-if="topic.requiredAudience.length > 2"
-                      class="audience-tag audience-tag-more"
-                      >+{{ topic.requiredAudience.length - 2 }}</span
-                    >
+            <template #cell="{ column, row }: CellSlotProps<TopicRow>">
+              <template v-if="column.field === 'title'">
+                <span class="table-name-cell">{{ row.title }}</span>
+              </template>
+              <template v-else-if="column.field === 'topicTypeLabel'">
+                <span class="badge" :class="row.topicTypeBadgeClass">{{ row.topicTypeLabel }}</span>
+              </template>
+              <template v-else-if="column.field === 'trigger'">
+                <span class="trigger-cell">{{ row.trigger }}</span>
+              </template>
+              <template v-else-if="column.field === 'deliveryMethodLabel'">
+                <span class="badge badge-neutral">{{ row.deliveryMethodLabel }}</span>
+              </template>
+              <template v-else-if="column.field === 'effectiveDate'">
+                <span class="date-cell">{{ row.effectiveDate }}</span>
+              </template>
+              <template v-else-if="column.field === 'requiredAudience'">
+                <div class="audience-tags">
+                  <span v-for="aud in row.requiredAudience.slice(0, 2)" :key="aud" class="audience-tag">{{ aud }}</span>
+                  <span v-if="row.requiredAudience.length > 2" class="audience-tag audience-tag-more">+{{ row.requiredAudience.length - 2 }}</span>
+                </div>
+              </template>
+              <template v-else-if="column.field === 'workflowStatusLabel'">
+                <span :class="row.workflowBadgeClass">{{ row.workflowStatusLabel }}</span>
+              </template>
+              <template v-else-if="column.field === 'completion'">
+                <div class="completion-cell">
+                  <span class="completion-label">{{ row.isAcked ? '1' : '0' }}/1 ack.</span>
+                  <div class="progress-bar-track">
+                    <div class="progress-bar-fill" :class="{ 'progress-bar-done': row.isAcked }" :style="{ width: row.isAcked ? '100%' : '0%' }" />
                   </div>
-                </TableCell>
+                </div>
+              </template>
+              <template v-else-if="column.field === '_actions'">
+                <div class="cell-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger as-child>
+                      <Button variant="ghost" size="icon" class="table-action-btn" :aria-label="`Actions for ${row.title}`">
+                        <MoreHorizontal class="icon-xs" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem @click="viewTopic(row._raw)">
+                        <Eye class="icon-xs icon-mr" /> View
+                      </DropdownMenuItem>
+                      <DropdownMenuItem v-if="!row.isAcked" @click="acknowledge(row.id, row.title)">
+                        <CheckCircle2 class="icon-xs icon-mr" /> Acknowledge
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </template>
+            </template>
 
-                <TableCell>
-                  <span :class="WORKFLOW_BADGE[topic.workflowStatus] ?? 'badge badge-neutral'">
-                    {{ WORKFLOW_LABELS[topic.workflowStatus] ?? topic.workflowStatus }}
-                  </span>
-                </TableCell>
-
-                <TableCell>
-                  <div class="completion-cell">
-                    <span class="completion-label">
-                      {{ acknowledged.has(topic.id) ? '1' : '0' }}/1 ack.
-                    </span>
-                    <div class="progress-bar-track">
-                      <div
-                        class="progress-bar-fill"
-                        :class="{ 'progress-bar-done': acknowledged.has(topic.id) }"
-                        :style="{ width: acknowledged.has(topic.id) ? '100%' : '0%' }"
-                      />
-                    </div>
-                  </div>
-                </TableCell>
-
-                <TableCell class="table-actions-cell admin-actions-cell">
-                  <div class="action-btns">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      class="table-action-btn"
-                      :aria-label="`View ${topic.title}`"
-                      @click="viewTopic(topic)"
-                    >
-                      <Eye class="icon-xs" />
-                    </Button>
-                    <Button
-                      v-if="!acknowledged.has(topic.id)"
-                      variant="ghost"
-                      size="icon"
-                      class="table-action-btn action-issue"
-                      :aria-label="`Acknowledge ${topic.title}`"
-                      @click="acknowledge(topic.id, topic.title)"
-                    >
-                      <CheckCircle2 class="icon-xs" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-              <TableRow v-if="empFilteredTopics.length === 0">
-                <TableCell colspan="9" class="empty-cell">
-                  <div class="empty-state-block">
-                    <CheckCircle2 class="empty-state-icon" />
-                    <p class="empty-state-message">
-                      No awareness topics assigned to your role at this time.
-                    </p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+            <template #empty>
+              <div class="empty-state-block">
+                <CheckCircle2 class="empty-state-icon" />
+                <p class="empty-state-message">No awareness topics assigned to your role at this time.</p>
+              </div>
+            </template>
+          </IoiTable>
         </div>
       </CardContent>
     </Card>
@@ -401,169 +390,114 @@ const briefingCount = computed(
         </div>
       </CardHeader>
 
-      <!-- Filters toolbar -->
-      <div class="filter-toolbar">
-        <Select v-model="filterType">
-          <SelectTrigger class="filter-select">
-            <SelectValue placeholder="Topic Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All Types</SelectItem>
-            <SelectItem v-for="(label, key) in TOPIC_TYPE_LABELS" :key="key" :value="key">
-              {{ label }}
-            </SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select v-model="filterStatus">
-          <SelectTrigger class="filter-select">
-            <SelectValue placeholder="Workflow Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All Statuses</SelectItem>
-            <SelectItem v-for="(label, key) in WORKFLOW_LABELS" :key="key" :value="key">
-              {{ label }}
-            </SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select v-model="filterDelivery">
-          <SelectTrigger class="filter-select">
-            <SelectValue placeholder="Delivery Method" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">All Methods</SelectItem>
-            <SelectItem value="READ_AND_ACKNOWLEDGE">Read & Acknowledge</SelectItem>
-            <SelectItem value="TEAM_BRIEFING">Team Briefing</SelectItem>
-            <SelectItem value="TOOLBOX_TALK">Toolbox Talk</SelectItem>
-            <SelectItem value="SUPERVISOR_CASCADE">Supervisor Cascade</SelectItem>
-            <SelectItem value="FORMAL_RETRAINING">Formal Retraining</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <span class="filter-count"
-          >{{ filteredTopics.length }} result{{ filteredTopics.length !== 1 ? 's' : '' }}</span
-        >
-      </div>
-
       <CardContent class="data-card-content">
         <div class="table-wrapper">
-          <Table class="dense-table">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Topic Type</TableHead>
-                <TableHead>Trigger</TableHead>
-                <TableHead>Delivery Method</TableHead>
-                <TableHead>Effective Date</TableHead>
-                <TableHead>Audience</TableHead>
-                <TableHead>Workflow Status</TableHead>
-                <TableHead>Completion</TableHead>
-                <TableHead class="table-actions-header">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow v-for="topic in filteredTopics" :key="topic.id">
-                <TableCell class="table-name-cell">{{ topic.title }}</TableCell>
+          <IoiTable
+            ref="adminTableRef"
+            :rows="adminRows"
+            :columns="topicColumns"
+            row-key="id"
+            :page-size="10000"
+            aria-label="Awareness Topics"
+          >
+            <template #header="{ column }">
+              <div
+                class="sort-header"
+                :class="{ 'sort-header--no-sort': column.id === '_actions', 'sort-header--right': column.id === '_actions' }"
+                @click.stop="headerSortAdmin(String(column.field))"
+              >
+                <span>{{ column.header ?? column.field }}</span>
+                <ChevronUp      v-if="getSortDir(adminSortStates, String(column.field)) === 'asc'"  class="sort-icon" />
+                <ChevronDown    v-else-if="getSortDir(adminSortStates, String(column.field)) === 'desc'" class="sort-icon" />
+                <ChevronsUpDown v-else-if="column.id !== '_actions'" class="sort-icon sort-icon-inactive" />
+              </div>
+            </template>
 
-                <TableCell>
-                  <span class="badge" :class="TOPIC_TYPE_BADGE[topic.topicType]">
-                    {{ TOPIC_TYPE_LABELS[topic.topicType] ?? topic.topicType }}
-                  </span>
-                </TableCell>
+            <template #header-filter="{ column, mode, value, options, setValue }: HeaderFilterSlotProps<TopicRow>">
+              <Select
+                v-if="mode === 'select'"
+                :model-value="value || '__all__'"
+                @update:model-value="(v) => setValue(!v || v === '__all__' ? '' : String(v))"
+              >
+                <SelectTrigger size="sm" class="table-filter-select" :aria-label="`Filter by ${column.header ?? column.field}`">
+                  <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All</SelectItem>
+                  <SelectItem v-for="opt in options" :key="opt" :value="opt">{{ opt }}</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                v-else-if="mode === 'text'"
+                :model-value="value"
+                class="table-filter-input"
+                :placeholder="`Filter ${column.header ?? column.field}…`"
+                :aria-label="`Filter by ${column.header ?? column.field}`"
+                @input="(e: Event) => setValue((e.target as HTMLInputElement).value)"
+              />
+            </template>
 
-                <TableCell class="trigger-cell">{{ topic.trigger }}</TableCell>
-
-                <TableCell>
-                  <span class="badge badge-neutral">
-                    {{ DELIVERY_LABELS[topic.deliveryMethod] ?? topic.deliveryMethod }}
-                  </span>
-                </TableCell>
-
-                <TableCell class="date-cell">{{ topic.effectiveDate }}</TableCell>
-
-                <TableCell>
-                  <div class="audience-tags">
-                    <span
-                      v-for="aud in topic.requiredAudience.slice(0, 2)"
-                      :key="aud"
-                      class="audience-tag"
-                      >{{ aud }}</span
-                    >
-                    <span
-                      v-if="topic.requiredAudience.length > 2"
-                      class="audience-tag audience-tag-more"
-                      >+{{ topic.requiredAudience.length - 2 }}</span
-                    >
+            <template #cell="{ column, row }: CellSlotProps<TopicRow>">
+              <template v-if="column.field === 'title'">
+                <span class="table-name-cell">{{ row.title }}</span>
+              </template>
+              <template v-else-if="column.field === 'topicTypeLabel'">
+                <span class="badge" :class="row.topicTypeBadgeClass">{{ row.topicTypeLabel }}</span>
+              </template>
+              <template v-else-if="column.field === 'trigger'">
+                <span class="trigger-cell">{{ row.trigger }}</span>
+              </template>
+              <template v-else-if="column.field === 'deliveryMethodLabel'">
+                <span class="badge badge-neutral">{{ row.deliveryMethodLabel }}</span>
+              </template>
+              <template v-else-if="column.field === 'effectiveDate'">
+                <span class="date-cell">{{ row.effectiveDate }}</span>
+              </template>
+              <template v-else-if="column.field === 'requiredAudience'">
+                <div class="audience-tags">
+                  <span v-for="aud in row.requiredAudience.slice(0, 2)" :key="aud" class="audience-tag">{{ aud }}</span>
+                  <span v-if="row.requiredAudience.length > 2" class="audience-tag audience-tag-more">+{{ row.requiredAudience.length - 2 }}</span>
+                </div>
+              </template>
+              <template v-else-if="column.field === 'workflowStatusLabel'">
+                <span :class="row.workflowBadgeClass">{{ row.workflowStatusLabel }}</span>
+              </template>
+              <template v-else-if="column.field === 'completion'">
+                <div class="completion-cell">
+                  <span class="completion-label">{{ row.completionAcknowledged }}/{{ row.completionTotal }} ack.</span>
+                  <div class="progress-bar-track">
+                    <div class="progress-bar-fill" :style="{ width: row.completionTotal > 0 ? `${Math.round((row.completionAcknowledged / row.completionTotal) * 100)}%` : '0%' }" />
                   </div>
-                </TableCell>
+                </div>
+              </template>
+              <template v-else-if="column.field === '_actions'">
+                <div class="cell-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger as-child>
+                      <Button variant="ghost" size="icon" class="table-action-btn" :aria-label="`Actions for ${row.title}`">
+                        <MoreHorizontal class="icon-xs" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem @click="viewTopic(row._raw)">
+                        <Eye class="icon-xs icon-mr" /> View
+                      </DropdownMenuItem>
+                      <DropdownMenuItem v-if="row.workflowStatus === 'DRAFTED'" @click="issueTopic(row._raw)">
+                        <Send class="icon-xs icon-mr" /> Issue
+                      </DropdownMenuItem>
+                      <DropdownMenuItem v-if="row.workflowStatus !== 'CLOSED' && row.workflowStatus !== 'DRAFTED'" @click="closeTopic(row._raw)">
+                        <XCircle class="icon-xs icon-mr" /> Close
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </template>
+            </template>
 
-                <TableCell>
-                  <span :class="WORKFLOW_BADGE[topic.workflowStatus] ?? 'badge badge-neutral'">
-                    {{ WORKFLOW_LABELS[topic.workflowStatus] ?? topic.workflowStatus }}
-                  </span>
-                </TableCell>
-
-                <TableCell>
-                  <div class="completion-cell">
-                    <span class="completion-label">
-                      {{ topic.completionAcknowledged }}/{{ topic.completionTotal }} ack.
-                    </span>
-                    <div class="progress-bar-track">
-                      <div
-                        class="progress-bar-fill"
-                        :style="{
-                          width:
-                            topic.completionTotal > 0
-                              ? `${Math.round((topic.completionAcknowledged / topic.completionTotal) * 100)}%`
-                              : '0%',
-                        }"
-                      />
-                    </div>
-                  </div>
-                </TableCell>
-
-                <TableCell class="table-actions-cell admin-actions-cell">
-                  <div class="action-btns">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      class="table-action-btn"
-                      :aria-label="`View ${topic.title}`"
-                      @click="viewTopic(topic)"
-                    >
-                      <Eye class="icon-xs" />
-                    </Button>
-                    <Button
-                      v-if="topic.workflowStatus === 'DRAFTED'"
-                      variant="ghost"
-                      size="icon"
-                      class="table-action-btn action-issue"
-                      :aria-label="`Issue ${topic.title}`"
-                      @click="issueTopic(topic)"
-                    >
-                      <Send class="icon-xs" />
-                    </Button>
-                    <Button
-                      v-if="topic.workflowStatus !== 'CLOSED' && topic.workflowStatus !== 'DRAFTED'"
-                      variant="ghost"
-                      size="icon"
-                      class="table-action-btn action-close"
-                      :aria-label="`Close ${topic.title}`"
-                      @click="closeTopic(topic)"
-                    >
-                      <XCircle class="icon-xs" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-              <TableRow v-if="filteredTopics.length === 0">
-                <TableCell colspan="9" class="empty-cell"
-                  >No topics match the selected filters.</TableCell
-                >
-              </TableRow>
-            </TableBody>
-          </Table>
+            <template #empty>
+              <div class="empty-cell">No topics match the selected filters.</div>
+            </template>
+          </IoiTable>
         </div>
       </CardContent>
     </Card>
@@ -582,6 +516,25 @@ const briefingCount = computed(
   overflow-x: auto;
 }
 
+.sort-header {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  user-select: none;
+  width: 100%;
+}
+.sort-header--no-sort { cursor: default; }
+.sort-header--right   { justify-content: flex-end; }
+.sort-icon            { width: 12px; height: 12px; flex-shrink: 0; }
+.sort-icon-inactive   { opacity: 0.25; }
+.cell-right           { display: flex; justify-content: flex-end; width: 100%; }
+
+:global(.row-acknowledged) .ioi-table__cell,
+:global(.row-acknowledged td) {
+  opacity: 0.6;
+}
+
 .table-name-cell {
   font-weight: 500;
   min-width: 200px;
@@ -595,26 +548,6 @@ const briefingCount = computed(
 .topic-count {
   font-size: 0.8125rem;
   color: var(--text-caption);
-}
-
-/* ── Filters toolbar ─────────────────────────────────────── */
-.filter-toolbar {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-lg);
-  border-bottom: var(--border-subtle);
-  flex-wrap: wrap;
-}
-
-.filter-select {
-  width: 172px;
-}
-
-.filter-count {
-  font-size: 0.8125rem;
-  color: var(--text-caption);
-  margin-left: auto;
 }
 
 /* ── Banners ─────────────────────────────────────────────── */
@@ -716,34 +649,6 @@ const briefingCount = computed(
 
 .progress-bar-done {
   background-color: var(--brand-success);
-}
-
-/* ── Action buttons (admin) ──────────────────────────────── */
-.admin-actions-cell {
-  white-space: nowrap;
-}
-
-.action-btns {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  justify-content: flex-end;
-}
-
-.action-issue {
-  color: var(--brand-primary);
-}
-
-.action-issue:hover {
-  background-color: oklch(0 0 0 / 0.06);
-}
-
-.action-close {
-  color: var(--brand-critical);
-}
-
-.action-close:hover {
-  background-color: oklch(from var(--brand-critical) l c h / 0.08);
 }
 
 /* ── Date cell ───────────────────────────────────────────── */

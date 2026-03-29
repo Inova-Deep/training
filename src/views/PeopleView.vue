@@ -1,20 +1,17 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
-import {
-  Search,
-  X,
-  MoreHorizontal,
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  ChevronDown,
-  ChevronsUpDown,
-} from 'lucide-vue-next'
+import { ref, computed, onMounted } from 'vue'
+import { MoreHorizontal, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-vue-next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table as IoiTable } from '@ioi-dev/vue-table/unstyled'
-import type { ColumnDef, CellSlotProps, SortState, IoiPaginationChangePayload } from '@ioi-dev/vue-table/unstyled'
+import type { ColumnDef, CellSlotProps, SortState, IoiPaginationChangePayload, HeaderFilterSlotProps } from '@ioi-dev/vue-table/unstyled'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu'
 import {
   Select,
   SelectContent,
@@ -22,12 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu'
 import { useEmployeesStore } from '@/stores/employees'
 import { useSkillsMatrixStore, type SupervisionStatus } from '@/stores/skillsMatrix'
 import { useTrainingNeedsStore } from '@/stores/trainingNeeds'
@@ -70,12 +61,6 @@ function openDrawerByEmployeeId(id: string, tab: PersonSheetTab = 'profile') {
   }
 }
 
-// Toolbar filter state
-const searchQuery = ref('')
-const selectedDepartment = ref('')
-const selectedBusinessUnit = ref('')
-const selectedJobTitle = ref('')
-
 // Column definitions
 const columns: ColumnDef<PeopleRow>[] = [
   { id: 'name',          field: 'name',          header: 'Name',                 type: 'text',   headerFilter: 'text',   width: 200 },
@@ -88,7 +73,7 @@ const columns: ColumnDef<PeopleRow>[] = [
   { id: 'openGaps',      field: 'openGaps',      header: 'Open Gaps',            type: 'number',                         width: 110 },
   { id: 'isCompliant',   field: 'isCompliant',   header: 'Mandatory Compliance', type: 'text',   headerFilter: 'select', width: 190 },
   { id: 'expiringCerts', field: 'expiringCerts', header: 'Expiring Certs',       type: 'number',                         width: 130 },
-  { id: '_actions',      field: '_actions',      header: '',                                                             width: 60  },
+  { id: '_actions',      field: '_actions',      header: 'Actions',                                                      width: 72  },
 ]
 
 // Table ref & sort
@@ -169,82 +154,6 @@ const rows = computed<PeopleRow[]>(() =>
 
 const isLoading = computed(() => store.isLoading)
 
-// Derive toolbar filter options from filteredEmployees
-const departments = computed(() => {
-  const map = new Map<string, { id: string; name: string }>()
-  for (const emp of store.filteredEmployees) {
-    if (emp.department && !map.has(emp.department.id))
-      map.set(emp.department.id, { id: emp.department.id, name: emp.department.name ?? '' })
-  }
-  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
-})
-
-const businessUnits = computed(() => {
-  const map = new Map<string, { id: string; name: string }>()
-  for (const emp of store.filteredEmployees) {
-    if (emp.businessUnit && !map.has(emp.businessUnit.id))
-      map.set(emp.businessUnit.id, { id: emp.businessUnit.id, name: emp.businessUnit.name ?? '' })
-  }
-  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
-})
-
-const jobTitles = computed(() => {
-  const map = new Map<string, { id: string; name: string }>()
-  for (const emp of store.filteredEmployees) {
-    if (emp.jobTitle && !map.has(emp.jobTitle.id))
-      map.set(emp.jobTitle.id, { id: emp.jobTitle.id, name: emp.jobTitle.name ?? '' })
-  }
-  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
-})
-
-// Debounced search
-let searchTimer: ReturnType<typeof setTimeout> | null = null
-onUnmounted(() => { if (searchTimer) clearTimeout(searchTimer) })
-
-function handleSearch() {
-  if (searchTimer) clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => {
-    store.setFilter('search', searchQuery.value)
-    pageIndex.value = 0
-  }, 300)
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function handleDepartmentChange(value: any) {
-  selectedDepartment.value = value === '__all__' ? '' : value
-  store.setFilter('departmentId', value === '__all__' ? '' : value)
-  pageIndex.value = 0
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function handleBusinessUnitChange(value: any) {
-  selectedBusinessUnit.value = value === '__all__' ? '' : value
-  store.setFilter('businessUnitId', value === '__all__' ? '' : value)
-  pageIndex.value = 0
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function handleJobTitleChange(value: any) {
-  selectedJobTitle.value = value === '__all__' ? '' : value
-  store.setFilter('jobTitleId', value === '__all__' ? '' : value)
-  pageIndex.value = 0
-}
-
-function clearFilters() {
-  searchQuery.value = ''
-  selectedDepartment.value = ''
-  selectedBusinessUnit.value = ''
-  selectedJobTitle.value = ''
-  store.clearFilters()
-  sortStates.value = []
-  tableRef.value?.setSortState([])
-  pageIndex.value = 0
-}
-
-watch(searchQuery, () => { handleSearch() })
-
-watch(() => rows.value.length, () => { pageIndex.value = 0 })
-
 onMounted(async () => {
   await Promise.all([store.fetchAllReferenceData(), store.fetchEmployees()])
   if (matrixStore.mockEmployeeRows.length === 0) {
@@ -269,70 +178,6 @@ onMounted(async () => {
       <CardTitle class="data-card-title">Employee Directory</CardTitle>
     </CardHeader>
     <CardContent class="data-card-content">
-      <div class="toolbar">
-        <div class="toolbar-filters">
-          <div class="search-input-wrapper">
-            <Search class="search-input-icon" />
-            <Input
-              v-model="searchQuery"
-              class="toolbar-search-input"
-              placeholder="Search employees..."
-              aria-label="Search employees"
-            />
-          </div>
-
-          <Select :model-value="selectedDepartment" @update:model-value="handleDepartmentChange">
-            <SelectTrigger class="filter-select">
-              <SelectValue placeholder="Department" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All Departments</SelectItem>
-              <SelectItem v-for="dept in departments" :key="dept.id" :value="dept.id">
-                {{ dept.name }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select
-            :model-value="selectedBusinessUnit"
-            @update:model-value="handleBusinessUnitChange"
-          >
-            <SelectTrigger class="filter-select">
-              <SelectValue placeholder="Business Unit" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All Business Units</SelectItem>
-              <SelectItem v-for="bu in businessUnits" :key="bu.id" :value="bu.id">
-                {{ bu.name }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select :model-value="selectedJobTitle" @update:model-value="handleJobTitleChange">
-            <SelectTrigger class="filter-select">
-              <SelectValue placeholder="Job Title" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">All Job Titles</SelectItem>
-              <SelectItem v-for="title in jobTitles" :key="title.id" :value="title.id">
-                {{ title.name }}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Button
-            v-if="searchQuery || selectedDepartment || selectedBusinessUnit || selectedJobTitle"
-            variant="ghost"
-            size="sm"
-            class="clear-filters-btn"
-            @click="clearFilters"
-          >
-            <X class="icon-xs" />
-            Clear
-          </Button>
-        </div>
-      </div>
-
       <div v-if="isLoading" class="loading-cell">Loading employees...</div>
 
       <template v-else>
@@ -350,23 +195,42 @@ onMounted(async () => {
             <template #header="{ column }">
               <div
                 class="sort-header"
-                :class="{ 'sort-header--no-sort': column.id === '_actions' }"
+                :class="{
+                  'sort-header--no-sort': column.id === '_actions',
+                  'sort-header--center': column.type === 'number',
+                  'sort-header--right': column.id === '_actions',
+                }"
                 @click.stop="headerSort(String(column.field))"
               >
                 <span>{{ column.header ?? column.field }}</span>
-                <ChevronUp
-                  v-if="getSortDir(String(column.field)) === 'asc'"
-                  class="sort-icon"
-                />
-                <ChevronDown
-                  v-else-if="getSortDir(String(column.field)) === 'desc'"
-                  class="sort-icon"
-                />
-                <ChevronsUpDown
-                  v-else-if="column.id !== '_actions'"
-                  class="sort-icon sort-icon-inactive"
-                />
+                <ChevronUp    v-if="getSortDir(String(column.field)) === 'asc'"  class="sort-icon" />
+                <ChevronDown  v-else-if="getSortDir(String(column.field)) === 'desc'" class="sort-icon" />
+                <ChevronsUpDown v-else-if="column.id !== '_actions'" class="sort-icon sort-icon-inactive" />
               </div>
+            </template>
+
+            <template #header-filter="{ column, mode, value, options, setValue }: HeaderFilterSlotProps<PeopleRow>">
+              <Select
+                v-if="mode === 'select'"
+                :model-value="value || '__all__'"
+                @update:model-value="(v) => setValue(!v || v === '__all__' ? '' : String(v))"
+              >
+                <SelectTrigger size="sm" class="table-filter-select" :aria-label="`Filter by ${column.header ?? column.field}`">
+                  <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All</SelectItem>
+                  <SelectItem v-for="opt in options" :key="opt" :value="opt">{{ opt }}</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                v-else-if="mode === 'text'"
+                :model-value="value"
+                class="table-filter-input"
+                :placeholder="`Filter ${column.header ?? column.field}…`"
+                :aria-label="`Filter by ${column.header ?? column.field}`"
+                @input="(e: Event) => setValue((e.target as HTMLInputElement).value)"
+              />
             </template>
 
             <template #cell="{ column, row, value }: CellSlotProps<PeopleRow>">
@@ -378,10 +242,7 @@ onMounted(async () => {
               </template>
 
               <template v-else-if="column.field === 'status'">
-                <span
-                  class="badge"
-                  :class="row.status === 'Active' ? 'badge-success' : 'badge-neutral'"
-                >
+                <span class="badge" :class="row.status === 'Active' ? 'badge-success' : 'badge-neutral'">
                   {{ row.status }}
                 </span>
               </template>
@@ -394,14 +255,16 @@ onMounted(async () => {
               </template>
 
               <template v-else-if="column.field === 'openGaps'">
-                <span
-                  v-if="row.openGaps !== null"
-                  class="gap-count"
-                  :class="row.openGaps > 0 ? 'gap-count-high' : 'gap-count-zero'"
-                >
-                  {{ row.openGaps }}
-                </span>
-                <span v-else class="text-muted">—</span>
+                <div class="cell-center">
+                  <span
+                    v-if="row.openGaps !== null"
+                    class="gap-count"
+                    :class="row.openGaps > 0 ? 'gap-count-high' : 'gap-count-zero'"
+                  >
+                    {{ row.openGaps }}
+                  </span>
+                  <span v-else class="text-muted">—</span>
+                </div>
               </template>
 
               <template v-else-if="column.field === 'isCompliant'">
@@ -416,17 +279,20 @@ onMounted(async () => {
               </template>
 
               <template v-else-if="column.field === 'expiringCerts'">
-                <span
-                  v-if="row.expiringCerts !== null"
-                  class="gap-count"
-                  :class="row.expiringCerts > 0 ? 'gap-count-warn' : 'gap-count-zero'"
-                >
-                  {{ row.expiringCerts }}
-                </span>
-                <span v-else class="text-muted">—</span>
+                <div class="cell-center">
+                  <span
+                    v-if="row.expiringCerts !== null"
+                    class="gap-count"
+                    :class="row.expiringCerts > 0 ? 'gap-count-warn' : 'gap-count-zero'"
+                  >
+                    {{ row.expiringCerts }}
+                  </span>
+                  <span v-else class="text-muted">—</span>
+                </div>
               </template>
 
               <template v-else-if="column.field === '_actions'">
+                <div class="cell-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger as-child>
                     <Button
@@ -444,6 +310,7 @@ onMounted(async () => {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                </div>
               </template>
 
               <template v-else>{{ value }}</template>
@@ -462,43 +329,15 @@ onMounted(async () => {
             of {{ totalCount }} employees
           </div>
           <div class="pagination-controls">
-            <Button
-              variant="outline"
-              size="sm"
-              class="pagination-btn"
-              :disabled="pageIndex === 0"
-              @click="pageIndex = 0"
-            >
-              First
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              class="pagination-btn"
-              :disabled="pageIndex === 0"
-              @click="pageIndex--"
-            >
+            <Button variant="outline" size="sm" class="pagination-btn" :disabled="pageIndex === 0" @click="pageIndex = 0">First</Button>
+            <Button variant="outline" size="icon" class="pagination-btn" :disabled="pageIndex === 0" @click="pageIndex--">
               <ChevronLeft class="icon-sm" />
             </Button>
             <span class="pagination-page-info">Page {{ pageIndex + 1 }} of {{ pageCount }}</span>
-            <Button
-              variant="outline"
-              size="icon"
-              class="pagination-btn"
-              :disabled="pageIndex >= pageCount - 1"
-              @click="pageIndex++"
-            >
+            <Button variant="outline" size="icon" class="pagination-btn" :disabled="pageIndex >= pageCount - 1" @click="pageIndex++">
               <ChevronRight class="icon-sm" />
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              class="pagination-btn"
-              :disabled="pageIndex >= pageCount - 1"
-              @click="pageIndex = pageCount - 1"
-            >
-              Last
-            </Button>
+            <Button variant="outline" size="sm" class="pagination-btn" :disabled="pageIndex >= pageCount - 1" @click="pageIndex = pageCount - 1">Last</Button>
           </div>
         </div>
       </template>
@@ -513,51 +352,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-md);
-  border-bottom: var(--border-subtle);
-}
-
-.toolbar-filters {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  flex-wrap: wrap;
-}
-
-.search-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.search-input-icon {
-  position: absolute;
-  left: var(--space-sm);
-  width: 16px;
-  height: 16px;
-  color: var(--text-caption);
-  pointer-events: none;
-}
-
-.toolbar-search-input {
-  padding-left: 2.25rem;
-  width: 280px;
-}
-
-.filter-select {
-  width: 160px;
-}
-
-.clear-filters-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-}
-
 .table-wrapper {
   overflow-x: auto;
 }
@@ -598,10 +392,11 @@ onMounted(async () => {
   justify-content: space-between;
   padding: var(--space-md);
   border-top: var(--border-subtle);
+  font-family: var(--font-sans);
 }
 
 .pagination-info {
-  font-size: var(--font-size-sm);
+  font-size: 0.8125rem;
   color: var(--text-caption);
 }
 
@@ -615,120 +410,42 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 0.8125rem;
+  font-family: var(--font-sans);
 }
 
 .pagination-page-info {
   padding: 0 var(--space-sm);
-  font-size: var(--font-size-sm);
+  font-size: 0.8125rem;
+  color: var(--text-body);
+  font-family: var(--font-sans);
 }
 
-.icon-xs {
-  width: 14px;
-  height: 14px;
-}
-
-.icon-sm {
-  width: 16px;
-  height: 16px;
-}
+.icon-xs { width: 14px; height: 14px; }
+.icon-sm { width: 16px; height: 16px; }
 
 .text-muted {
   font-size: 0.875rem;
   color: var(--text-caption);
 }
 
-.gap-count {
-  display: inline-flex;
-  align-items: center;
+.sort-header--center {
   justify-content: center;
-  min-width: 1.5rem;
-  height: 1.5rem;
-  border-radius: var(--radius-full);
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0 0.375rem;
 }
 
-.gap-count-zero {
-  background: var(--bg-subtle);
-  color: var(--text-caption);
+.sort-header--right {
+  justify-content: flex-end;
 }
 
-.gap-count-high {
-  background: oklch(from var(--brand-critical) l c h / 0.1);
-  color: var(--brand-critical);
-}
-
-.gap-count-warn {
-  background: oklch(from var(--brand-warning) l c h / 0.1);
-  color: var(--brand-warning);
-}
-
-/* ── IoiTable → dense-table skin ─────────────────────────────── */
-:deep(.ioi-table table) {
+.cell-right {
+  display: flex;
+  justify-content: flex-end;
   width: 100%;
-  border-collapse: collapse;
 }
 
-:deep(.ioi-table thead tr:first-child th) {
-  padding: 0 var(--space-sm);
-  height: 40px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  color: var(--text-caption);
-  background-color: var(--bg-surface);
-  vertical-align: middle;
-  text-align: left;
-  border-bottom: var(--border-subtle);
-  white-space: nowrap;
-}
-
-:deep(.ioi-table__row) {
-  height: 44px;
-}
-
-:deep(.ioi-table__row:hover) {
-  background-color: var(--bg-subtle) !important;
-}
-
-:deep(.ioi-table__cell) {
-  padding: 0 var(--space-sm) !important;
-  font-size: 0.8125rem;
-  vertical-align: middle;
-  border-bottom: var(--border-subtle);
-  font-family: inherit;
-  color: var(--text-body);
-}
-
-:deep(.ioi-table__row:last-child .ioi-table__cell) {
-  border-bottom: none;
-}
-
-/* Filter row */
-:deep(.ioi-table__filter-row th) {
-  background-color: var(--bg-surface);
-  padding: var(--space-xs) var(--space-sm);
-  border-bottom: var(--border-subtle);
-}
-
-:deep(.ioi-table__filter-input),
-:deep(.ioi-table__filter-select) {
+.cell-center {
+  display: flex;
+  justify-content: center;
   width: 100%;
-  font-size: 0.75rem;
-  font-family: inherit;
-  padding: 0.25rem var(--space-sm);
-  border: var(--border-strong);
-  border-radius: var(--radius-sm);
-  background-color: var(--bg-surface);
-  color: var(--text-body);
-  line-height: 1.4;
-}
-
-:deep(.ioi-table__filter-input:focus),
-:deep(.ioi-table__filter-select:focus) {
-  outline: none;
-  border-color: oklch(0.7200 0 0);
 }
 </style>

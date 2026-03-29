@@ -538,26 +538,8 @@ export const useSkillsMatrixStore = defineStore('skillsMatrix', () => {
     search: '',
   })
 
-  const viewMode = ref<'summary' | 'grid'>('grid')
-  const expandedCategories = ref<CompetencyCategory[]>([
-    'Mandatory',
-    'Additive Manufacturing Operations',
-    'Welding & Fabrication',
-    'Robotics & Automation',
-    'Materials & Powder Handling',
-    'Materials Testing & Inspection',
-    'Quality',
-    'Health & Safety',
-    'Regulatory Compliance',
-    'Workshop',
-    'Plant & Machinery',
-    'Business / Systems',
-    // legacy / alternate category names kept for data compatibility
-    'Technical',
-    'HSE / Workshop Safety',
-    'Equipment-Specific Qualification',
-    'Quality & Compliance',
-  ])
+  const viewMode = ref<'summary' | 'grid'>('summary')
+  const expandedCategories = ref<CompetencyCategory[]>([])
   const visibleColumns = ref<string[]>(getStoredColumns())
   const sorting = ref<MatrixSorting>({
     field: 'displayName',

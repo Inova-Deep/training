@@ -2,30 +2,18 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
-  Search,
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  Users,
-  ShieldAlert,
-  Filter,
   MoreHorizontal,
   Eye,
   Pencil,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
 } from 'lucide-vue-next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@/components/ui/table'
+import { Table as IoiTable } from '@ioi-dev/vue-table/unstyled'
+import type { ColumnDef, CellSlotProps, SortState, HeaderFilterSlotProps } from '@ioi-dev/vue-table/unstyled'
 import {
   Select,
   SelectContent,
@@ -38,13 +26,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
 import { useSkillsMatrixStore } from '@/stores/skillsMatrix'
 import { useEmployeesStore } from '@/stores/employees'
 import roleRequirementsData from '@/data/roleRequirements.json'
 import {
-  DEMO_DEPARTMENTS,
   VISIBLE_DEMO_ROLES,
   matchRoleName,
   normalizeRoleName,
@@ -65,17 +51,10 @@ type RoleRequirementsJson = Record<
 >
 
 const requirementsJson = roleRequirementsData as RoleRequirementsJson
-const DEPARTMENTS = DEMO_DEPARTMENTS
 
 const matrixStore = useSkillsMatrixStore()
 const employeesStore = useEmployeesStore()
 const router = useRouter()
-
-const search = ref('')
-const filterDept = ref('All')
-const filterCriticalOnly = ref(false)
-const filterOpenGaps = ref(false)
-const filterExpiringMandatory = ref(false)
 
 onMounted(async () => {
   try {
@@ -121,7 +100,8 @@ function computeRisk(roleName: string): RiskLevel {
   return 'Low'
 }
 
-interface RoleStats {
+type RolesRow = {
+  id: string
   name: string
   department: string
   assigned: number
@@ -129,80 +109,86 @@ interface RoleStats {
   withGaps: number
   underSupervision: number
   expiringItems: number
-  risk: RiskLevel
-  id: string
+  risk: string
+  riskBadgeClass: string
 }
-
-const roleStats = computed((): RoleStats[] => {
-  return VISIBLE_DEMO_ROLES.map((role) => {
-      const employees = matrixStore.mockEmployeeRows.filter(
-        (e) => matchRoleName(e.jobTitle, role.name),
-      )
-      const assigned = employees.length
-      const fullyCompliant = employees.filter((e) => e.isAuthorised).length
-      const withGaps = employees.filter((e) => e.expiredCount > 0 || e.requiredCount > 0).length
-      const underSupervision = employees.filter(
-        (e) => e.supervisionStatus === 'SUPERVISED_ONLY',
-      ).length
-      const expiringItems = employees.filter((e) => e.expiringCount > 0).length
-      const risk = computeRisk(role.name)
-
-      return {
-        name: role.name,
-        department: role.department,
-        assigned,
-        fullyCompliant,
-        withGaps,
-        underSupervision,
-        expiringItems,
-        risk,
-        id: encodeURIComponent(role.name),
-      }
-    })
-})
-
-const filteredRoles = computed(() => {
-  return roleStats.value.filter((r) => {
-    if (search.value) {
-      const s = search.value.toLowerCase()
-      if (
-        !r.name.toLowerCase().includes(s) &&
-        !r.department.toLowerCase().includes(s)
-      )
-        return false
-    }
-    if (filterDept.value && filterDept.value !== 'All') {
-      if (r.department !== filterDept.value) return false
-    }
-    if (filterCriticalOnly.value) {
-      if (r.risk !== 'Critical' && r.risk !== 'High') return false
-    }
-    if (filterOpenGaps.value) {
-      if (r.withGaps === 0) return false
-    }
-    if (filterExpiringMandatory.value) {
-      if (r.expiringItems === 0) return false
-    }
-    return true
-  })
-})
 
 function riskClass(risk: RiskLevel) {
   switch (risk) {
-    case 'Critical':
-      return 'badge-critical'
-    case 'High':
-      return 'badge-high'
-    case 'Moderate':
-      return 'badge-warning'
-    default:
-      return 'badge-neutral'
+    case 'Critical': return 'badge-critical'
+    case 'High': return 'badge-high'
+    case 'Moderate': return 'badge-warning'
+    default: return 'badge-neutral'
   }
 }
 
 function navigateToRole(id: string) {
   router.push(`/roles/${id}`)
 }
+
+const roleStats = computed((): RolesRow[] => {
+  return VISIBLE_DEMO_ROLES.map((role) => {
+    const employees = matrixStore.mockEmployeeRows.filter(
+      (e) => matchRoleName(e.jobTitle, role.name),
+    )
+    const assigned = employees.length
+    const fullyCompliant = employees.filter((e) => e.isAuthorised).length
+    const withGaps = employees.filter((e) => e.expiredCount > 0 || e.requiredCount > 0).length
+    const underSupervision = employees.filter(
+      (e) => e.supervisionStatus === 'SUPERVISED_ONLY',
+    ).length
+    const expiringItems = employees.filter((e) => e.expiringCount > 0).length
+    const risk = computeRisk(role.name)
+
+    return {
+      id: encodeURIComponent(role.name),
+      name: role.name,
+      department: role.department,
+      assigned,
+      fullyCompliant,
+      withGaps,
+      underSupervision,
+      expiringItems,
+      risk,
+      riskBadgeClass: riskClass(risk),
+    }
+  })
+})
+
+const rows = computed<RolesRow[]>(() => roleStats.value)
+
+// Table sort
+interface IoiTableRef { setSortState: (s: SortState[]) => void }
+const tableRef = ref<IoiTableRef | null>(null)
+const sortStates = ref<SortState[]>([])
+
+function getSortDir(field: string): 'asc' | 'desc' | '' {
+  return sortStates.value.find(s => s.field === field)?.direction ?? ''
+}
+
+function headerSort(field: string): void {
+  if (field === '_actions') return
+  const cur = getSortDir(field)
+  const next: SortState[] = !cur
+    ? [{ field, direction: 'asc' }]
+    : cur === 'asc'
+      ? [{ field, direction: 'desc' }]
+      : []
+  sortStates.value = next
+  tableRef.value?.setSortState(next)
+}
+
+const columns: ColumnDef<RolesRow>[] = [
+  { id: 'name',            field: 'name',            header: 'Role Name',        type: 'text',   headerFilter: 'text'            },
+  { id: 'department',      field: 'department',      header: 'Department',       type: 'text',   headerFilter: 'select'          },
+  { id: 'assigned',        field: 'assigned',        header: 'Assigned',         type: 'number',                         width: 100 },
+  { id: 'fullyCompliant',  field: 'fullyCompliant',  header: 'Compliant',        type: 'number',                         width: 110 },
+  { id: 'withGaps',        field: 'withGaps',        header: 'With Gaps',        type: 'number',                         width: 110 },
+  { id: 'underSupervision',field: 'underSupervision',header: 'Under Supervision',type: 'number',                         width: 150 },
+  { id: 'expiringItems',   field: 'expiringItems',   header: 'Expiring',         type: 'number',                         width: 100 },
+  { id: 'risk',            field: 'risk',            header: 'Risk',             type: 'text',   headerFilter: 'select', width: 100 },
+  { id: '_actions',        field: '_actions',        header: 'Actions',                                                  width: 72  },
+]
 </script>
 
 <template>
@@ -218,277 +204,170 @@ function navigateToRole(id: string) {
       <CardTitle class="data-card-title">Role Readiness Overview</CardTitle>
     </CardHeader>
     <CardContent class="data-card-content">
-      <div class="filter-bar">
-        <div class="filter-bar-left">
-          <div class="search-input-wrapper">
-            <Search class="search-input-icon" />
-            <Input
-              v-model="search"
-              class="global-search"
-              placeholder="Search roles..."
-              aria-label="Search roles"
-            />
-          </div>
+      <div class="table-wrapper">
+        <IoiTable
+          ref="tableRef"
+          :rows="rows"
+          :columns="columns"
+          row-key="id"
+          :page-size="10000"
+          aria-label="Role Readiness Overview"
+        >
+          <template #header="{ column }">
+            <div
+              class="sort-header"
+              :class="{
+                'sort-header--no-sort': column.id === '_actions',
+                'sort-header--center': column.type === 'number',
+                'sort-header--right': column.id === '_actions',
+              }"
+              @click.stop="headerSort(String(column.field))"
+            >
+              <span>{{ column.header ?? column.field }}</span>
+              <ChevronUp    v-if="getSortDir(String(column.field)) === 'asc'"  class="sort-icon" />
+              <ChevronDown  v-else-if="getSortDir(String(column.field)) === 'desc'" class="sort-icon" />
+              <ChevronsUpDown v-else-if="column.id !== '_actions'" class="sort-icon sort-icon-inactive" />
+            </div>
+          </template>
 
-          <div class="filter-select-wrap">
-            <Filter class="filter-icon" />
-            <Select v-model="filterDept">
-              <SelectTrigger class="dept-select" aria-label="Filter by department">
-                <SelectValue placeholder="Department" />
+          <template #header-filter="{ column, mode, value, options, setValue }: HeaderFilterSlotProps<RolesRow>">
+            <Select
+              v-if="mode === 'select'"
+              :model-value="value || '__all__'"
+              @update:model-value="(v) => setValue(!v || v === '__all__' ? '' : String(v))"
+            >
+              <SelectTrigger size="sm" class="table-filter-select" :aria-label="`Filter by ${column.header ?? column.field}`">
+                <SelectValue placeholder="All" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem v-for="d in DEPARTMENTS" :key="d" :value="d">{{
-                  d
-                }}</SelectItem>
+                <SelectItem value="__all__">All</SelectItem>
+                <SelectItem v-for="opt in options" :key="opt" :value="opt">{{ opt }}</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-        </div>
+            <Input
+              v-else-if="mode === 'text'"
+              :model-value="value"
+              class="table-filter-input"
+              :placeholder="`Filter ${column.header ?? column.field}…`"
+              :aria-label="`Filter by ${column.header ?? column.field}`"
+              @input="(e: Event) => setValue((e.target as HTMLInputElement).value)"
+            />
+          </template>
 
-        <div class="filter-toggles">
-          <div class="filter-toggle-item">
-            <Switch
-              id="filter-critical"
-              v-model:checked="filterCriticalOnly"
-              aria-label="Show critical roles only"
-            />
-            <Label for="filter-critical" class="toggle-label">
-              <ShieldAlert class="icon-xxs" />
-              Critical roles only
-            </Label>
-          </div>
-          <div class="filter-toggle-item">
-            <Switch
-              id="filter-gaps"
-              v-model:checked="filterOpenGaps"
-              aria-label="Show roles with open gaps"
-            />
-            <Label for="filter-gaps" class="toggle-label">
-              <AlertTriangle class="icon-xxs" />
-              Roles with open gaps
-            </Label>
-          </div>
-          <div class="filter-toggle-item">
-            <Switch
-              id="filter-expiring"
-              v-model:checked="filterExpiringMandatory"
-              aria-label="Show roles with expiring mandatory items"
-            />
-            <Label for="filter-expiring" class="toggle-label">
-              <Clock class="icon-xxs" />
-              Expiring mandatory items
-            </Label>
-          </div>
-        </div>
-      </div>
+          <template #cell="{ column, row }: CellSlotProps<RolesRow>">
+            <template v-if="column.field === 'name'">
+              <span class="table-name-cell">{{ row.name }}</span>
+            </template>
 
-      <div class="table-wrapper">
-        <Table class="dense-table">
-          <TableHeader>
-            <TableRow>
-              <TableHead>Role Name</TableHead>
-              <TableHead>Department</TableHead>
-              <TableHead class="col-center">
-                <span class="col-header-icon"
-                  ><Users class="icon-xxs" /> Assigned</span
-                >
-              </TableHead>
-              <TableHead class="col-center">
-                <span class="col-header-icon"
-                  ><CheckCircle2 class="icon-xxs" /> Compliant</span
-                >
-              </TableHead>
-              <TableHead class="col-center">
-                <span class="col-header-icon"
-                  ><AlertTriangle class="icon-xxs" /> With Gaps</span
-                >
-              </TableHead>
-              <TableHead class="col-center">Under Supervision</TableHead>
-              <TableHead class="col-center">
-                <span class="col-header-icon"
-                  ><Clock class="icon-xxs" /> Expiring</span
-                >
-              </TableHead>
-              <TableHead class="col-center">Risk</TableHead>
-              <TableHead class="table-actions-header">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow v-for="role in filteredRoles" :key="role.id">
-              <TableCell class="table-name-cell">{{ role.name }}</TableCell>
-              <TableCell>
-                <span class="dept-badge">{{ role.department }}</span>
-              </TableCell>
-              <TableCell class="col-center">
-                <span class="stat-count">{{ role.assigned }}</span>
-              </TableCell>
-              <TableCell class="col-center">
-                <span
-                  v-if="role.assigned > 0"
-                  class="stat-count stat-good"
-                  >{{ role.fullyCompliant }}</span
-                >
+            <template v-else-if="column.field === 'department'">
+              <span class="dept-badge">{{ row.department }}</span>
+            </template>
+
+            <template v-else-if="column.field === 'assigned'">
+              <div class="cell-center">
+                <span class="stat-count">{{ row.assigned }}</span>
+              </div>
+            </template>
+
+            <template v-else-if="column.field === 'fullyCompliant'">
+              <div class="cell-center">
+                <span v-if="row.assigned > 0" class="stat-count stat-good">{{ row.fullyCompliant }}</span>
                 <span v-else class="empty-value">—</span>
-              </TableCell>
-              <TableCell class="col-center">
-                <span
-                  v-if="role.withGaps > 0"
-                  class="stat-count stat-warn"
-                  >{{ role.withGaps }}</span
-                >
-                <span
-                  v-else-if="role.assigned > 0"
-                  class="stat-count stat-good"
-                  >0</span
-                >
+              </div>
+            </template>
+
+            <template v-else-if="column.field === 'withGaps'">
+              <div class="cell-center">
+                <span v-if="row.withGaps > 0" class="stat-count stat-warn">{{ row.withGaps }}</span>
+                <span v-else-if="row.assigned > 0" class="stat-count stat-good">0</span>
                 <span v-else class="empty-value">—</span>
-              </TableCell>
-              <TableCell class="col-center">
-                <span
-                  v-if="role.underSupervision > 0"
-                  class="stat-count stat-info"
-                  >{{ role.underSupervision }}</span
-                >
-                <span v-else-if="role.assigned > 0" class="empty-value"
-                  >0</span
-                >
+              </div>
+            </template>
+
+            <template v-else-if="column.field === 'underSupervision'">
+              <div class="cell-center">
+                <span v-if="row.underSupervision > 0" class="stat-count stat-info">{{ row.underSupervision }}</span>
+                <span v-else-if="row.assigned > 0" class="empty-value">0</span>
                 <span v-else class="empty-value">—</span>
-              </TableCell>
-              <TableCell class="col-center">
-                <span
-                  v-if="role.expiringItems > 0"
-                  class="stat-count stat-warn"
-                  >{{ role.expiringItems }}</span
-                >
-                <span v-else-if="role.assigned > 0" class="empty-value"
-                  >0</span
-                >
+              </div>
+            </template>
+
+            <template v-else-if="column.field === 'expiringItems'">
+              <div class="cell-center">
+                <span v-if="row.expiringItems > 0" class="stat-count stat-warn">{{ row.expiringItems }}</span>
+                <span v-else-if="row.assigned > 0" class="empty-value">0</span>
                 <span v-else class="empty-value">—</span>
-              </TableCell>
-              <TableCell class="col-center">
-                <span class="badge" :class="riskClass(role.risk)">{{
-                  role.risk
-                }}</span>
-              </TableCell>
-              <TableCell class="table-actions-cell">
+              </div>
+            </template>
+
+            <template v-else-if="column.field === 'risk'">
+              <div class="cell-center">
+                <span class="badge" :class="row.riskBadgeClass">{{ row.risk }}</span>
+              </div>
+            </template>
+
+            <template v-else-if="column.field === '_actions'">
+              <div class="cell-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger as-child>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      class="table-action-btn"
-                      :aria-label="`Actions for ${role.name}`"
-                    >
+                    <Button variant="ghost" size="icon" class="table-action-btn" :aria-label="`Actions for ${row.name}`">
                       <MoreHorizontal class="icon-xs" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem @click="navigateToRole(role.id)">
-                      <Eye class="icon-xs icon-mr" />
-                      View Details
+                    <DropdownMenuItem @click="navigateToRole(row.id)">
+                      <Eye class="icon-xs icon-mr" /> View Details
                     </DropdownMenuItem>
                     <DropdownMenuItem>
-                      <Pencil class="icon-xs icon-mr" />
-                      Edit Requirements
+                      <Pencil class="icon-xs icon-mr" /> Edit Requirements
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </TableCell>
-            </TableRow>
-            <TableRow v-if="filteredRoles.length === 0">
-              <TableCell colspan="9" class="empty-state">
-                No roles match the current filters.
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+              </div>
+            </template>
+
+            <template v-else>{{ String(row[column.field as keyof RolesRow] ?? '') }}</template>
+          </template>
+
+          <template #empty>
+            <div class="empty-state">No roles match the current filters.</div>
+          </template>
+        </IoiTable>
       </div>
 
       <p class="table-footer-note">
-        {{ filteredRoles.length }} role{{
-          filteredRoles.length !== 1 ? 's' : ''
-        }}
-        shown. Risk is computed from competency gap rates across assigned
-        employees.
+        {{ rows.length }} role{{ rows.length !== 1 ? 's' : '' }} shown.
+        Risk is computed from competency gap rates across assigned employees.
       </p>
     </CardContent>
   </Card>
 </template>
 
 <style scoped>
-.filter-bar {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: var(--space-md);
-  margin-bottom: var(--space-md);
-}
-
-.filter-bar-left {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  flex-wrap: wrap;
-}
-
-.filter-select-wrap {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-}
-
-.filter-icon {
-  width: 14px;
-  height: 14px;
-  color: var(--text-caption);
-  flex-shrink: 0;
-}
-
-.dept-select {
-  min-width: 200px;
-}
-
-.filter-toggles {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-md);
-}
-
-.filter-toggle-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-}
-
-.toggle-label {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.8125rem;
-  color: var(--text-body);
-  cursor: pointer;
-  user-select: none;
-}
-
 .table-wrapper {
   overflow-x: auto;
 }
 
-.table-name-cell {
-  font-weight: 500;
-}
-
-.col-center {
-  text-align: center;
-}
-
-.col-header-icon {
-  display: inline-flex;
+.sort-header {
+  display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 0.25rem;
+  cursor: pointer;
+  user-select: none;
+  width: 100%;
 }
+
+.sort-header--no-sort { cursor: default; }
+.sort-header--center  { justify-content: center; }
+.sort-header--right   { justify-content: flex-end; }
+
+.sort-icon { width: 12px; height: 12px; flex-shrink: 0; }
+.sort-icon-inactive { opacity: 0.25; }
+
+.cell-center { display: flex; justify-content: center; width: 100%; }
+.cell-right  { display: flex; justify-content: flex-end; width: 100%; }
+
+.table-name-cell { font-weight: 500; }
 
 .dept-badge {
   display: inline-block;
@@ -508,34 +387,16 @@ function navigateToRole(id: string) {
   text-align: center;
 }
 
-.stat-good {
-  color: var(--brand-success);
-}
-
-.stat-warn {
-  color: var(--brand-warning);
-}
-
-.stat-info {
-  color: var(--brand-primary);
-}
+.stat-good  { color: var(--brand-success); }
+.stat-warn  { color: var(--brand-warning); }
+.stat-info  { color: var(--brand-primary); }
 
 .empty-value {
   font-size: 0.75rem;
   color: var(--text-caption);
 }
 
-.badge-critical {
-  background-color: oklch(0.5 0.2 25 / 0.15);
-  color: oklch(0.45 0.2 25);
-  border: 1px solid oklch(0.5 0.2 25 / 0.3);
-}
-
-.badge-high {
-  background-color: oklch(0.65 0.18 50 / 0.15);
-  color: oklch(0.5 0.18 50);
-  border: 1px solid oklch(0.65 0.18 50 / 0.3);
-}
+/* badge-critical and badge-high are defined globally in main.css */
 
 .table-footer-note {
   font-size: 0.75rem;
@@ -551,17 +412,7 @@ function navigateToRole(id: string) {
   font-style: italic;
 }
 
-.icon-xxs {
-  width: 12px;
-  height: 12px;
-}
-
-.icon-xs {
-  width: 14px;
-  height: 14px;
-}
-
-.icon-mr {
-  margin-right: 0.25rem;
-}
+.icon-xxs { width: 12px; height: 12px; }
+.icon-xs  { width: 14px; height: 14px; }
+.icon-mr  { margin-right: 0.25rem; }
 </style>

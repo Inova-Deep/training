@@ -3,26 +3,20 @@ import { onMounted, computed, ref } from 'vue'
 import {
   MoreHorizontal,
   Plus,
-  Filter,
-  Search,
   AlertTriangle,
-  Clock,
   UserCheck,
   GraduationCap,
   ChevronRight,
   AlertCircle,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
 } from 'lucide-vue-next'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@/components/ui/table'
+import { Table as IoiTable } from '@ioi-dev/vue-table/unstyled'
+import type { ColumnDef, CellSlotProps, SortState, RowClickPayload, HeaderFilterSlotProps } from '@ioi-dev/vue-table/unstyled'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -167,17 +161,108 @@ const getWorkflowBadgeClass = (need: any) => {
   return 'badge-neutral'
 }
 
-const isGating = (need: any) => {
-  const comp = getCompetency(need.employeeCompetenceItemId || '')
-  return comp.riskLevelCode === 'HIGH_CRITICAL'
-}
-
 const newHireCount = computed(() => {
   return trainingStore.trainingNeeds.filter(
     (n) =>
       n.createdReason === 'NEW_HIRE' && (n.workflowStatus === 'IDENTIFIED' || n.status === 'OPEN'),
   ).length
 })
+
+// ── IoiTable ──────────────────────────────────────────────────────────────────
+
+type TrainingNeedRow = {
+  id: string
+  employeeDisplayName: string
+  employeeInitial: string
+  employeeJobTitle: string
+  competencyCode: string
+  competencyTitle: string
+  isGatingCritical: boolean
+  trainingTypeCode: string
+  riskLevelCode: string
+  riskIsCritical: boolean
+  sourceTypeLabel: string
+  sourceTypeBadgeClass: string
+  sourceReference: string
+  dueDate: string
+  dueDateDisplay: string
+  isOverdue: boolean
+  workflowStatusLabel: string
+  workflowStatusBadgeClass: string
+  workflowStatus: string
+}
+
+const rows = computed<TrainingNeedRow[]>(() =>
+  trainingStore.trainingNeeds.map((need) => {
+    const emp  = getEmployee(need.erpEmployeeId)
+    const comp = getCompetency(need.employeeCompetenceItemId || '')
+    const dueDate = need.dueDate || ''
+    const overdue =
+      dueDate &&
+      new Date(dueDate) < new Date() &&
+      need.workflowStatus !== 'CLOSED'
+    return {
+      id: need.id,
+      employeeDisplayName: emp.displayName ?? 'Unknown',
+      employeeInitial: (emp.displayName ?? '?').charAt(0),
+      employeeJobTitle: emp.jobTitle?.name ?? '',
+      competencyCode: comp.code ?? '???',
+      competencyTitle: comp.title ?? 'Unknown',
+      isGatingCritical: comp.riskLevelCode === 'HIGH_CRITICAL',
+      trainingTypeCode: need.trainingTypeCode ?? '',
+      riskLevelCode: comp.riskLevelCode ?? '',
+      riskIsCritical: comp.riskLevelCode === 'HIGH_CRITICAL',
+      sourceTypeLabel: getSourceLabel(need.sourceType),
+      sourceTypeBadgeClass: getSourceBadgeClass(need.sourceType),
+      sourceReference: need.sourceReference ?? '',
+      dueDate,
+      dueDateDisplay: dueDate
+        ? new Date(dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+        : '—',
+      isOverdue: !!overdue,
+      workflowStatusLabel: getWorkflowLabel(need),
+      workflowStatusBadgeClass: getWorkflowBadgeClass(need),
+      workflowStatus: need.workflowStatus ?? '',
+    }
+  }),
+)
+
+interface IoiTableRef { setSortState: (s: SortState[]) => void }
+const tableRef   = ref<IoiTableRef | null>(null)
+const sortStates = ref<SortState[]>([])
+
+function getSortDir(field: string): 'asc' | 'desc' | '' {
+  return sortStates.value.find(s => s.field === field)?.direction ?? ''
+}
+
+function headerSort(field: string): void {
+  if (field === '_actions') return
+  const cur = getSortDir(field)
+  const next: SortState[] = !cur
+    ? [{ field, direction: 'asc' }]
+    : cur === 'asc' ? [{ field, direction: 'desc' }] : []
+  sortStates.value = next
+  tableRef.value?.setSortState(next)
+}
+
+function handleRowClick(payload: RowClickPayload<TrainingNeedRow>) {
+  openDetails(payload.row.id)
+}
+
+function rowClass(row: TrainingNeedRow) {
+  return row.workflowStatus === 'CLOSED' ? 'row-inactive clickable-row' : 'clickable-row'
+}
+
+const columns: ColumnDef<TrainingNeedRow>[] = [
+  { id: 'employee',    field: 'employeeDisplayName', header: 'Employee',       type: 'text', headerFilter: 'text',   width: 200 },
+  { id: 'requirement', field: 'competencyTitle',     header: 'Requirement',    type: 'text', headerFilter: 'text',   width: 220 },
+  { id: 'gating',      field: 'isGatingCritical',    header: 'Gating',         type: 'text',                         width: 90  },
+  { id: 'typeRisk',    field: 'trainingTypeCode',     header: 'Type & Risk',    type: 'text', headerFilter: 'select', width: 130 },
+  { id: 'source',      field: 'sourceTypeLabel',      header: 'Source',         type: 'text', headerFilter: 'select', width: 160 },
+  { id: 'dueDate',     field: 'dueDate',              header: 'Due Date',       type: 'text',                         width: 100 },
+  { id: 'status',      field: 'workflowStatusLabel',  header: 'Status',         type: 'text', headerFilter: 'select', width: 150 },
+  { id: '_actions',    field: '_actions',             header: 'Actions',                                              width: 72  },
+]
 </script>
 
 <template>
@@ -214,246 +299,149 @@ const newHireCount = computed(() => {
     <Button variant="secondary" size="sm"> Handle Onboarding </Button>
   </div>
 
-  <!-- Filters -->
-  <Card class="filter-card">
-    <div class="filter-toolbar">
-      <div class="filter-group">
-        <div class="search-wrapper">
-          <Search class="search-icon icon-xs" />
-          <Input
-            placeholder="Search source or reference..."
-            class="filter-input-search"
-            aria-label="Search training needs"
-            v-model="trainingStore.filters.search"
-          />
-        </div>
-
-        <Select v-model="trainingStore.filters.departmentId">
-          <SelectTrigger class="filter-select filter-select-wide">
-            <SelectValue placeholder="Department" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Departments</SelectItem>
-            <SelectItem v-for="dept in empStore.departments" :key="dept.id" :value="dept.id">
-              {{ dept.name }}
-            </SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select v-model="trainingStore.filters.priority">
-          <SelectTrigger class="filter-select filter-select-narrow">
-            <SelectValue placeholder="Priority" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Priorities</SelectItem>
-            <SelectItem value="CRITICAL">Critical / Gating</SelectItem>
-            <SelectItem value="HIGH">High</SelectItem>
-            <SelectItem value="MEDIUM">Medium</SelectItem>
-            <SelectItem value="LOW">Low</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select v-model="trainingStore.filters.status">
-          <SelectTrigger class="filter-select filter-select-narrow">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="IDENTIFIED">Identified</SelectItem>
-            <SelectItem value="APPROVED">Approved</SelectItem>
-            <SelectItem value="SCHEDULED">Scheduled</SelectItem>
-            <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-            <SelectItem value="EVIDENCE_SUBMITTED">Evidence Submitted</SelectItem>
-            <SelectItem value="EFFECTIVENESS_REVIEW">Effectiveness Review</SelectItem>
-            <SelectItem value="CLOSED">Closed</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select v-model="trainingStore.filters.sourceType">
-          <SelectTrigger class="filter-select filter-select-wide">
-            <SelectValue placeholder="Source" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Sources</SelectItem>
-            <SelectItem value="NCR_CAPA">NCR / CAPA</SelectItem>
-            <SelectItem value="AUDIT_FINDING">Audit Finding</SelectItem>
-            <SelectItem value="EXPIRY_RENEWAL">Expiry / Renewal</SelectItem>
-            <SelectItem value="PROCEDURE_CHANGE">Procedure Change</SelectItem>
-            <SelectItem value="NEW_EQUIPMENT">New Equipment</SelectItem>
-            <SelectItem value="NEW_STARTER">New Starter</SelectItem>
-            <SelectItem value="INCIDENT_NEAR_MISS">Incident / Near Miss</SelectItem>
-            <SelectItem value="MANAGER_REQUEST">Manager Request</SelectItem>
-            <SelectItem value="COMPETENCE_GAP">Competence Gap</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Button variant="ghost" size="sm">
-          <Filter class="icon-xs icon-mr" />
-          More Filters
-        </Button>
-      </div>
-    </div>
-  </Card>
-
   <Card class="data-card">
     <CardContent class="table-card-content">
       <div class="table-wrapper">
-        <Table class="dense-table">
-          <TableHeader>
-            <TableRow class="table-header-row">
-              <TableHead class="col-employee">Employee</TableHead>
-              <TableHead class="col-requirement">Requirement</TableHead>
-              <TableHead class="col-gating">Gating</TableHead>
-              <TableHead class="col-type">Type &amp; Risk</TableHead>
-              <TableHead class="col-source">Source</TableHead>
-              <TableHead class="col-date">Due Date</TableHead>
-              <TableHead class="col-status">Status</TableHead>
-              <TableHead class="table-actions-header">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow
-              v-for="need in trainingStore.filteredNeeds"
-              :key="need.id"
-              class="clickable-row"
-              :class="{ 'row-inactive': need.workflowStatus === 'CLOSED' }"
-              @click="openDetails(need.id)"
+        <IoiTable
+          ref="tableRef"
+          :rows="rows"
+          :columns="columns"
+          row-key="id"
+          :page-size="10000"
+          :row-class="rowClass"
+          aria-label="Training Needs"
+          @row-click="handleRowClick"
+        >
+          <template #header="{ column }">
+            <div
+              class="sort-header"
+              :class="{
+                'sort-header--no-sort': column.id === '_actions',
+                'sort-header--right':   column.id === '_actions',
+              }"
+              @click.stop="headerSort(String(column.field))"
             >
-              <TableCell>
-                <div class="table-user">
-                  <div class="table-avatar table-avatar-primary">
-                    {{ getEmployee(need.erpEmployeeId).displayName?.charAt(0) }}
-                  </div>
-                  <div class="user-info-col">
-                    <span class="user-name">{{ getEmployee(need.erpEmployeeId).displayName }}</span>
-                    <span class="user-job-title">{{
-                      getEmployee(need.erpEmployeeId).jobTitle?.name
-                    }}</span>
-                  </div>
+              <span>{{ column.header ?? column.field }}</span>
+              <ChevronUp      v-if="getSortDir(String(column.field)) === 'asc'"  class="sort-icon" />
+              <ChevronDown    v-else-if="getSortDir(String(column.field)) === 'desc'" class="sort-icon" />
+              <ChevronsUpDown v-else-if="column.id !== '_actions'" class="sort-icon sort-icon-inactive" />
+            </div>
+          </template>
+
+          <template #header-filter="{ column, mode, value, options, setValue }: HeaderFilterSlotProps<TrainingNeedRow>">
+            <Select
+              v-if="mode === 'select'"
+              :model-value="value || '__all__'"
+              @update:model-value="(v) => setValue(!v || v === '__all__' ? '' : String(v))"
+            >
+              <SelectTrigger size="sm" class="table-filter-select" :aria-label="`Filter by ${column.header ?? column.field}`">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All</SelectItem>
+                <SelectItem v-for="opt in options" :key="opt" :value="opt">{{ opt }}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              v-else-if="mode === 'text'"
+              :model-value="value"
+              class="table-filter-input"
+              :placeholder="`Filter ${column.header ?? column.field}…`"
+              :aria-label="`Filter by ${column.header ?? column.field}`"
+              @input="(e: Event) => setValue((e.target as HTMLInputElement).value)"
+            />
+          </template>
+
+          <template #cell="{ column, row }: CellSlotProps<TrainingNeedRow>">
+            <template v-if="column.field === 'employeeDisplayName'">
+              <div class="table-user">
+                <div class="table-avatar table-avatar-primary">{{ row.employeeInitial }}</div>
+                <div class="user-info-col">
+                  <span class="user-name">{{ row.employeeDisplayName }}</span>
+                  <span class="user-job-title">{{ row.employeeJobTitle }}</span>
                 </div>
-              </TableCell>
+              </div>
+            </template>
 
-              <TableCell>
-                <div class="requirement-cell">
-                  <span class="requirement-code">
-                    {{ getCompetency(need.employeeCompetenceItemId || '').code }}
-                  </span>
-                  <span class="requirement-title">
-                    {{ getCompetency(need.employeeCompetenceItemId || '').title }}
-                  </span>
+            <template v-else-if="column.field === 'competencyTitle'">
+              <div class="requirement-cell">
+                <span class="requirement-code">{{ row.competencyCode }}</span>
+                <span class="requirement-title">{{ row.competencyTitle }}</span>
+              </div>
+            </template>
+
+            <template v-else-if="column.field === 'isGatingCritical'">
+              <div v-if="row.isGatingCritical" class="badge badge-critical badge-compact">
+                <AlertTriangle class="icon-xxs" /> Critical
+              </div>
+              <span v-else class="empty-indicator">—</span>
+            </template>
+
+            <template v-else-if="column.field === 'trainingTypeCode'">
+              <div class="type-risk-cell">
+                <span class="training-type-badge">{{ row.trainingTypeCode }}</span>
+                <div class="risk-level-row">
+                  <span class="status-dot" :class="row.riskIsCritical ? 'status-dot-critical' : 'status-dot-warning'"></span>
+                  <span class="risk-level-text">{{ row.riskLevelCode }}</span>
                 </div>
-              </TableCell>
+              </div>
+            </template>
 
-              <TableCell>
-                <div v-if="isGating(need)" class="badge badge-critical badge-compact">
-                  <AlertTriangle class="icon-xxs" />
-                  Critical
-                </div>
-                <span v-else class="empty-indicator">—</span>
-              </TableCell>
+            <template v-else-if="column.field === 'sourceTypeLabel'">
+              <div class="source-cell">
+                <span class="badge badge-compact" :class="row.sourceTypeBadgeClass">{{ row.sourceTypeLabel }}</span>
+                <span v-if="row.sourceReference" class="source-reference">{{ row.sourceReference }}</span>
+              </div>
+            </template>
 
-              <TableCell>
-                <div class="type-risk-cell">
-                  <span class="training-type-badge">{{ need.trainingTypeCode }}</span>
-                  <div class="risk-level-row">
-                    <span
-                      class="status-dot"
-                      :class="
-                        getCompetency(need.employeeCompetenceItemId || '').riskLevelCode ===
-                        'HIGH_CRITICAL'
-                          ? 'status-dot-critical'
-                          : 'status-dot-warning'
-                      "
-                    ></span>
-                    <span class="risk-level-text">{{
-                      getCompetency(need.employeeCompetenceItemId || '').riskLevelCode
-                    }}</span>
-                  </div>
-                </div>
-              </TableCell>
+            <template v-else-if="column.field === 'dueDate'">
+              <div class="date-cell">
+                <span class="date-text">{{ row.dueDateDisplay }}</span>
+                <span v-if="row.isOverdue" class="overdue-label">Overdue</span>
+              </div>
+            </template>
 
-              <!-- Source column (replaces Reason) -->
-              <TableCell>
-                <div class="source-cell">
-                  <span class="badge badge-compact" :class="getSourceBadgeClass(need.sourceType)">
-                    {{ getSourceLabel(need.sourceType) }}
-                  </span>
-                  <span v-if="need.sourceReference" class="source-reference">
-                    {{ need.sourceReference }}
-                  </span>
-                </div>
-              </TableCell>
+            <template v-else-if="column.field === 'workflowStatusLabel'">
+              <span class="badge" :class="row.workflowStatusBadgeClass">{{ row.workflowStatusLabel }}</span>
+            </template>
 
-              <TableCell>
-                <div class="date-cell">
-                  <span class="date-text">{{
-                    new Date(need.dueDate || '').toLocaleDateString('en-GB', {
-                      day: '2-digit',
-                      month: 'short',
-                    })
-                  }}</span>
-                  <span
-                    v-if="
-                      need.dueDate &&
-                      new Date(need.dueDate) < new Date() &&
-                      need.workflowStatus !== 'CLOSED'
-                    "
-                    class="overdue-label"
-                    >Overdue</span
-                  >
-                </div>
-              </TableCell>
-
-              <TableCell>
-                <span class="badge" :class="getWorkflowBadgeClass(need)">
-                  {{ getWorkflowLabel(need) }}
-                </span>
-              </TableCell>
-
-              <TableCell class="table-actions-cell" @click.stop>
+            <template v-else-if="column.field === '_actions'">
+              <div class="cell-right" @click.stop>
                 <DropdownMenu>
                   <DropdownMenuTrigger as-child>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      class="table-action-btn"
-                      :aria-label="`Actions for ${getEmployee(need.erpEmployeeId).displayName}`"
-                    >
+                    <Button variant="ghost" size="icon" class="table-action-btn" :aria-label="`Actions for ${row.employeeDisplayName}`">
                       <MoreHorizontal class="icon-xs" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" class="dropdown-wide">
-                    <DropdownMenuItem @click="openDetails(need.id)">
-                      <ChevronRight class="icon-xs icon-mr" />
-                      Resolve...
+                    <DropdownMenuItem @click="openDetails(row.id)">
+                      <ChevronRight class="icon-xs icon-mr" /> Resolve...
                     </DropdownMenuItem>
                     <DropdownMenuItem>
-                      <UserCheck class="icon-xs icon-mr" />
-                      Assign to Me
+                      <UserCheck class="icon-xs icon-mr" /> Assign to Me
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem class="destructive-action">
-                      <AlertCircle class="icon-xs icon-mr" />
-                      Escalate
+                      <AlertCircle class="icon-xs icon-mr" /> Escalate
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </TableCell>
-            </TableRow>
-            <TableRow v-if="trainingStore.filteredNeeds.length === 0">
-              <TableCell colspan="8" class="training-empty-cell">
-                <div class="training-empty-state">
-                  <AlertCircle class="training-empty-icon" />
-                  <p class="training-empty-title">No training needs identified</p>
-                  <p class="training-empty-subtitle">
-                    Training needs are created when competence gaps, NCRs, or other triggers are
-                    detected.
-                  </p>
-                </div>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+              </div>
+            </template>
+
+            <template v-else>{{ String(row[column.field as keyof TrainingNeedRow] ?? '') }}</template>
+          </template>
+
+          <template #empty>
+            <div class="training-empty-state">
+              <AlertCircle class="training-empty-icon" />
+              <p class="training-empty-title">No training needs identified</p>
+              <p class="training-empty-subtitle">
+                Training needs are created when competence gaps, NCRs, or other triggers are detected.
+              </p>
+            </div>
+          </template>
+        </IoiTable>
       </div>
     </CardContent>
   </Card>
@@ -535,62 +523,6 @@ const newHireCount = computed(() => {
   color: var(--text-body);
 }
 
-/* Filter Card */
-.filter-card {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  margin-bottom: var(--space-lg);
-}
-
-.filter-card :deep(.card-content) {
-  padding: 0;
-}
-
-.filter-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-md);
-}
-
-.filter-group {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  flex-wrap: wrap;
-}
-
-.search-wrapper {
-  position: relative;
-  width: 280px;
-}
-
-.search-icon {
-  position: absolute;
-  left: var(--space-sm);
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-caption);
-  pointer-events: none;
-}
-
-.filter-input-search {
-  padding-left: calc(var(--space-sm) * 2.5);
-}
-
-.filter-select {
-  background-color: var(--bg-surface);
-}
-
-.filter-select-wide {
-  width: 180px;
-}
-
-.filter-select-narrow {
-  width: 150px;
-}
-
 /* Table Card */
 .table-card-content {
   padding: 0;
@@ -600,46 +532,29 @@ const newHireCount = computed(() => {
   overflow-x: auto;
 }
 
-/* Table Header */
-.table-header-row {
-  background-color: var(--bg-subtle);
-}
-
-.col-employee {
-  width: 200px;
-}
-.col-requirement {
-  width: 220px;
-}
-.col-gating {
-  width: 90px;
-}
-.col-type {
-  width: 130px;
-}
-.col-source {
-  width: 160px;
-}
-.col-date {
-  width: 100px;
-}
-.col-status {
-  width: 150px;
-}
-
-/* Table Rows */
-.clickable-row {
+/* Table rows */
+:global(.clickable-row) {
   cursor: pointer;
-  transition: background-color 0.15s ease;
 }
 
-.clickable-row:hover {
-  background-color: var(--bg-hover);
-}
-
-.row-inactive {
+:global(.row-inactive) {
   opacity: 0.6;
 }
+
+/* Sort header */
+.sort-header {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  user-select: none;
+  width: 100%;
+}
+.sort-header--no-sort { cursor: default; }
+.sort-header--right   { justify-content: flex-end; }
+.sort-icon            { width: 12px; height: 12px; flex-shrink: 0; }
+.sort-icon-inactive   { opacity: 0.25; }
+.cell-right           { display: flex; justify-content: flex-end; width: 100%; }
 
 /* User Cell */
 .table-avatar-primary {

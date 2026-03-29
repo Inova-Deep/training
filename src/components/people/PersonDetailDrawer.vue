@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ShieldAlert, ShieldCheck, Search } from 'lucide-vue-next'
+import { ShieldAlert, ShieldCheck, Search, MoreHorizontal } from 'lucide-vue-next'
 import {
   Sheet,
   SheetContent,
@@ -11,14 +11,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { Input } from '@/components/ui/input'
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@/components/ui/table'
+import { Table as IoiTable } from '@ioi-dev/vue-table/unstyled'
+import type { ColumnDef, CellSlotProps } from '@ioi-dev/vue-table/unstyled'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -384,6 +378,102 @@ function getAwarenessBadgeClass(workflowStatus: string): string {
   }
 }
 
+// ─── IoiTable column definitions ─────────────────────────────────────────────
+
+type CompRow = {
+  id: string
+  code: string
+  title: string
+  isGating: boolean
+  derivedStatus: string
+  actionRequired: string
+  responsible: string
+  lastAssessed: string
+  expiry: string
+  expiryClass: string
+  _item: EmployeeCompetenceItem
+}
+
+const compColumns: ColumnDef<CompRow>[] = [
+  { id: 'competency',    field: 'title',          header: 'Competency',      type: 'text' },
+  { id: 'gating',        field: 'isGating',       header: 'Gating',          type: 'text', width: 80  },
+  { id: 'status',        field: 'derivedStatus',  header: 'Status',          type: 'text', width: 140 },
+  { id: 'action',        field: 'actionRequired', header: 'Action Required', type: 'text' },
+  { id: 'responsible',   field: 'responsible',    header: 'Responsible',     type: 'text', width: 130 },
+  { id: 'lastAssessed',  field: 'lastAssessed',   header: 'Last Assessed',   type: 'text', width: 120 },
+  { id: 'expiry',        field: 'expiry',         header: 'Expiry',          type: 'text', width: 110 },
+  { id: '_actions',      field: '_actions',       header: 'Actions',                       width: 72  },
+]
+
+const compRows = computed<CompRow[]>(() =>
+  filteredCompetencies.value.map((comp) => ({
+    id: comp.id,
+    code: comp.code,
+    title: comp.title,
+    isGating: comp.item.isGating,
+    derivedStatus: comp.item.derivedStatus,
+    actionRequired: getActionRequired(comp.item, comp.code),
+    responsible: getResponsible(comp.item),
+    lastAssessed: comp.item.lastCompletedAt ? formatDate(comp.item.lastCompletedAt) : '—',
+    expiry: comp.item.expiryDate ? formatDate(comp.item.expiryDate) : '—',
+    expiryClass: getExpiryClass(comp.item),
+    _item: comp.item,
+  })),
+)
+
+type TnRow = {
+  id: string
+  competencyCode: string
+  competencyTitle: string
+  sourceBadgeClass: string
+  sourceLabel: string
+  dueDateDisplay: string
+  isOverdue: boolean
+  workflowBadgeClass: string
+  workflowLabel: string
+}
+
+const tnColumns: ColumnDef<TnRow>[] = [
+  { id: 'requirement', field: 'competencyTitle', header: 'Requirement', type: 'text' },
+  { id: 'source',      field: 'sourceLabel',     header: 'Source',      type: 'text', width: 150 },
+  { id: 'dueDate',     field: 'dueDateDisplay',  header: 'Due Date',    type: 'text', width: 100 },
+  { id: 'status',      field: 'workflowLabel',   header: 'Status',      type: 'text', width: 160 },
+]
+
+const openNeedRows = computed<TnRow[]>(() =>
+  openNeeds.value.map((need) => {
+    const { code, title } = getCompetencyLabel(need.employeeCompetenceItemId)
+    return {
+      id: need.id,
+      competencyCode: code,
+      competencyTitle: title,
+      sourceBadgeClass: getSourceBadgeClass(need.sourceType),
+      sourceLabel: getSourceLabel(need.sourceType),
+      dueDateDisplay: formatShortDate(need.dueDate),
+      isOverdue: isOverdue(need.dueDate, need.workflowStatus),
+      workflowBadgeClass: getWorkflowBadgeClass(need),
+      workflowLabel: getWorkflowLabel(need),
+    }
+  }),
+)
+
+const closedNeedRows = computed<TnRow[]>(() =>
+  closedNeeds.value.map((need) => {
+    const { code, title } = getCompetencyLabel(need.employeeCompetenceItemId)
+    return {
+      id: need.id,
+      competencyCode: code,
+      competencyTitle: title,
+      sourceBadgeClass: getSourceBadgeClass(need.sourceType),
+      sourceLabel: getSourceLabel(need.sourceType),
+      dueDateDisplay: formatShortDate(need.dueDate),
+      isOverdue: false,
+      workflowBadgeClass: getWorkflowBadgeClass(need),
+      workflowLabel: getWorkflowLabel(need),
+    }
+  }),
+)
+
 // ─── Watcher — reset tab on employee change ───────────────────────────────────
 
 watch(
@@ -746,71 +836,45 @@ watch(
 
               <!-- Competency table -->
               <div class="comp-table-wrapper">
-                <Table class="dense-table">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Competency</TableHead>
-                      <TableHead>Gating</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Action Required</TableHead>
-                      <TableHead>Responsible</TableHead>
-                      <TableHead>Last Assessed</TableHead>
-                      <TableHead>Expiry</TableHead>
-                      <TableHead class="table-actions-header">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow
-                      v-if="filteredCompetencies.length === 0"
-                    >
-                      <TableCell colspan="8" class="empty-cell">
-                        No competencies match your search.
-                      </TableCell>
-                    </TableRow>
-                    <TableRow
-                      v-for="comp in filteredCompetencies"
-                      :key="comp.id"
-                    >
-                      <TableCell>
-                        <div class="comp-cell">
-                          <span class="comp-code-label">{{ comp.code }}</span>
-                          <span class="comp-title-label">{{ comp.title }}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span v-if="comp.item.isGating" class="badge badge-critical badge-sm">Gating</span>
-                        <span v-else class="text-muted">—</span>
-                      </TableCell>
-                      <TableCell>
-                        <StatusChip :status="comp.item.derivedStatus" compact />
-                      </TableCell>
-                      <TableCell>
-                        <span class="comp-action-text">{{ getActionRequired(comp.item, comp.code) }}</span>
-                      </TableCell>
-                      <TableCell>
-                        <span class="comp-action-text">{{ getResponsible(comp.item) }}</span>
-                      </TableCell>
-                      <TableCell>
-                        <span class="comp-action-text">{{ comp.item.lastCompletedAt ? formatDate(comp.item.lastCompletedAt) : '—' }}</span>
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          class="comp-action-text"
-                          :class="getExpiryClass(comp.item)"
-                        >
-                          {{ comp.item.expiryDate ? formatDate(comp.item.expiryDate) : '—' }}
-                        </span>
-                      </TableCell>
-                      <TableCell class="table-actions-cell">
+                <IoiTable
+                  :rows="compRows"
+                  :columns="compColumns"
+                  row-key="id"
+                  :page-size="10000"
+                  aria-label="Competencies"
+                >
+                  <template #cell="{ column, row }: CellSlotProps<CompRow>">
+                    <template v-if="column.field === 'title'">
+                      <div class="comp-cell">
+                        <span class="comp-code-label">{{ row.code }}</span>
+                        <span class="comp-title-label">{{ row.title }}</span>
+                      </div>
+                    </template>
+                    <template v-else-if="column.field === 'isGating'">
+                      <span v-if="row.isGating" class="badge badge-critical badge-sm">Gating</span>
+                      <span v-else class="text-muted">—</span>
+                    </template>
+                    <template v-else-if="column.field === 'derivedStatus'">
+                      <StatusChip :status="row.derivedStatus as any" compact />
+                    </template>
+                    <template v-else-if="column.field === 'actionRequired'">
+                      <span class="comp-action-text">{{ row.actionRequired }}</span>
+                    </template>
+                    <template v-else-if="column.field === 'responsible'">
+                      <span class="comp-action-text">{{ row.responsible }}</span>
+                    </template>
+                    <template v-else-if="column.field === 'lastAssessed'">
+                      <span class="comp-action-text">{{ row.lastAssessed }}</span>
+                    </template>
+                    <template v-else-if="column.field === 'expiry'">
+                      <span class="comp-action-text" :class="row.expiryClass">{{ row.expiry }}</span>
+                    </template>
+                    <template v-else-if="column.field === '_actions'">
+                      <div class="cell-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger as-child>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              class="table-action-btn"
-                              :aria-label="`Actions for ${comp.title}`"
-                            >
-                              <span class="comp-more-icon">···</span>
+                            <Button variant="ghost" size="icon" class="table-action-btn" :aria-label="`Actions for ${row.title}`">
+                              <MoreHorizontal class="icon-xs" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
@@ -818,10 +882,13 @@ watch(
                             <DropdownMenuItem>Upload Evidence</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
+                      </div>
+                    </template>
+                  </template>
+                  <template #empty>
+                    <div class="empty-cell">No competencies match your search.</div>
+                  </template>
+                </IoiTable>
               </div>
             </template>
             <p v-else class="drawer-section-empty">No competency matrix data for this employee.</p>
@@ -846,48 +913,34 @@ watch(
               <div v-if="openNeeds.length > 0" class="drawer-section">
                 <p class="drawer-section-label">Open / Active</p>
                 <div class="comp-table-wrapper">
-                  <Table class="dense-table">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Requirement</TableHead>
-                        <TableHead>Source</TableHead>
-                        <TableHead>Due Date</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow
-                        v-for="need in openNeeds"
-                        :key="need.id"
-                      >
-                        <TableCell>
-                          <div class="comp-cell">
-                            <span class="comp-code-label">{{ getCompetencyLabel(need.employeeCompetenceItemId).code }}</span>
-                            <span class="comp-title-label">{{ getCompetencyLabel(need.employeeCompetenceItemId).title }}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span class="badge" :class="getSourceBadgeClass(need.sourceType)">
-                            {{ getSourceLabel(need.sourceType) }}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div class="tn-date-cell">
-                            <span>{{ formatShortDate(need.dueDate) }}</span>
-                            <span
-                              v-if="isOverdue(need.dueDate, need.workflowStatus)"
-                              class="overdue-tag"
-                            >Overdue</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span class="badge" :class="getWorkflowBadgeClass(need)">
-                            {{ getWorkflowLabel(need) }}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
+                  <IoiTable
+                    :rows="openNeedRows"
+                    :columns="tnColumns"
+                    row-key="id"
+                    :page-size="10000"
+                    aria-label="Open Training Needs"
+                  >
+                    <template #cell="{ column, row }: CellSlotProps<TnRow>">
+                      <template v-if="column.field === 'competencyTitle'">
+                        <div class="comp-cell">
+                          <span class="comp-code-label">{{ row.competencyCode }}</span>
+                          <span class="comp-title-label">{{ row.competencyTitle }}</span>
+                        </div>
+                      </template>
+                      <template v-else-if="column.field === 'sourceLabel'">
+                        <span class="badge" :class="row.sourceBadgeClass">{{ row.sourceLabel }}</span>
+                      </template>
+                      <template v-else-if="column.field === 'dueDateDisplay'">
+                        <div class="tn-date-cell">
+                          <span>{{ row.dueDateDisplay }}</span>
+                          <span v-if="row.isOverdue" class="overdue-tag">Overdue</span>
+                        </div>
+                      </template>
+                      <template v-else-if="column.field === 'workflowLabel'">
+                        <span class="badge" :class="row.workflowBadgeClass">{{ row.workflowLabel }}</span>
+                      </template>
+                    </template>
+                  </IoiTable>
                 </div>
               </div>
 
@@ -897,43 +950,32 @@ watch(
               <div v-if="closedNeeds.length > 0" class="drawer-section">
                 <p class="drawer-section-label">Completed</p>
                 <div class="comp-table-wrapper">
-                  <Table class="dense-table">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Requirement</TableHead>
-                        <TableHead>Source</TableHead>
-                        <TableHead>Due Date</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow
-                        v-for="need in closedNeeds"
-                        :key="need.id"
-                        class="row-inactive"
-                      >
-                        <TableCell>
-                          <div class="comp-cell">
-                            <span class="comp-code-label">{{ getCompetencyLabel(need.employeeCompetenceItemId).code }}</span>
-                            <span class="comp-title-label">{{ getCompetencyLabel(need.employeeCompetenceItemId).title }}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span class="badge" :class="getSourceBadgeClass(need.sourceType)">
-                            {{ getSourceLabel(need.sourceType) }}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span>{{ formatShortDate(need.dueDate) }}</span>
-                        </TableCell>
-                        <TableCell>
-                          <span class="badge" :class="getWorkflowBadgeClass(need)">
-                            {{ getWorkflowLabel(need) }}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
+                  <IoiTable
+                    :rows="closedNeedRows"
+                    :columns="tnColumns"
+                    row-key="id"
+                    :page-size="10000"
+                    row-class="row-inactive"
+                    aria-label="Completed Training Needs"
+                  >
+                    <template #cell="{ column, row }: CellSlotProps<TnRow>">
+                      <template v-if="column.field === 'competencyTitle'">
+                        <div class="comp-cell">
+                          <span class="comp-code-label">{{ row.competencyCode }}</span>
+                          <span class="comp-title-label">{{ row.competencyTitle }}</span>
+                        </div>
+                      </template>
+                      <template v-else-if="column.field === 'sourceLabel'">
+                        <span class="badge" :class="row.sourceBadgeClass">{{ row.sourceLabel }}</span>
+                      </template>
+                      <template v-else-if="column.field === 'dueDateDisplay'">
+                        <span>{{ row.dueDateDisplay }}</span>
+                      </template>
+                      <template v-else-if="column.field === 'workflowLabel'">
+                        <span class="badge" :class="row.workflowBadgeClass">{{ row.workflowLabel }}</span>
+                      </template>
+                    </template>
+                  </IoiTable>
                 </div>
               </div>
 
@@ -1169,13 +1211,10 @@ watch(
   color: var(--text-body);
 }
 
-/* ··· icon for dropdown trigger (avoids importing MoreHorizontal) */
-.comp-more-icon {
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  color: var(--text-body);
-  line-height: 1;
+.cell-right {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
 }
 
 /* Training Needs date cell */

@@ -97,8 +97,8 @@ const cellDrillComp = ref<Competency | null>(null)
 const cellDrillItem = ref<EmployeeCompetenceItem | null>(null)
 
 const demoView = ref<string>('')
-const showLegend = ref(true) // 6.3 collapsible legend
-const showReadiness = ref(true) // 6.7 collapsible readiness
+const showLegend = ref(false) // 6.3 collapsible legend
+const showReadiness = ref(false) // 6.7 collapsible readiness
 
 // ─── Filter arrays (6.8) ──────────────────────────────────────────────────────
 const JOB_TITLES = DEMO_ROLE_NAMES
@@ -132,12 +132,6 @@ const CATEGORY_ORDER: CompetencyCategory[] = [
   'Robotics & Automation',
   'Materials & Powder Handling',
   'Materials Testing & Inspection',
-  'Quality',
-  'Health & Safety',
-  'Regulatory Compliance',
-  'Workshop',
-  'Plant & Machinery',
-  'Business / Systems',
 ]
 
 // Legacy category names from actual data — we still render them in the grid
@@ -575,6 +569,55 @@ onMounted(async () => {
       <h1 class="page-title">Skills Matrix</h1>
       <p class="page-subtitle">Organisation-wide competence tracking and compliance overview</p>
     </div>
+    <!-- Team Readiness — overview sits above table-level controls -->
+    <div class="readiness-section">
+      <Button variant="ghost" size="sm" class="readiness-toggle" @click="showReadiness = !showReadiness" aria-label="Toggle team readiness">
+        <Users class="icon-xs" />
+        <span>Team Readiness</span>
+        <component :is="showReadiness ? ChevronDown : ChevronRight" class="icon-xs" />
+      </Button>
+      <div v-if="showReadiness" class="readiness-table-wrapper">
+        <table class="readiness-table">
+          <thead>
+            <tr>
+              <th>Job Title</th>
+              <th class="num-col">People</th>
+              <th class="num-col">Authorised</th>
+              <th class="num-col">Supervised</th>
+              <th class="num-col">Not Auth.</th>
+              <th class="readiness-col">Readiness</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in teamReadiness" :key="row.jobTitle">
+              <td>{{ row.jobTitle }}</td>
+              <td class="num-col">{{ row.people }}</td>
+              <td class="num-col readiness-auth">{{ row.authorised }}</td>
+              <td class="num-col readiness-supervised">{{ row.supervised }}</td>
+              <td class="num-col readiness-not-auth">{{ row.notAuthorised }}</td>
+              <td class="readiness-col">
+                <div class="readiness-bar-wrap">
+                  <div
+                    class="readiness-bar"
+                    :style="{
+                      width: row.readinessPct + '%',
+                      backgroundColor: readinessColor(row.readinessPct),
+                    }"
+                  ></div>
+                </div>
+                <span class="readiness-pct" :style="{ color: readinessColor(row.readinessPct) }">
+                  {{ row.readinessPct }}%
+                </span>
+              </td>
+            </tr>
+            <tr v-if="teamReadiness.length === 0">
+              <td colspan="6" class="empty-cell">No data</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="sticky-top-bar">
       <div class="top-bar-header">
         <div class="scope-selector">
@@ -893,55 +936,6 @@ onMounted(async () => {
         <div class="summary-stat">
           <span class="stat-value">{{ summaryStats.complianceRate }}%</span>
           <span class="stat-label">Compliance</span>
-        </div>
-      </div>
-
-      <!-- 6.7 Team Readiness collapsible section -->
-      <div class="readiness-section">
-        <Button variant="ghost" size="sm" class="readiness-toggle" @click="showReadiness = !showReadiness" aria-label="Toggle team readiness">
-          <Users class="icon-xs" />
-          <span>Team Readiness</span>
-          <component :is="showReadiness ? ChevronDown : ChevronRight" class="icon-xs" />
-        </Button>
-        <div v-if="showReadiness" class="readiness-table-wrapper">
-          <table class="readiness-table">
-            <thead>
-              <tr>
-                <th>Job Title</th>
-                <th class="num-col">People</th>
-                <th class="num-col">Authorised</th>
-                <th class="num-col">Supervised</th>
-                <th class="num-col">Not Auth.</th>
-                <th class="readiness-col">Readiness</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in teamReadiness" :key="row.jobTitle">
-                <td>{{ row.jobTitle }}</td>
-                <td class="num-col">{{ row.people }}</td>
-                <td class="num-col readiness-auth">{{ row.authorised }}</td>
-                <td class="num-col readiness-supervised">{{ row.supervised }}</td>
-                <td class="num-col readiness-not-auth">{{ row.notAuthorised }}</td>
-                <td class="readiness-col">
-                  <div class="readiness-bar-wrap">
-                    <div
-                      class="readiness-bar"
-                      :style="{
-                        width: row.readinessPct + '%',
-                        backgroundColor: readinessColor(row.readinessPct),
-                      }"
-                    ></div>
-                  </div>
-                  <span class="readiness-pct" :style="{ color: readinessColor(row.readinessPct) }">
-                    {{ row.readinessPct }}%
-                  </span>
-                </td>
-              </tr>
-              <tr v-if="teamReadiness.length === 0">
-                <td colspan="6" class="empty-cell">No data</td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </div>
 
@@ -1958,6 +1952,7 @@ onMounted(async () => {
   border-radius: var(--radius-lg);
   background-color: var(--bg-surface);
   overflow: hidden;
+  margin: 0 var(--space-md);
 }
 
 .readiness-toggle {

@@ -620,6 +620,12 @@
   color: var(--brand-critical);
 }
 
+.badge-high {
+  background-color: oklch(0.65 0.18 50 / 0.15);
+  color: oklch(0.5 0.18 50);
+  border: 1px solid oklch(0.65 0.18 50 / 0.3);
+}
+
 .badge-neutral {
   background-color: var(--bg-subtle);
   color: var(--text-body);
@@ -2172,4 +2178,147 @@
 
 .row-inactive {
   opacity: 0.6;
+}
+
+/* ── @ioi-dev/vue-table global skin ─────────────────────────────────────────
+   Applies the project's dense-table look to every IoiTable instance.
+   Uses the /unstyled import so these are the only styles the component gets.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Screen-reader-only live region — must be visually hidden */
+.ioi-table__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.ioi-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-sans);
+}
+
+/* Header row */
+.ioi-table thead tr:first-child th {
+  padding: 0 var(--space-sm);
+  height: 40px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-caption);
+  background-color: var(--bg-surface);
+  vertical-align: middle;
+  text-align: left;
+  border-bottom: var(--border-subtle);
+  border-right: 1px solid oklch(0.94 0 0);
+  white-space: nowrap;
+}
+
+.ioi-table thead tr:first-child th:last-child {
+  border-right: none;
+}
+
+/* Filter row */
+.ioi-table__filter-row th {
+  background-color: var(--bg-surface);
+  padding: var(--space-xs) var(--space-sm);
+  border-bottom: var(--border-subtle);
+  border-right: 1px solid oklch(0.94 0 0);
+}
+
+.ioi-table__filter-row th:last-child {
+  border-right: none;
+}
+
+.ioi-table__filter-input,
+.ioi-table__filter-select {
+  width: 100%;
+  font-size: 0.75rem;
+  font-family: var(--font-sans);
+  padding: 0.25rem var(--space-sm);
+  border: var(--border-strong);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-surface);
+  color: var(--text-body);
+  line-height: 1.4;
+}
+
+.ioi-table__filter-input:focus,
+.ioi-table__filter-select:focus {
+  outline: none;
+  border-color: oklch(0.72 0 0);
+}
+
+/* Data rows */
+.ioi-table__row {
+  height: 44px;
+}
+
+.ioi-table__row:hover {
+  background-color: var(--bg-subtle) !important;
+}
+
+/* Cells */
+.ioi-table__cell {
+  padding: 0 var(--space-sm) !important;
+  font-size: 0.8125rem;
+  vertical-align: middle;
+  border-bottom: var(--border-subtle);
+  border-right: 1px solid oklch(0.94 0 0);
+  color: var(--text-body);
+}
+
+.ioi-table__cell:last-child {
+  border-right: none;
+}
+
+.ioi-table__row:last-child .ioi-table__cell {
+  border-bottom: none;
+}
+
+/* Shadcn Select & Input inside the filter row — compact sizing */
+.ioi-table .table-filter-select {
+  width: 100%;
+  height: 26px;
+  min-height: 26px;
+  font-size: 0.75rem;
+  padding-left: var(--space-xs);
+  padding-right: var(--space-xs);
+}
+
+.ioi-table .table-filter-input {
+  width: 100%;
+  height: 26px;
+  min-height: 26px;
+  font-size: 0.75rem;
+  padding: 0 var(--space-xs);
+}
+
+/* Loading / error overlays — keep them positioned properly */
+.ioi-table__loading-overlay,
+.ioi-table__error-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: oklch(1 0 0 / 0.9);
+  z-index: 10;
+  font-size: 0.8125rem;
+  color: var(--text-caption);
+}
+
+/* Empty state */
+.ioi-table__empty {
+  padding: var(--space-xl);
+  text-align: center;
+  color: var(--text-caption);
+  font-size: 0.8125rem;
 }

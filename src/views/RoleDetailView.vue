@@ -27,14 +27,8 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { Table as IoiTable } from '@ioi-dev/vue-table/unstyled'
+import type { ColumnDef, CellSlotProps } from '@ioi-dev/vue-table/unstyled'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -645,6 +639,88 @@ function workflowLabel(s: string) {
   }
 }
 
+// ── IoiTable — Requirements tab ───────────────────────────────────
+type ReqRow = {
+  id: string
+  code: string
+  title: string
+  compType: string
+  compTypeBadgeClass: string
+  compTypeLabel: string
+  category: string
+  isGating: boolean
+  mandatory: boolean
+  riskLevelCode: string
+  interval: string
+  metCount: number
+  total: number
+}
+
+const reqColumns: ColumnDef<ReqRow>[] = [
+  { id: 'code',      field: 'code',          header: 'Code',        type: 'text', width: 70 },
+  { id: 'title',     field: 'title',         header: 'Item',        type: 'text' },
+  { id: 'type',      field: 'compTypeLabel', header: 'Type',        type: 'text' },
+  { id: 'category',  field: 'category',      header: 'Category',    type: 'text' },
+  { id: 'level',     field: 'riskLevelCode', header: 'Level',       type: 'text' },
+  { id: 'mandatory', field: 'mandatory',     header: 'Mandatory',   type: 'text', width: 100 },
+  { id: 'interval',  field: 'interval',      header: 'Interval',    type: 'text' },
+  { id: 'teamStatus',field: 'metCount',      header: 'Team Status', type: 'number', width: 120 },
+  { id: '_actions',  field: '_actions',      header: 'Actions',                    width: 72  },
+]
+
+const reqRows = computed<ReqRow[]>(() =>
+  enrichedRequirements.value.map((r) => ({
+    id: r.id,
+    code: r.code,
+    title: r.title,
+    compType: r.compType,
+    compTypeBadgeClass: compTypeBadgeClass(r.compType),
+    compTypeLabel: compTypeLabel(r.compType),
+    category: r.category,
+    isGating: r.isGating,
+    mandatory: r.mandatory,
+    riskLevelCode: r.riskLevelCode,
+    interval: r.interval,
+    metCount: r.metCount,
+    total: r.total,
+  })),
+)
+
+// ── IoiTable — Assigned People tab ────────────────────────────────
+type PeopleRow = {
+  employeeId: string
+  name: string
+  status: string
+  statusBadgeClass: string
+  gapCount: number
+  supervisedItems: number
+  expiryIssues: number
+  readiness: number
+}
+
+const peopleColumns: ColumnDef<PeopleRow>[] = [
+  { id: 'name',            field: 'name',            header: 'Name',              type: 'text' },
+  { id: 'status',          field: 'status',          header: 'Current Status',    type: 'text' },
+  { id: 'gapCount',        field: 'gapCount',        header: 'Gap Count',         type: 'number', width: 110 },
+  { id: 'supervisedItems', field: 'supervisedItems', header: 'Supervised Items',  type: 'number', width: 140 },
+  { id: 'expiryIssues',    field: 'expiryIssues',    header: 'Expiry Issues',     type: 'number', width: 120 },
+  { id: 'readiness',       field: 'readiness',       header: 'Readiness',         type: 'number', width: 110 },
+  { id: '_actions',        field: '_actions',        header: 'Actions',                           width: 72  },
+]
+
+const peopleRows = computed<PeopleRow[]>(() =>
+  assignedPeopleRows.value.map((p) => ({
+    employeeId: p.employeeId,
+    name: p.name,
+    status: p.status,
+    statusBadgeClass: statusBadgeClass(p.status),
+    gapCount: p.gapCount,
+    supervisedItems: p.supervisedItems,
+    expiryIssues: p.expiryIssues,
+    readiness: p.readiness,
+  })),
+)
+
 function deliveryLabel(d: string) {
   switch (d) {
     case 'READ_AND_ACKNOWLEDGE':
@@ -1054,96 +1130,71 @@ function deliveryLabel(d: string) {
 
           <Card>
             <CardContent class="requirements-table-wrap">
-              <Table class="dense-table">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead style="width: 70px">Code</TableHead>
-                    <TableHead>Item</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Level</TableHead>
-                    <TableHead class="col-center">Mandatory</TableHead>
-                    <TableHead>Interval</TableHead>
-                    <TableHead class="col-center">Team Status</TableHead>
-                    <TableHead class="table-actions-header">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow v-for="req in enrichedRequirements" :key="req.id">
-                    <TableCell class="code-cell">{{ req.code }}</TableCell>
-                    <TableCell class="req-name">{{ req.title }}</TableCell>
-                    <TableCell>
-                      <span class="badge" :class="compTypeBadgeClass(req.compType)">
-                        {{ compTypeLabel(req.compType) }}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span class="category-text">{{ req.category }}</span>
-                    </TableCell>
-                    <TableCell>
-                      <span v-if="req.isGating" class="badge badge-critical">Gating</span>
-                      <span v-else class="badge badge-neutral">Required</span>
-                    </TableCell>
-                    <TableCell class="col-center">
-                      <Flag v-if="req.mandatory" class="icon-xs flag-icon" aria-label="Mandatory" />
+              <IoiTable
+                :rows="reqRows"
+                :columns="reqColumns"
+                row-key="id"
+                :page-size="10000"
+                aria-label="Role Requirements"
+              >
+                <template #cell="{ column, row }: CellSlotProps<ReqRow>">
+                  <template v-if="column.field === 'code'">
+                    <span class="code-cell">{{ row.code }}</span>
+                  </template>
+                  <template v-else-if="column.field === 'title'">
+                    <span class="req-name">{{ row.title }}</span>
+                  </template>
+                  <template v-else-if="column.field === 'compTypeLabel'">
+                    <span class="badge" :class="row.compTypeBadgeClass">{{ row.compTypeLabel }}</span>
+                  </template>
+                  <template v-else-if="column.field === 'category'">
+                    <span class="category-text">{{ row.category }}</span>
+                  </template>
+                  <template v-else-if="column.field === 'riskLevelCode'">
+                    <span v-if="row.isGating" class="badge badge-critical">Gating</span>
+                    <span v-else class="badge badge-neutral">Required</span>
+                  </template>
+                  <template v-else-if="column.field === 'mandatory'">
+                    <div class="cell-center">
+                      <Flag v-if="row.mandatory" class="icon-xs flag-icon" aria-label="Mandatory" />
                       <span v-else class="req-empty">—</span>
-                    </TableCell>
-                    <TableCell>
-                      <span class="interval-text">{{ req.interval }}</span>
-                    </TableCell>
-                    <TableCell class="col-center">
-                      <div v-if="req.total > 0" class="team-status">
-                        <span
-                          class="team-status-text"
-                          :class="req.metCount === req.total ? 'stat-good' : 'stat-warn'"
-                        >
-                          {{ req.metCount }}/{{ req.total }}
+                    </div>
+                  </template>
+                  <template v-else-if="column.field === 'interval'">
+                    <span class="interval-text">{{ row.interval }}</span>
+                  </template>
+                  <template v-else-if="column.field === 'metCount'">
+                    <div class="cell-center">
+                      <div v-if="row.total > 0" class="team-status">
+                        <span class="team-status-text" :class="row.metCount === row.total ? 'stat-good' : 'stat-warn'">
+                          {{ row.metCount }}/{{ row.total }}
                         </span>
                         <div class="team-bar-track">
-                          <div
-                            class="team-bar-fill"
-                            :style="{
-                              width: (req.total > 0 ? (req.metCount / req.total) * 100 : 0) + '%',
-                            }"
-                            :class="req.metCount === req.total ? 'bar-fill-good' : 'bar-fill-warn'"
-                          />
+                          <div class="team-bar-fill" :style="{ width: (row.total > 0 ? (row.metCount / row.total) * 100 : 0) + '%' }" :class="row.metCount === row.total ? 'bar-fill-good' : 'bar-fill-warn'" />
                         </div>
                       </div>
                       <span v-else class="req-empty">—</span>
-                    </TableCell>
-                    <TableCell class="table-actions-cell">
+                    </div>
+                  </template>
+                  <template v-else-if="column.field === '_actions'">
+                    <div class="cell-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger as-child>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            class="table-action-btn"
-                            aria-label="Requirement actions"
-                          >
+                          <Button variant="ghost" size="icon" class="table-action-btn" aria-label="Requirement actions">
                             <MoreHorizontal class="icon-xs" aria-hidden="true" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            @click="
-                              () => {
-                                const r = store.roleRequirements.find((x) => x.id === req.id)
-                                if (r) openEditSheet(r)
-                              }
-                            "
-                            >Edit</DropdownMenuItem
-                          >
+                          <DropdownMenuItem @click="() => { const r = store.roleRequirements.find((x) => x.id === row.id); if (r) openEditSheet(r) }">Edit</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow v-if="enrichedRequirements.length === 0">
-                    <TableCell colspan="9" class="req-empty-state">
-                      No requirements configured for this role yet.
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+                    </div>
+                  </template>
+                </template>
+                <template #empty>
+                  <div class="req-empty-state">No requirements configured for this role yet.</div>
+                </template>
+              </IoiTable>
             </CardContent>
           </Card>
         </div>
@@ -1164,95 +1215,65 @@ function deliveryLabel(d: string) {
 
           <Card>
             <CardContent class="requirements-table-wrap">
-              <Table class="dense-table">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Current Status</TableHead>
-                    <TableHead class="col-center">Gap Count</TableHead>
-                    <TableHead class="col-center">Supervised Items</TableHead>
-                    <TableHead class="col-center">Expiry Issues</TableHead>
-                    <TableHead class="col-center">Readiness</TableHead>
-                    <TableHead class="table-actions-header">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow v-for="person in assignedPeopleRows" :key="person.employeeId">
-                    <TableCell class="req-name">{{ person.name }}</TableCell>
-                    <TableCell>
-                      <span class="badge" :class="statusBadgeClass(person.status)">
-                        {{ person.status }}
-                      </span>
-                    </TableCell>
-                    <TableCell class="col-center">
-                      <span v-if="person.gapCount > 0" class="stat-count stat-warn">{{
-                        person.gapCount
-                      }}</span>
+              <IoiTable
+                :rows="peopleRows"
+                :columns="peopleColumns"
+                row-key="employeeId"
+                :page-size="10000"
+                aria-label="Assigned People"
+              >
+                <template #cell="{ column, row }: CellSlotProps<PeopleRow>">
+                  <template v-if="column.field === 'name'">
+                    <span class="req-name">{{ row.name }}</span>
+                  </template>
+                  <template v-else-if="column.field === 'status'">
+                    <span class="badge" :class="row.statusBadgeClass">{{ row.status }}</span>
+                  </template>
+                  <template v-else-if="column.field === 'gapCount'">
+                    <div class="cell-center">
+                      <span v-if="row.gapCount > 0" class="stat-count stat-warn">{{ row.gapCount }}</span>
                       <span v-else class="stat-count stat-good">0</span>
-                    </TableCell>
-                    <TableCell class="col-center">
-                      <span v-if="person.supervisedItems > 0" class="stat-count stat-info">{{
-                        person.supervisedItems
-                      }}</span>
+                    </div>
+                  </template>
+                  <template v-else-if="column.field === 'supervisedItems'">
+                    <div class="cell-center">
+                      <span v-if="row.supervisedItems > 0" class="stat-count stat-info">{{ row.supervisedItems }}</span>
                       <span v-else class="empty-value">0</span>
-                    </TableCell>
-                    <TableCell class="col-center">
-                      <span v-if="person.expiryIssues > 0" class="stat-count stat-warn">{{
-                        person.expiryIssues
-                      }}</span>
+                    </div>
+                  </template>
+                  <template v-else-if="column.field === 'expiryIssues'">
+                    <div class="cell-center">
+                      <span v-if="row.expiryIssues > 0" class="stat-count stat-warn">{{ row.expiryIssues }}</span>
                       <span v-else class="empty-value">0</span>
-                    </TableCell>
-                    <TableCell class="col-center">
+                    </div>
+                  </template>
+                  <template v-else-if="column.field === 'readiness'">
+                    <div class="cell-center">
                       <div class="readiness-cell">
-                        <span
-                          class="readiness-pct"
-                          :class="
-                            person.readiness >= 75
-                              ? 'stat-good'
-                              : person.readiness >= 40
-                                ? 'stat-warn'
-                                : 'stat-danger'
-                          "
-                        >
-                          {{ person.readiness }}%
+                        <span class="readiness-pct" :class="row.readiness >= 75 ? 'stat-good' : row.readiness >= 40 ? 'stat-warn' : 'stat-danger'">
+                          {{ row.readiness }}%
                         </span>
                         <div class="team-bar-track">
-                          <div
-                            class="team-bar-fill"
-                            :style="{ width: person.readiness + '%' }"
-                            :class="{
-                              'bar-fill-good': person.readiness >= 75,
-                              'bar-fill-warn': person.readiness >= 40 && person.readiness < 75,
-                              'bar-fill-danger': person.readiness < 40,
-                            }"
-                          />
+                          <div class="team-bar-fill" :style="{ width: row.readiness + '%' }" :class="{ 'bar-fill-good': row.readiness >= 75, 'bar-fill-warn': row.readiness >= 40 && row.readiness < 75, 'bar-fill-danger': row.readiness < 40 }" />
                         </div>
                       </div>
-                    </TableCell>
-                    <TableCell class="table-actions-cell">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        class="link-btn"
-                        aria-label="View employee profile"
-                      >
-                        <ExternalLink class="icon-xxs" aria-hidden="true" />
-                        Profile
+                    </div>
+                  </template>
+                  <template v-else-if="column.field === '_actions'">
+                    <div class="cell-right">
+                      <Button variant="ghost" size="icon" class="table-action-btn" aria-label="View employee profile">
+                        <ExternalLink class="icon-xs" aria-hidden="true" />
                       </Button>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow v-if="assignedPeopleRows.length === 0">
-                    <TableCell colspan="7" class="req-empty-state">
-                      <div class="role-empty-state">
-                        <Users class="role-empty-icon" />
-                        <p class="role-empty-message">
-                          No employees currently assigned to this role.
-                        </p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+                    </div>
+                  </template>
+                </template>
+                <template #empty>
+                  <div class="role-empty-state">
+                    <Users class="role-empty-icon" />
+                    <p class="role-empty-message">No employees currently assigned to this role.</p>
+                  </div>
+                </template>
+              </IoiTable>
             </CardContent>
           </Card>
         </div>
@@ -1289,43 +1310,39 @@ function deliveryLabel(d: string) {
                 <div v-if="highestRiskItems.length === 0" class="req-empty-state">
                   No gaps found — all requirements are met across the team.
                 </div>
-                <Table v-else class="dense-table">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Competency</TableHead>
-                      <TableHead class="col-center">Gap Count</TableHead>
-                      <TableHead class="col-center">Gap Rate</TableHead>
-                      <TableHead>Gating</TableHead>
-                      <TableHead>Severity</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow v-for="item in highestRiskItems" :key="item.compId">
-                      <TableCell class="req-name">{{ item.title }}</TableCell>
-                      <TableCell class="col-center">
-                        <span class="gap-count-text"
-                          >{{ item.gapCount }} of {{ item.total }} people missing</span
-                        >
-                      </TableCell>
-                      <TableCell class="col-center">
-                        <span
-                          class="stat-count"
-                          :class="item.gapPct >= 50 ? 'stat-warn' : 'stat-info'"
-                          >{{ item.gapPct }}%</span
-                        >
-                      </TableCell>
-                      <TableCell>
-                        <span v-if="item.isGating" class="badge badge-critical">Gating</span>
-                        <span v-else class="badge badge-neutral">Non-Gating</span>
-                      </TableCell>
-                      <TableCell>
-                        <span class="badge" :class="riskSeverityBadge(item)">{{
-                          riskSeverityLabel(item)
-                        }}</span>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
+                <IoiTable
+                  v-else
+                  :rows="highestRiskItems.map(i => ({ ...i, id: i.compId }))"
+                  :columns="[
+                    { id: 'title',     field: 'title',    header: 'Competency',  type: 'text' },
+                    { id: 'gapCount',  field: 'gapCount', header: 'Gap Count',   type: 'number', width: 180 },
+                    { id: 'gapPct',    field: 'gapPct',   header: 'Gap Rate',    type: 'number', width: 100 },
+                    { id: 'isGating',  field: 'isGating', header: 'Gating',      type: 'text',   width: 110 },
+                    { id: 'severity',  field: 'severity', header: 'Severity',    type: 'text',   width: 110 },
+                  ]"
+                  row-key="id"
+                  :page-size="10000"
+                  aria-label="Highest Risk Items"
+                >
+                  <template #cell="{ column, row }">
+                    <template v-if="column.field === 'title'">
+                      <span class="req-name">{{ row.title }}</span>
+                    </template>
+                    <template v-else-if="column.field === 'gapCount'">
+                      <div class="cell-center"><span class="gap-count-text">{{ row.gapCount }} of {{ row.total }} people missing</span></div>
+                    </template>
+                    <template v-else-if="column.field === 'gapPct'">
+                      <div class="cell-center"><span class="stat-count" :class="(row.gapPct as number) >= 50 ? 'stat-warn' : 'stat-info'">{{ row.gapPct }}%</span></div>
+                    </template>
+                    <template v-else-if="column.field === 'isGating'">
+                      <span v-if="row.isGating" class="badge badge-critical">Gating</span>
+                      <span v-else class="badge badge-neutral">Non-Gating</span>
+                    </template>
+                    <template v-else-if="column.field === 'severity'">
+                      <span class="badge" :class="riskSeverityBadge(row as any)">{{ riskSeverityLabel(row as any) }}</span>
+                    </template>
+                  </template>
+                </IoiTable>
               </CardContent>
             </Card>
 
@@ -1342,24 +1359,30 @@ function deliveryLabel(d: string) {
                 <div v-if="commonGaps.length === 0" class="req-empty-state">
                   No common gaps — no competency has a gap rate ≥ 50%.
                 </div>
-                <Table v-else class="dense-table">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Competency</TableHead>
-                      <TableHead class="col-center">% Missing</TableHead>
-                      <TableHead>Recommended Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow v-for="item in commonGaps" :key="item.compId">
-                      <TableCell class="req-name">{{ item.title }}</TableCell>
-                      <TableCell class="col-center">
-                        <span class="stat-count stat-warn">{{ item.gapPct }}%</span>
-                      </TableCell>
-                      <TableCell class="action-text">{{ recommendedAction(item) }}</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
+                <IoiTable
+                  v-else
+                  :rows="commonGaps.map(i => ({ ...i, id: i.compId }))"
+                  :columns="[
+                    { id: 'title',  field: 'title',  header: 'Competency',        type: 'text' },
+                    { id: 'gapPct', field: 'gapPct', header: '% Missing',         type: 'number', width: 110 },
+                    { id: 'action', field: 'action', header: 'Recommended Action', type: 'text' },
+                  ]"
+                  row-key="id"
+                  :page-size="10000"
+                  aria-label="Common Gaps"
+                >
+                  <template #cell="{ column, row }">
+                    <template v-if="column.field === 'title'">
+                      <span class="req-name">{{ row.title }}</span>
+                    </template>
+                    <template v-else-if="column.field === 'gapPct'">
+                      <div class="cell-center"><span class="stat-count stat-warn">{{ row.gapPct }}%</span></div>
+                    </template>
+                    <template v-else-if="column.field === 'action'">
+                      <span class="action-text">{{ recommendedAction(row as any) }}</span>
+                    </template>
+                  </template>
+                </IoiTable>
               </CardContent>
             </Card>
           </template>
@@ -1380,56 +1403,46 @@ function deliveryLabel(d: string) {
 
           <Card>
             <CardContent class="requirements-table-wrap">
-              <Table class="dense-table">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Topic</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Effective Date</TableHead>
-                    <TableHead>Completion</TableHead>
-                    <TableHead>Delivery Method</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow v-for="topic in linkedAwareness" :key="topic.id">
-                    <TableCell class="req-name">{{ topic.title }}</TableCell>
-                    <TableCell>
-                      <span class="badge" :class="topicTypeBadgeClass(topic.topicType)">
-                        {{ topicTypeLabel(topic.topicType) }}
-                      </span>
-                    </TableCell>
-                    <TableCell class="date-cell">{{ formatDate(topic.effectiveDate) }}</TableCell>
-                    <TableCell>
-                      <div class="completion-cell">
-                        <span class="completion-pct">{{ topic.completion }}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell class="req-code">{{
-                      deliveryLabel(topic.deliveryMethod)
-                    }}</TableCell>
-                    <TableCell>
-                      <span
-                        class="badge"
-                        :class="
-                          topic.status === 'Completed'
-                            ? 'badge-success'
-                            : topic.status === 'Active'
-                              ? 'badge-primary'
-                              : 'badge-neutral'
-                        "
-                      >
-                        {{ workflowLabel(topic.workflowStatus) }}
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow v-if="linkedAwareness.length === 0">
-                    <TableCell colspan="6" class="req-empty-state">
-                      No awareness topics are currently targeted at this role.
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+              <IoiTable
+                :rows="linkedAwareness.map(t => ({ ...t, id: t.id }))"
+                :columns="[
+                  { id: 'title',          field: 'title',          header: 'Topic',           type: 'text' },
+                  { id: 'topicType',      field: 'topicType',      header: 'Type',            type: 'text' },
+                  { id: 'effectiveDate',  field: 'effectiveDate',  header: 'Effective Date',  type: 'text', width: 130 },
+                  { id: 'completion',     field: 'completion',     header: 'Completion',      type: 'text', width: 110 },
+                  { id: 'deliveryMethod', field: 'deliveryMethod', header: 'Delivery Method', type: 'text' },
+                  { id: 'workflowStatus', field: 'workflowStatus', header: 'Status',          type: 'text', width: 150 },
+                ]"
+                row-key="id"
+                :page-size="10000"
+                aria-label="Linked Awareness Topics"
+              >
+                <template #cell="{ column, row }">
+                  <template v-if="column.field === 'title'">
+                    <span class="req-name">{{ row.title }}</span>
+                  </template>
+                  <template v-else-if="column.field === 'topicType'">
+                    <span class="badge" :class="topicTypeBadgeClass(String(row.topicType))">{{ topicTypeLabel(String(row.topicType)) }}</span>
+                  </template>
+                  <template v-else-if="column.field === 'effectiveDate'">
+                    <span class="date-cell">{{ formatDate(String(row.effectiveDate)) }}</span>
+                  </template>
+                  <template v-else-if="column.field === 'completion'">
+                    <span class="completion-pct">{{ row.completion }}</span>
+                  </template>
+                  <template v-else-if="column.field === 'deliveryMethod'">
+                    <span class="req-code">{{ deliveryLabel(String(row.deliveryMethod)) }}</span>
+                  </template>
+                  <template v-else-if="column.field === 'workflowStatus'">
+                    <span class="badge" :class="row.status === 'Completed' ? 'badge-success' : row.status === 'Active' ? 'badge-primary' : 'badge-neutral'">
+                      {{ workflowLabel(String(row.workflowStatus)) }}
+                    </span>
+                  </template>
+                </template>
+                <template #empty>
+                  <div class="req-empty-state">No awareness topics are currently targeted at this role.</div>
+                </template>
+              </IoiTable>
             </CardContent>
           </Card>
         </div>
@@ -1997,6 +2010,18 @@ function deliveryLabel(d: string) {
 .col-center {
   text-align: center;
 }
+
+.cell-center {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.cell-right {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
 .code-cell {
   font-family: var(--font-mono);
   font-size: 0.75rem;
@@ -2147,11 +2172,7 @@ function deliveryLabel(d: string) {
   border: 1px solid oklch(0.5 0.2 25 / 0.3);
 }
 
-.badge-high {
-  background-color: oklch(0.65 0.18 50 / 0.15);
-  color: oklch(0.5 0.18 50);
-  border: 1px solid oklch(0.65 0.18 50 / 0.3);
-}
+/* badge-high defined globally in main.css */
 
 .badge-info {
   background-color: oklch(0.55 0.15 255 / 0.12);

@@ -1,17 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { MoreHorizontal, Plus, Search, Archive, Edit, Eye } from 'lucide-vue-next'
+import { MoreHorizontal, Plus, Archive, Edit, Eye, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-vue-next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@/components/ui/table'
+import { Table as IoiTable } from '@ioi-dev/vue-table/unstyled'
+import type { ColumnDef, CellSlotProps, SortState, HeaderFilterSlotProps } from '@ioi-dev/vue-table/unstyled'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -26,8 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
 import { useCompetencyLibraryStore } from '@/stores/competencyLibrary'
 import { useReferenceListsStore } from '@/stores/referenceLists'
 import { useAuthStore } from '@/stores/auth'
@@ -39,13 +31,6 @@ const refStore = useReferenceListsStore()
 const authStore = useAuthStore()
 
 const canAddCompetency = computed(() => ['QHSE', 'HR_ADMIN', 'ADMIN'].includes(authStore.userRole))
-
-const search = ref('')
-const typeFilter = ref('all')
-const categoryFilter = ref('all')
-const mandatoryOnly = ref(false)
-const safetyCriticalOnly = ref(false)
-const deptFilter = ref('all')
 
 const isFormOpen = ref(false)
 const editingCompetency = ref<CompetencyLibraryItem | null>(null)
@@ -61,84 +46,13 @@ const COMPETENCY_TYPES = [
   { value: 'EQUIPMENT_QUALIFICATION', label: 'Equipment Qualification' },
 ]
 
-const CATEGORIES = [
-  'Mandatory',
-  'Additive Manufacturing Operations',
-  'Welding & Fabrication',
-  'Robotics & Automation',
-  'Materials & Powder Handling',
-  'Materials Testing & Inspection',
-  'Quality & Compliance',
-  'HSE / Workshop Safety',
-  'Equipment-Specific Qualification',
-  'Technical',
-]
-
-const ALL_DEPARTMENTS = [
-  'Additive Manufacturing',
-  'Welding & Fabrication',
-  'Robotics & Automation',
-  'Quality Assurance',
-  'Materials Testing',
-  'Maintenance',
-  'QHSE',
-  'HR',
-  'Logistics',
-]
-
-const filteredCompetencies = computed(() => {
-  return store.competencies.filter((c) => {
-    const matchesSearch =
-      !search.value ||
-      c.title.toLowerCase().includes(search.value.toLowerCase()) ||
-      c.code?.toLowerCase().includes(search.value.toLowerCase())
-
-    const matchesType = typeFilter.value === 'all' || c.competencyType === typeFilter.value
-
-    const matchesCategory = categoryFilter.value === 'all' || c.category === categoryFilter.value
-
-    const matchesMandatory = !mandatoryOnly.value || c.mandatory === true
-
-    const matchesSafety = !safetyCriticalOnly.value || c.safetyCritical === true
-
-    const matchesDept =
-      deptFilter.value === 'all' ||
-      !c.applicableDepartments ||
-      c.applicableDepartments.some(
-        (d) => d.toLowerCase() === deptFilter.value.toLowerCase() || d === 'All',
-      )
-
-    return (
-      matchesSearch &&
-      matchesType &&
-      matchesCategory &&
-      matchesMandatory &&
-      matchesSafety &&
-      matchesDept
-    )
-  })
-})
-
 function typeBadgeClass(type: string | undefined): string {
   switch (type) {
-    case 'CERTIFICATION':
-      return 'badge-primary'
-    case 'EXTERNAL_QUALIFICATION':
-      return 'badge-primary'
-    case 'EQUIPMENT_QUALIFICATION':
-      return 'badge-warning'
-    case 'SKILL':
-      return 'badge-success'
-    case 'TRAINING':
-      return 'badge-neutral'
-    case 'OJT_COACHING':
-      return 'badge-neutral'
-    case 'AWARENESS_TOPIC':
-      return 'badge-neutral'
-    case 'PROCEDURE_BRIEFING':
-      return 'badge-neutral'
-    default:
-      return 'badge-neutral'
+    case 'CERTIFICATION':          return 'badge-primary'
+    case 'EXTERNAL_QUALIFICATION': return 'badge-primary'
+    case 'EQUIPMENT_QUALIFICATION':return 'badge-warning'
+    case 'SKILL':                  return 'badge-success'
+    default:                       return 'badge-neutral'
   }
 }
 
@@ -156,13 +70,7 @@ function openEditForm(comp: CompetencyLibraryItem) {
   isFormOpen.value = true
 }
 
-function handleSaved() {
-  // store reactivity handles refresh
-}
-
-function getRiskLevelName(code: string) {
-  return refStore.riskLevelByCode(code)?.name || code
-}
+function handleSaved() {}
 
 function formatValidity(comp: CompetencyLibraryItem) {
   if (comp.validityInterval) return comp.validityInterval
@@ -170,27 +78,77 @@ function formatValidity(comp: CompetencyLibraryItem) {
   return comp.defaultValidityDays ? `${comp.defaultValidityDays} days` : 'Required'
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function handleTypeChange(value: any) {
-  typeFilter.value = value ?? 'all'
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function handleCategoryChange(value: any) {
-  categoryFilter.value = value ?? 'all'
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function handleDeptChange(value: any) {
-  deptFilter.value = value ?? 'all'
-}
-
 onMounted(() => {
-  if (store.competencies.length === 0) {
-    store.fetchCompetencies()
-  }
+  if (store.competencies.length === 0) store.fetchCompetencies()
   refStore.fetchAll()
 })
+
+// ── Row type ──────────────────────────────────────────────────────────────────
+type CompLibRow = {
+  id: string
+  code: string
+  title: string
+  typeValue: string
+  typeBadgeClass: string
+  typeBadgeLabel: string
+  category: string
+  mandatory: boolean
+  safetyCritical: boolean
+  assessmentMethod: string
+  validity: string
+  applicableDepartments: string[]
+  _raw: CompetencyLibraryItem
+}
+
+const rows = computed<CompLibRow[]>(() =>
+  store.competencies
+    .map((c) => ({
+      id: c.id,
+      code: c.code || '-',
+      title: c.title,
+      typeValue: c.competencyType ?? '',
+      typeBadgeClass: typeBadgeClass(c.competencyType),
+      typeBadgeLabel: typeBadgeLabel(c.competencyType),
+      category: c.category ?? '',
+      mandatory: !!c.mandatory,
+      safetyCritical: !!c.safetyCritical,
+      assessmentMethod: c.assessmentMethod || '—',
+      validity: formatValidity(c),
+      applicableDepartments: c.applicableDepartments ?? [],
+      _raw: c,
+    })),
+)
+
+// ── Sort ──────────────────────────────────────────────────────────────────────
+interface IoiTableRef { setSortState: (s: SortState[]) => void }
+const tableRef   = ref<IoiTableRef | null>(null)
+const sortStates = ref<SortState[]>([])
+
+function getSortDir(field: string): 'asc' | 'desc' | '' {
+  return sortStates.value.find(s => s.field === field)?.direction ?? ''
+}
+
+function headerSort(field: string): void {
+  if (field === '_actions') return
+  const cur = getSortDir(field)
+  const next: SortState[] = !cur
+    ? [{ field, direction: 'asc' }]
+    : cur === 'asc' ? [{ field, direction: 'desc' }] : []
+  sortStates.value = next
+  tableRef.value?.setSortState(next)
+}
+
+const columns: ColumnDef<CompLibRow>[] = [
+  { id: 'code',                 field: 'code',                 header: 'Code',               type: 'text', headerFilter: 'text',   width: 90 },
+  { id: 'title',                field: 'title',                header: 'Title',              type: 'text', headerFilter: 'text'            },
+  { id: 'typeValue',            field: 'typeBadgeLabel',       header: 'Type',               type: 'text', headerFilter: 'select'          },
+  { id: 'category',             field: 'category',             header: 'Category',           type: 'text', headerFilter: 'select'          },
+  { id: 'flags',                field: 'flags',                header: 'Flags',              type: 'text'                                  },
+  { id: 'assessmentMethod',     field: 'assessmentMethod',     header: 'Assessment Method',  type: 'text'                                  },
+  { id: 'validity',             field: 'validity',             header: 'Validity',           type: 'text'                                  },
+  { id: 'applicableDepartments',field: 'applicableDepartments',header: 'Applicable Depts',   type: 'text'                                  },
+  { id: '_actions',             field: '_actions',             header: 'Actions',                                                  width: 72 },
+]
 </script>
 
 <template>
@@ -213,171 +171,129 @@ onMounted(() => {
       </div>
     </CardHeader>
     <CardContent class="data-card-content">
-      <!-- Filter bar -->
-      <div class="filter-bar">
-        <div class="search-input-wrapper">
-          <Search class="search-input-icon" />
-          <Input
-            v-model="search"
-            class="global-search"
-            placeholder="Search code or title..."
-            style="padding-left: 2.25rem"
-          />
-        </div>
-
-        <Select :model-value="typeFilter" @update:model-value="handleTypeChange">
-          <SelectTrigger class="filter-select">
-            <SelectValue placeholder="All Types" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem v-for="t in COMPETENCY_TYPES" :key="t.value" :value="t.value">
-              {{ t.label }}
-            </SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select :model-value="categoryFilter" @update:model-value="handleCategoryChange">
-          <SelectTrigger class="filter-select">
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem v-for="cat in CATEGORIES" :key="cat" :value="cat">
-              {{ cat }}
-            </SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select :model-value="deptFilter" @update:model-value="handleDeptChange">
-          <SelectTrigger class="filter-select">
-            <SelectValue placeholder="All Departments" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Departments</SelectItem>
-            <SelectItem v-for="dept in ALL_DEPARTMENTS" :key="dept" :value="dept">
-              {{ dept }}
-            </SelectItem>
-          </SelectContent>
-        </Select>
-
-        <div class="filter-toggle">
-          <Switch id="mandatory-switch" v-model:checked="mandatoryOnly" />
-          <Label for="mandatory-switch" class="filter-toggle-label">Mandatory only</Label>
-        </div>
-
-        <div class="filter-toggle">
-          <Switch id="safety-switch" v-model:checked="safetyCriticalOnly" />
-          <Label for="safety-switch" class="filter-toggle-label">Safety-critical only</Label>
-        </div>
-      </div>
-
-      <div class="results-count">
-        Showing {{ filteredCompetencies.length }} of {{ store.competencies.length }} items
-      </div>
-
       <div class="table-wrapper">
-        <Table class="dense-table">
-          <TableHeader>
-            <TableRow>
-              <TableHead style="width: 90px">Code</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Flags</TableHead>
-              <TableHead>Assessment Method</TableHead>
-              <TableHead>Validity</TableHead>
-              <TableHead>Applicable Depts</TableHead>
-              <TableHead class="table-actions-header">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow v-for="comp in filteredCompetencies" :key="comp.id">
-              <TableCell class="code-cell">
-                {{ comp.code || '-' }}
-              </TableCell>
-              <TableCell class="table-name-cell">{{ comp.title }}</TableCell>
-              <TableCell>
-                <span
-                  v-if="comp.competencyType"
-                  class="badge badge-sm"
-                  :class="typeBadgeClass(comp.competencyType)"
-                >
-                  {{ typeBadgeLabel(comp.competencyType) }}
-                </span>
-                <span v-else class="text-caption">—</span>
-              </TableCell>
-              <TableCell>
-                <span class="badge badge-neutral badge-sm">{{ comp.category }}</span>
-              </TableCell>
-              <TableCell>
-                <div class="flag-badges">
-                  <span v-if="comp.mandatory" class="badge badge-primary badge-sm">Mandatory</span>
-                  <span v-if="comp.safetyCritical" class="badge badge-critical badge-sm"
-                    >Safety Critical</span
-                  >
-                </div>
-              </TableCell>
-              <TableCell class="text-caption-sm">
-                {{ comp.assessmentMethod || '—' }}
-              </TableCell>
-              <TableCell class="text-caption-sm">
-                {{ formatValidity(comp) }}
-              </TableCell>
-              <TableCell>
-                <div
-                  v-if="comp.applicableDepartments && comp.applicableDepartments.length"
-                  class="dept-tags"
-                >
-                  <span
-                    v-for="dept in comp.applicableDepartments.slice(0, 2)"
-                    :key="dept"
-                    class="badge badge-neutral badge-sm"
-                    >{{ dept }}</span
-                  >
-                  <span v-if="comp.applicableDepartments.length > 2" class="more-tag">
-                    +{{ comp.applicableDepartments.length - 2 }}
-                  </span>
-                </div>
-                <span v-else class="text-caption">—</span>
-              </TableCell>
-              <TableCell class="table-actions-cell">
+        <IoiTable
+          ref="tableRef"
+          :rows="rows"
+          :columns="columns"
+          row-key="id"
+          :page-size="10000"
+          aria-label="Competency Library"
+        >
+          <template #header="{ column }">
+            <div
+              class="sort-header"
+              :class="{
+                'sort-header--no-sort': column.id === '_actions',
+                'sort-header--right':   column.id === '_actions',
+              }"
+              @click.stop="headerSort(String(column.field))"
+            >
+              <span>{{ column.header ?? column.field }}</span>
+              <ChevronUp      v-if="getSortDir(String(column.field)) === 'asc'"  class="sort-icon" />
+              <ChevronDown    v-else-if="getSortDir(String(column.field)) === 'desc'" class="sort-icon" />
+              <ChevronsUpDown v-else-if="column.id !== '_actions'" class="sort-icon sort-icon-inactive" />
+            </div>
+          </template>
+
+          <template #header-filter="{ column, mode, value, options, setValue }: HeaderFilterSlotProps<CompLibRow>">
+            <Select
+              v-if="mode === 'select'"
+              :model-value="value || '__all__'"
+              @update:model-value="(v) => setValue(!v || v === '__all__' ? '' : String(v))"
+            >
+              <SelectTrigger size="sm" class="table-filter-select" :aria-label="`Filter by ${column.header ?? column.field}`">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All</SelectItem>
+                <SelectItem v-for="opt in options" :key="opt" :value="opt">{{ opt }}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              v-else-if="mode === 'text'"
+              :model-value="value"
+              class="table-filter-input"
+              :placeholder="`Filter ${column.header ?? column.field}…`"
+              :aria-label="`Filter by ${column.header ?? column.field}`"
+              @input="(e: Event) => setValue((e.target as HTMLInputElement).value)"
+            />
+          </template>
+
+          <template #cell="{ column, row }: CellSlotProps<CompLibRow>">
+            <template v-if="column.field === 'code'">
+              <span class="code-cell">{{ row.code }}</span>
+            </template>
+
+            <template v-else-if="column.field === 'title'">
+              <span class="table-name-cell">{{ row.title }}</span>
+            </template>
+
+            <template v-else-if="column.field === 'typeBadgeLabel'">
+              <span v-if="row.typeValue" class="badge badge-sm" :class="row.typeBadgeClass">
+                {{ row.typeBadgeLabel }}
+              </span>
+              <span v-else class="text-caption">—</span>
+            </template>
+
+            <template v-else-if="column.field === 'category'">
+              <span class="badge badge-neutral badge-sm">{{ row.category }}</span>
+            </template>
+
+            <template v-else-if="column.field === 'flags'">
+              <div class="flag-badges">
+                <span v-if="row.mandatory"     class="badge badge-primary badge-sm">Mandatory</span>
+                <span v-if="row.safetyCritical" class="badge badge-critical badge-sm">Safety Critical</span>
+              </div>
+            </template>
+
+            <template v-else-if="column.field === 'assessmentMethod'">
+              <span class="text-caption-sm">{{ row.assessmentMethod }}</span>
+            </template>
+
+            <template v-else-if="column.field === 'validity'">
+              <span class="text-caption-sm">{{ row.validity }}</span>
+            </template>
+
+            <template v-else-if="column.field === 'applicableDepartments'">
+              <div v-if="row.applicableDepartments.length" class="dept-tags">
+                <span v-for="dept in row.applicableDepartments.slice(0, 2)" :key="dept" class="badge badge-neutral badge-sm">{{ dept }}</span>
+                <span v-if="row.applicableDepartments.length > 2" class="more-tag">+{{ row.applicableDepartments.length - 2 }}</span>
+              </div>
+              <span v-else class="text-caption">—</span>
+            </template>
+
+            <template v-else-if="column.field === '_actions'">
+              <div class="cell-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger as-child>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      class="table-action-btn"
-                      :aria-label="`Actions for ${comp.title}`"
-                    >
+                    <Button variant="ghost" size="icon" class="table-action-btn" :aria-label="`Actions for ${row.title}`">
                       <MoreHorizontal class="icon-xs" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem v-if="canAddCompetency" @click="openEditForm(comp)">
-                      <Edit class="icon-xs icon-mr" />
-                      Edit Details
+                    <DropdownMenuItem v-if="canAddCompetency" @click="openEditForm(row._raw)">
+                      <Edit class="icon-xs icon-mr" /> Edit Details
                     </DropdownMenuItem>
                     <DropdownMenuItem>
-                      <Eye class="icon-xs icon-mr" />
-                      View Assignments
+                      <Eye class="icon-xs icon-mr" /> View Assignments
                     </DropdownMenuItem>
                     <DropdownMenuSeparator v-if="canAddCompetency" />
                     <DropdownMenuItem v-if="canAddCompetency" class="destructive-action">
-                      <Archive class="icon-xs icon-mr" />
-                      Archive Item
+                      <Archive class="icon-xs icon-mr" /> Archive Item
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </TableCell>
-            </TableRow>
-            <TableRow v-if="filteredCompetencies.length === 0">
-              <TableCell colspan="9" class="empty-state-cell">
-                No competencies found matching your criteria
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+              </div>
+            </template>
+
+            <template v-else>{{ String(row[column.field as keyof CompLibRow] ?? '') }}</template>
+          </template>
+
+          <template #empty>
+            <div class="empty-state-cell">No competencies found matching your criteria</div>
+          </template>
+        </IoiTable>
       </div>
     </CardContent>
   </Card>
@@ -390,14 +306,23 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.table-wrapper {
-  overflow-x: auto;
-}
+.table-wrapper { overflow-x: auto; }
 
-.code-cell {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
+.sort-header {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  user-select: none;
+  width: 100%;
 }
+.sort-header--no-sort { cursor: default; }
+.sort-header--right   { justify-content: flex-end; }
+.sort-icon            { width: 12px; height: 12px; flex-shrink: 0; }
+.sort-icon-inactive   { opacity: 0.25; }
+.cell-right           { display: flex; justify-content: flex-end; width: 100%; }
+
+.code-cell { font-family: var(--font-mono); font-size: 0.75rem; }
 
 .table-name-cell {
   font-weight: 500;
@@ -405,12 +330,10 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: block;
 }
 
-.data-card-actions {
-  display: flex;
-  gap: var(--space-sm);
-}
+.data-card-actions { display: flex; gap: var(--space-sm); }
 
 .empty-state-cell {
   text-align: center;
@@ -418,76 +341,10 @@ onMounted(() => {
   color: var(--text-caption);
 }
 
-/* Filter bar */
-.filter-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-md);
-  border-bottom: var(--border-subtle);
-  flex-wrap: wrap;
-}
+.badge-sm { font-size: 0.6875rem; padding: 1px 6px; height: auto; }
 
-.search-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.search-input-icon {
-  position: absolute;
-  left: var(--space-sm);
-  width: 16px;
-  height: 16px;
-  color: var(--text-caption);
-  pointer-events: none;
-}
-
-.global-search {
-  width: 220px;
-}
-
-.filter-select {
-  width: 160px;
-}
-
-.filter-toggle {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-}
-
-.filter-toggle-label {
-  font-size: 0.8125rem;
-  color: var(--text-body);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.results-count {
-  font-size: 0.75rem;
-  color: var(--text-caption);
-  padding: var(--space-xs) var(--space-md);
-}
-
-/* Badge overrides */
-.badge-sm {
-  font-size: 0.6875rem;
-  padding: 1px 6px;
-  height: auto;
-}
-
-.flag-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-}
-
-.dept-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-}
+.flag-badges { display: flex; flex-wrap: wrap; gap: 3px; }
+.dept-tags   { display: flex; flex-wrap: wrap; gap: 3px; }
 
 .more-tag {
   font-size: 0.6875rem;
@@ -496,22 +353,9 @@ onMounted(() => {
   align-items: center;
 }
 
-.text-caption {
-  font-size: 0.75rem;
-  color: var(--text-caption);
-}
+.text-caption    { font-size: 0.75rem; color: var(--text-caption); }
+.text-caption-sm { font-size: 0.75rem; color: var(--text-body); }
 
-.text-caption-sm {
-  font-size: 0.75rem;
-  color: var(--text-body);
-}
-
-.icon-xs {
-  width: 14px;
-  height: 14px;
-}
-
-.icon-mr {
-  margin-right: 0.25rem;
-}
+.icon-xs { width: 14px; height: 14px; }
+.icon-mr { margin-right: 0.25rem; }
 </style>

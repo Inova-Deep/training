@@ -509,68 +509,247 @@ import AppHeader from '@/components/layout/AppHeader.vue'
 
 ## Table Patterns
 
-### Dense Data Table (Default Style)
+> **Standard:** All tables MUST use `@ioi-dev/vue-table` (IoiTable). All views have been migrated. The legacy `dense-table` pattern remains in `main.css` for reference but MUST NOT be used for new tables. `SkillsMatrixView` is the only intentional exception due to its custom multi-mode complexity.
 
-All tables should use the dense-table class and follow this pattern:
+---
 
-```vue
-<script setup lang="ts">
-import { MoreHorizontal } from 'lucide-vue-next'
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+### IoiTable — Standard (Preferred)
+
+**Import:**
+```typescript
+import { Table as IoiTable } from '@ioi-dev/vue-table/unstyled'
+import type { ColumnDef, CellSlotProps, SortState, IoiPaginationChangePayload, HeaderFilterSlotProps } from '@ioi-dev/vue-table/unstyled'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ChevronUp, ChevronDown, ChevronsUpDown, MoreHorizontal } from 'lucide-vue-next'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
-</script>
+```
 
+**Column Definition:**
+```typescript
+type MyRow = { id: string; name: string; status: string; count: number }
+
+const columns: ColumnDef<MyRow>[] = [
+  // Text column with inline text filter
+  { id: 'name',    field: 'name',    header: 'Name',    type: 'text',   headerFilter: 'text',   width: 200 },
+  // Text column with select filter (options auto-populated from data)
+  { id: 'status',  field: 'status',  header: 'Status',  type: 'text',   headerFilter: 'select', width: 120 },
+  // Number column — centred automatically via sort-header--center + cell-center
+  { id: 'count',   field: 'count',   header: 'Count',   type: 'number',                         width: 90  },
+  // Actions column — always last, header: 'Actions', fixed width
+  { id: '_actions', field: '_actions', header: 'Actions',                                        width: 72  },
+]
+```
+
+**Column Definition Rules:**
+| Column type | `type` | `headerFilter` | Alignment |
+|---|---|---|---|
+| Text / string | `'text'` | `'text'` or `'select'` | Left (default) |
+| Numeric count | `'number'` | — | Centred (auto via `sort-header--center` + `cell-center`) |
+| Badge / status | `'text'` | `'select'` | Left |
+| Actions | — | — | Right (`sort-header--right` applied automatically) |
+
+**Template:**
+```vue
 <template>
-  <Table class="dense-table">
-    <TableHeader>
-      <TableRow>
-        <TableHead>Name</TableHead>
-        <TableHead>Department</TableHead>
-        <TableHead>Status</TableHead>
-        <TableHead class="table-actions-header">Actions</TableHead>
-      </TableRow>
-    </TableHeader>
-    <TableBody>
-      <TableRow>
-        <TableCell>
-          <div class="table-user">
-            <div class="table-avatar">JD</div>
-            <span>John Doe</span>
-          </div>
-        </TableCell>
-        <TableCell>Engineering</TableCell>
-        <TableCell>
-          <span class="badge badge-success">Active</span>
-        </TableCell>
-        <TableCell class="table-actions-cell">
-          <DropdownMenu>
-            <DropdownMenuTrigger as-child>
-              <Button variant="ghost" size="icon" class="table-action-btn" aria-label="Actions">
-                <MoreHorizontal class="icon-xs" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>View Details</DropdownMenuItem>
-              <DropdownMenuItem>Edit Record</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem class="destructive-action">Delete</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </TableCell>
-      </TableRow>
-    </TableBody>
-  </Table>
+  <IoiTable
+    ref="tableRef"
+    :rows="rows"
+    :columns="columns"
+    row-key="id"
+    v-model:pageIndex="pageIndex"
+    v-model:pageSize="pageSize"
+    aria-label="Table label"
+    @pagination-change="handlePaginationChange"
+  >
+    <!-- ── Sort header ── -->
+    <template #header="{ column }">
+      <div
+        class="sort-header"
+        :class="{
+          'sort-header--no-sort': column.id === '_actions',
+          'sort-header--center': column.type === 'number',
+          'sort-header--right': column.id === '_actions',
+        }"
+        @click.stop="headerSort(String(column.field))"
+      >
+        <span>{{ column.header ?? column.field }}</span>
+        <ChevronUp      v-if="getSortDir(String(column.field)) === 'asc'"  class="sort-icon" />
+        <ChevronDown    v-else-if="getSortDir(String(column.field)) === 'desc'" class="sort-icon" />
+        <ChevronsUpDown v-else-if="column.id !== '_actions'" class="sort-icon sort-icon-inactive" />
+      </div>
+    </template>
+
+    <!-- ── shadcn filter controls ── -->
+    <template #header-filter="{ column, mode, value, options, setValue }: HeaderFilterSlotProps<MyRow>">
+      <Select
+        v-if="mode === 'select'"
+        :model-value="value || '__all__'"
+        @update:model-value="(v: string) => setValue(v === '__all__' ? '' : v)"
+      >
+        <SelectTrigger size="sm" class="table-filter-select" :aria-label="`Filter by ${column.header}`">
+          <SelectValue placeholder="All" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__all__">All</SelectItem>
+          <SelectItem v-for="opt in options" :key="opt" :value="opt">{{ opt }}</SelectItem>
+        </SelectContent>
+      </Select>
+      <Input
+        v-else-if="mode === 'text'"
+        :model-value="value"
+        class="table-filter-input"
+        :placeholder="`Filter ${column.header}…`"
+        :aria-label="`Filter by ${column.header}`"
+        @input="(e: Event) => setValue((e.target as HTMLInputElement).value)"
+      />
+    </template>
+
+    <!-- ── Custom cells ── -->
+    <template #cell="{ column, row, value }: CellSlotProps<MyRow>">
+      <!-- Status badge -->
+      <template v-if="column.field === 'status'">
+        <span class="badge" :class="row.status === 'active' ? 'badge-success' : 'badge-neutral'">
+          {{ row.status }}
+        </span>
+      </template>
+
+      <!-- Centred number -->
+      <template v-else-if="column.field === 'count'">
+        <div class="cell-center">
+          <span class="gap-count" :class="row.count > 0 ? 'gap-count-high' : 'gap-count-zero'">
+            {{ row.count }}
+          </span>
+        </div>
+      </template>
+
+      <!-- Actions — always a DropdownMenu with MoreHorizontal icon -->
+      <template v-else-if="column.field === '_actions'">
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button variant="ghost" size="icon" class="table-action-btn" :aria-label="`Actions for ${row.name}`">
+              <MoreHorizontal class="icon-xs" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem>View Details</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </template>
+
+      <template v-else>{{ value }}</template>
+    </template>
+
+    <!-- ── Empty state ── -->
+    <template #empty>
+      <div class="empty-cell">No records found</div>
+    </template>
+  </IoiTable>
 </template>
 ```
 
-**Key Table Rules:**
-1. Always use `class="dense-table"` on Table component
-2. Last column (Actions) always has `class="table-actions-header"` on TableHead
-3. Actions cell uses `class="table-actions-cell"` on TableCell
-4. Action button is always a "..." icon with dropdown menu
-5. User/name cells use `.table-user` wrapper with `.table-avatar`
-6. Status badges use `.badge` classes (not Badge component)
+**Script (sort + pagination helpers):**
+```typescript
+interface IoiTableRef { setSortState: (s: SortState[]) => void }
+const tableRef = ref<IoiTableRef | null>(null)
+const sortStates = ref<SortState[]>([])
+const pageIndex = ref(0)
+const pageSize = ref(20)
+const tableTotal = ref(0)
+const tablePageCount = ref(0)
+
+function getSortDir(field: string): 'asc' | 'desc' | '' {
+  return sortStates.value.find(s => s.field === field)?.direction ?? ''
+}
+
+function headerSort(field: string): void {
+  if (field === '_actions') return
+  const cur = getSortDir(field)
+  const next: SortState[] = !cur
+    ? [{ field, direction: 'asc' }]
+    : cur === 'asc' ? [{ field, direction: 'desc' }] : []
+  sortStates.value = next
+  tableRef.value?.setSortState(next)
+  pageIndex.value = 0
+}
+
+function handlePaginationChange(payload: IoiPaginationChangePayload) {
+  tableTotal.value = payload.rowCount
+  tablePageCount.value = payload.pageCount
+}
+
+const pageCount = computed(() =>
+  tablePageCount.value > 0 ? tablePageCount.value : Math.ceil(rows.value.length / pageSize.value)
+)
+const totalCount = computed(() => tableTotal.value || rows.value.length)
+```
+
+**CSS classes needed (all defined globally in `main.css`):**
+```css
+/* Already global — no local <style scoped> needed for these */
+.sort-header        /* flex row, sortable header content */
+.sort-header--no-sort  /* disables pointer cursor */
+.sort-header--center   /* centres numeric column headers */
+.sort-header--right    /* right-aligns Actions header */
+.sort-icon             /* 12px sort chevron */
+.sort-icon-inactive    /* dimmed when unsorted */
+.cell-center           /* centres numeric cell content */
+.table-filter-select   /* compact shadcn SelectTrigger in filter row */
+.table-filter-input    /* compact shadcn Input in filter row */
+.empty-cell            /* centred empty-state text */
+```
+
+**Non-negotiable table rules:**
+1. Import from `@ioi-dev/vue-table/unstyled` — never from the default export (avoids bundled CSS conflicts)
+2. Actions column: `header: 'Actions'`, `id: '_actions'`, `field: '_actions'`, `width: 72` — always last
+3. Action button: `size="icon"` ghost Button with `MoreHorizontal` → DropdownMenu only. No text buttons in table cells
+4. Number columns: wrap cell content in `<div class="cell-center">` and add `sort-header--center` to header
+5. Filter controls: always use shadcn `Select` (select mode) / `Input` (text mode) via `#header-filter` slot — never rely on native `<select>` / `<input>`
+6. Pagination: always include pagination controls below the table using the pattern from PeopleView
+
+---
+
+### Dense Data Table (Legacy — do not use for new tables)
+
+Existing tables that have not been migrated to IoiTable still use this pattern:
+
+```vue
+<Table class="dense-table">
+  <TableHeader>
+    <TableRow>
+      <TableHead>Name</TableHead>
+      <TableHead>Status</TableHead>
+      <TableHead class="table-actions-header">Actions</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell>
+        <div class="table-user">
+          <div class="table-avatar">JD</div>
+          <span>John Doe</span>
+        </div>
+      </TableCell>
+      <TableCell><span class="badge badge-success">Active</span></TableCell>
+      <TableCell class="table-actions-cell">
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button variant="ghost" size="icon" class="table-action-btn" aria-label="Actions">
+              <MoreHorizontal class="icon-xs" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem>View Details</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem class="destructive-action">Delete</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </TableCell>
+    </TableRow>
+  </TableBody>
+</Table>
+```
 
 ---
 
