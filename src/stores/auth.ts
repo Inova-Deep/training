@@ -1,12 +1,11 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { authApi, usersApi, setToken } from '@/api/client'
-import type { AppUser, User, UserRole } from '@/types'
+import { getDemoEmployeeByDisplayName } from '@/lib/demoEmployees'
 import { getFirstAccessibleRoute } from '@/lib/navigation'
-
-// ─── Demo persona types ────────────────────────────────────────────────────────
+import { useEmployeesStore } from '@/stores/employees'
+import type { AppUser, User, UserRole } from '@/types'
 
 export type DemoPersonaKey =
   | 'employee'
@@ -24,213 +23,222 @@ export interface DemoPersona {
   role: UserRole
   email: string
   initials: string
-  /** Job title used to find this persona's employee row in the Skills Matrix store */
   linkedJobTitle: string | null
-  /** Route to navigate to when switching to this persona */
+  employeeId: string | null
   defaultRoute: string
 }
 
+const PERSONA_STORAGE_KEY = 'demo_persona_key'
+const DEMO_TOKEN = 'demo-local-token'
+
+function buildPersona(
+  key: DemoPersonaKey,
+  roleLabel: string,
+  role: UserRole,
+  linkedJobTitle: string | null,
+  defaultRoute: string,
+  fallbackDisplayName: string,
+  fallbackEmail: string,
+  fallbackInitials: string,
+): DemoPersona {
+  const employee = getDemoEmployeeByDisplayName(fallbackDisplayName)
+  return {
+    key,
+    displayName: employee?.displayName ?? fallbackDisplayName,
+    roleLabel,
+    role,
+    email: employee?.workEmail ?? fallbackEmail,
+    initials: fallbackInitials,
+    linkedJobTitle,
+    employeeId: employee?.id ?? null,
+    defaultRoute,
+  }
+}
+
 export const DEMO_PERSONAS: Record<DemoPersonaKey, DemoPersona> = {
-  employee: {
-    key: 'employee',
-    displayName: 'James Fletcher',
-    roleLabel: 'Employee',
-    role: 'EMPLOYEE',
-    email: 'james.fletcher@demo.com',
-    initials: 'JF',
-    linkedJobTitle: 'Welding / Fabrication Technician',
-    defaultRoute: '/my-competencies',
-  },
-  supervisor: {
-    key: 'supervisor',
-    displayName: 'Tom Bradley',
-    roleLabel: 'Supervisor',
-    role: 'SUPERVISOR',
-    email: 'tom.bradley@demo.com',
-    initials: 'TB',
-    linkedJobTitle: 'Production Supervisor',
-    defaultRoute: '/dashboard',
-  },
-  manager: {
-    key: 'manager',
-    displayName: 'David Clarke',
-    roleLabel: 'Manager',
-    role: 'MANAGER',
-    email: 'david.clarke@demo.com',
-    initials: 'DC',
-    linkedJobTitle: 'Production Supervisor',
-    defaultRoute: '/dashboard',
-  },
-  qhse: {
-    key: 'qhse',
-    displayName: 'Helen Marsh',
-    roleLabel: 'QHSE',
-    role: 'QHSE',
-    email: 'helen.marsh@demo.com',
-    initials: 'HM',
-    linkedJobTitle: 'QHSE Coordinator',
-    defaultRoute: '/dashboard',
-  },
-  hr_admin: {
-    key: 'hr_admin',
-    displayName: 'Sarah Bennett',
-    roleLabel: 'HR Admin',
-    role: 'HR_ADMIN',
-    email: 'sarah.bennett@demo.com',
-    initials: 'SB',
-    linkedJobTitle: 'HR / Training Coordinator',
-    defaultRoute: '/dashboard',
-  },
-  leadership: {
-    key: 'leadership',
-    displayName: 'Robert Ashford',
-    roleLabel: 'Leadership',
-    role: 'LEADERSHIP_VIEWER',
-    email: 'robert.ashford@demo.com',
-    initials: 'RA',
-    linkedJobTitle: null,
-    defaultRoute: '/dashboard',
-  },
+  employee: buildPersona(
+    'employee',
+    'Employee',
+    'EMPLOYEE',
+    'Welding / Fabrication Technician',
+    '/my-competencies',
+    'James Fletcher',
+    'james.fletcher@deepmanufacturing.co.uk',
+    'JF',
+  ),
+  supervisor: buildPersona(
+    'supervisor',
+    'Supervisor',
+    'SUPERVISOR',
+    'Production Supervisor',
+    '/dashboard',
+    'Tom Bradley',
+    'tom.bradley@deepmanufacturing.co.uk',
+    'TB',
+  ),
+  manager: buildPersona(
+    'manager',
+    'Production Manager',
+    'MANAGER',
+    'Production Manager',
+    '/dashboard',
+    'David Clarke',
+    'david.clarke@deepmanufacturing.co.uk',
+    'DC',
+  ),
+  qhse: buildPersona(
+    'qhse',
+    'QHSE',
+    'QHSE',
+    'QHSE Coordinator',
+    '/dashboard',
+    'Helen Marsh',
+    'helen.marsh@deepmanufacturing.co.uk',
+    'HM',
+  ),
+  hr_admin: buildPersona(
+    'hr_admin',
+    'HR Admin',
+    'HR_ADMIN',
+    'HR / Training Coordinator',
+    '/dashboard',
+    'Sarah Bennett',
+    'sarah.bennett@deepmanufacturing.co.uk',
+    'SB',
+  ),
+  leadership: buildPersona(
+    'leadership',
+    'Leadership',
+    'LEADERSHIP_VIEWER',
+    'Technical Director',
+    '/dashboard',
+    'Robert Ashford',
+    'robert.ashford@deepmanufacturing.co.uk',
+    'RA',
+  ),
   system_admin: {
     key: 'system_admin',
     displayName: 'Layla Hassan',
     roleLabel: 'System Admin',
     role: 'ADMIN',
-    email: 'layla.hassan@demo.com',
+    email: 'layla.hassan@deepmanufacturing.co.uk',
     initials: 'LH',
     linkedJobTitle: null,
+    employeeId: null,
     defaultRoute: '/admin/reference-lists',
   },
 }
 
-// ─── Hardcoded demo credentials ────────────────────────────────────────────────
+function buildAppUser(persona: DemoPersona): AppUser {
+  const now = new Date().toISOString()
+  return {
+    id: `demo-${persona.key}`,
+    email: persona.email,
+    displayName: persona.displayName,
+    role: persona.role,
+    erpEmployeeId: persona.employeeId ?? undefined,
+    isActive: true,
+    createdAt: now,
+    updatedAt: now,
+  }
+}
 
-const DEMO_EMAIL = 'hemish.patel@inova.krd' // matches hr_admin persona email
-const DEMO_PASSWORD = 'Testing123!'
-
-// ─── Store ─────────────────────────────────────────────────────────────────────
+function buildLocalUser(persona: DemoPersona): User | null {
+  if (!persona.employeeId) return null
+  const now = new Date().toISOString()
+  return {
+    id: `user-${persona.key}`,
+    tenantId: 'demo',
+    employeeId: persona.employeeId,
+    email: persona.email,
+    displayName: persona.displayName,
+    isActive: true,
+    lastLoginAt: now,
+    createdAt: now,
+    updatedAt: now,
+  }
+}
 
 export const useAuthStore = defineStore('auth', () => {
   const router = useRouter()
+  const employeesStore = useEmployeesStore()
 
   const user = ref<AppUser | null>(null)
   const dmlUser = ref<User | null>(null)
   const token = ref<string | null>(null)
   const isLoading = ref(false)
-  const currentPersonaKey = ref<DemoPersonaKey>('hr_admin')
-
+  const currentPersonaKey = ref<DemoPersonaKey>('manager')
   const isInitializing = ref(true)
-  const isAuthenticated = computed(() => !!token.value && !!user.value)
-  const userRole = computed(() => user.value?.role || 'EMPLOYEE')
+
+  const isAuthenticated = computed(() => !!user.value)
+  const userRole = computed<UserRole>(() => user.value?.role ?? 'EMPLOYEE')
   const isAdmin = computed(() => ['HR_ADMIN', 'ADMIN'].includes(userRole.value))
   const isManager = computed(() => userRole.value === 'MANAGER' || isAdmin.value)
   const activePersona = computed(() => DEMO_PERSONAS[currentPersonaKey.value])
+  const scopedEmployeeIds = computed(() => {
+    const employeeId = activePersona.value.employeeId
 
-  async function login(email: string, password: string) {
+    switch (activePersona.value.role) {
+      case 'EMPLOYEE':
+        return employeeId ? [employeeId] : []
+      case 'SUPERVISOR':
+        return employeesStore.getDirectReports(employeeId).map((employee) => employee.id)
+      case 'MANAGER':
+        return employeesStore.getAllReportIds(employeeId)
+      case 'QHSE':
+      case 'HR_ADMIN':
+      case 'ADMIN':
+      case 'LEADERSHIP_VIEWER':
+      default:
+        return employeesStore.allEmployees.map((employee) => employee.id)
+    }
+  })
+
+  function applyPersona(key: DemoPersonaKey) {
+    const persona = DEMO_PERSONAS[key]
+    currentPersonaKey.value = key
+    user.value = buildAppUser(persona)
+    dmlUser.value = buildLocalUser(persona)
+    token.value = DEMO_TOKEN
+    localStorage.setItem(PERSONA_STORAGE_KEY, key)
+    return persona
+  }
+
+  async function login(email: string, _password: string) {
     isLoading.value = true
     try {
-      const response = await authApi.login(email, password)
-      token.value = response.token
-      setToken(response.token)
-      localStorage.setItem('token', response.token)
-
-      await fetchUserInfo(email)
-
+      const normalizedEmail = email.trim().toLowerCase()
+      const persona =
+        Object.values(DEMO_PERSONAS).find((candidate) => candidate.email === normalizedEmail) ??
+        DEMO_PERSONAS.manager
+      applyPersona(persona.key)
       toast.success('Welcome back!')
-      router.push('/dashboard')
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Login failed'
-      toast.error(message)
-      throw error
+      await router.push(getFirstAccessibleRoute(persona.role, persona.defaultRoute))
     } finally {
       isLoading.value = false
     }
   }
 
-  async function fetchUserInfo(_email: string) {
-    const persona = DEMO_PERSONAS.hr_admin
-    try {
-      const dmlUserData = await usersApi.getByEmail(_email)
-      dmlUser.value = dmlUserData
-
-      user.value = {
-        id: dmlUserData.id,
-        email: persona.email,
-        displayName: persona.displayName,
-        role: 'HR_ADMIN',
-        erpEmployeeId: dmlUserData.employeeId ?? undefined,
-        isActive: dmlUserData.isActive,
-        createdAt: dmlUserData.createdAt,
-        updatedAt: dmlUserData.updatedAt,
-      }
-    } catch {
-      user.value = {
-        id: 'demo-user-id',
-        email: persona.email,
-        displayName: persona.displayName,
-        role: 'HR_ADMIN',
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
-    }
-  }
-
   function switchPersona(key: DemoPersonaKey) {
-    const persona = DEMO_PERSONAS[key]
-    currentPersonaKey.value = key
-    user.value = {
-      id: `demo-${key}`,
-      email: persona.email,
-      displayName: persona.displayName,
-      role: persona.role,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
+    const persona = applyPersona(key)
     toast.success(`Viewing as ${persona.displayName} (${persona.roleLabel})`)
-    router.push(getFirstAccessibleRoute(persona.role, persona.defaultRoute))
+    void router.push(getFirstAccessibleRoute(persona.role, persona.defaultRoute))
   }
 
   function logout() {
-    switchPersona('hr_admin')
+    const persona = applyPersona('manager')
+    toast.success(`Viewing as ${persona.displayName} (${persona.roleLabel})`)
+    void router.push(getFirstAccessibleRoute(persona.role, persona.defaultRoute))
   }
 
   function initializeAuth() {
-    const persona = DEMO_PERSONAS.hr_admin
-    currentPersonaKey.value = 'hr_admin'
-
-    // Restore a previously obtained real token so return visits are instant
-    const storedToken = localStorage.getItem('demo_token')
-    if (storedToken) {
-      token.value = storedToken
-      setToken(storedToken)
-      user.value = {
-        id: 'demo-hr-admin',
-        email: persona.email,
-        displayName: persona.displayName,
-        role: persona.role,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
-    }
-
-    // Always refresh — gets a real token and updates user info
-    authApi
-      .login(DEMO_EMAIL, DEMO_PASSWORD)
-      .then(async (response) => {
-        token.value = response.token
-        setToken(response.token)
-        localStorage.setItem('demo_token', response.token)
-        await fetchUserInfo(DEMO_EMAIL)
-      })
-      .catch(() => {
-        // API unavailable — if we have a stored token keep it, otherwise fail gracefully
-      })
-      .finally(() => {
-        isInitializing.value = false
-      })
+    const storedKey = localStorage.getItem(PERSONA_STORAGE_KEY)
+    const personaKey =
+      storedKey && storedKey in DEMO_PERSONAS
+        ? (storedKey as DemoPersonaKey)
+        : ('manager' as DemoPersonaKey)
+    applyPersona(personaKey)
+    isInitializing.value = false
   }
 
   initializeAuth()
@@ -247,6 +255,7 @@ export const useAuthStore = defineStore('auth', () => {
     isManager,
     currentPersonaKey,
     activePersona,
+    scopedEmployeeIds,
     login,
     logout,
     switchPersona,

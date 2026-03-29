@@ -77,7 +77,7 @@ const chartOptions = {
   <div class="chart-card">
     <div class="chart-card-header">
       <h3 class="chart-card-title">Training Needs by Source</h3>
-      <span class="chart-card-subtitle">All needs grouped by originating source</span>
+      <span class="chart-card-subtitle">Current scope grouped by originating source</span>
     </div>
     <div class="chart-body">
       <Doughnut :data="chartData" :options="chartOptions" />

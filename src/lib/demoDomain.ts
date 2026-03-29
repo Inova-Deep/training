@@ -92,6 +92,17 @@ export const DEMO_ROLES: DemoRoleMeta[] = [
     visibleInCatalog: true,
   },
   {
+    name: 'Production Manager',
+    department: 'Operations',
+    businessUnit: 'AM Operations',
+    purpose:
+      'Leads production readiness across additive manufacturing, welding, and robotics teams and owns escalation for operational competence risk.',
+    criticality: 'High',
+    requirementKey: 'Production Manager',
+    applicabilityKey: 'Production Manager',
+    visibleInCatalog: false,
+  },
+  {
     name: 'Technical Director',
     department: 'Operations',
     businessUnit: 'Plant Leadership',
@@ -130,7 +141,7 @@ const ROLE_ALIASES: Record<string, string> = {
   'Robotics Programmer': 'Robotics Operator',
   'Robot Programmer / Cell Technician': 'Robotics Operator',
   'Shift Lead': 'Production Supervisor',
-  'Operations Manager': 'Technical Director',
+  'Operations Manager': 'Production Manager',
   'HSE Coordinator': 'QHSE Coordinator',
   'HR & Training Coordinator': 'HR / Training Coordinator',
   'HR Administrator': 'HR / Training Coordinator',

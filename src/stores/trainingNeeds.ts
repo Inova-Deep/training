@@ -105,10 +105,10 @@ export const useTrainingNeedsStore = defineStore('trainingNeeds', () => {
     isLoading.value = true
     try {
       const empStore = useEmployeesStore()
-      if (empStore.filteredEmployees.length === 0) {
+      if (empStore.allEmployees.length === 0) {
         await empStore.fetchEmployees()
       }
-      const employees = empStore.filteredEmployees.slice(0, 11)
+      const employees = empStore.allEmployees
       const now = new Date().toISOString()
 
       // Workflow status distribution across demo items
@@ -163,9 +163,10 @@ export const useTrainingNeedsStore = defineStore('trainingNeeds', () => {
         const tmpl = templates[tmplIndex]!
 
         const sourceType = (tmpl.sourceType as TrainingNeedSource | undefined) ?? 'COMPETENCE_GAP'
-        const workflowStatus: TrainingNeedWorkflowStatus = workflowStatuses[i] ?? 'IDENTIFIED'
-        const interventionType = interventionTypes[i]
-        const priority = priorities[i] ?? 'MEDIUM'
+        const workflowStatus: TrainingNeedWorkflowStatus =
+          workflowStatuses[i % workflowStatuses.length] ?? 'IDENTIFIED'
+        const interventionType = interventionTypes[i % interventionTypes.length]
+        const priority = priorities[i % priorities.length] ?? 'MEDIUM'
 
         return {
           id: `tn-${emp.id}-${tmpl.id}`,

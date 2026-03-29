@@ -1,0 +1,2300 @@
+[
+  {
+    "id": "emp-001",
+    "tenantId": "demo",
+    "employeeNo": "DML-001",
+    "firstName": "James",
+    "lastName": "Fletcher",
+    "displayName": "James Fletcher",
+    "workEmail": "james.fletcher@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-welding-fabrication",
+      "code": "WF",
+      "name": "Welding & Fabrication"
+    },
+    "jobTitle": {
+      "id": "Welding%20%2F%20Fabrication%20Technician",
+      "code": "WELD-FAB",
+      "name": "Welding / Fabrication Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-061",
+      "employeeNo": "DML-061",
+      "firstName": "Tom",
+      "lastName": "Bradley",
+      "displayName": "Tom Bradley"
+    }
+  },
+  {
+    "id": "emp-002",
+    "tenantId": "demo",
+    "employeeNo": "DML-002",
+    "firstName": "Ryan",
+    "lastName": "Hargreaves",
+    "displayName": "Ryan Hargreaves",
+    "workEmail": "ryan.hargreaves@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-welding-fabrication",
+      "code": "WF",
+      "name": "Welding & Fabrication"
+    },
+    "jobTitle": {
+      "id": "Welding%20%2F%20Fabrication%20Technician",
+      "code": "WELD-FAB",
+      "name": "Welding / Fabrication Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-061",
+      "employeeNo": "DML-061",
+      "firstName": "Tom",
+      "lastName": "Bradley",
+      "displayName": "Tom Bradley"
+    }
+  },
+  {
+    "id": "emp-003",
+    "tenantId": "demo",
+    "employeeNo": "DML-003",
+    "firstName": "Emma",
+    "lastName": "Collins",
+    "displayName": "Emma Collins",
+    "workEmail": "emma.collins@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-welding-fabrication",
+      "code": "WF",
+      "name": "Welding & Fabrication"
+    },
+    "jobTitle": {
+      "id": "Welding%20%2F%20Fabrication%20Technician",
+      "code": "WELD-FAB",
+      "name": "Welding / Fabrication Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-061",
+      "employeeNo": "DML-061",
+      "firstName": "Tom",
+      "lastName": "Bradley",
+      "displayName": "Tom Bradley"
+    }
+  },
+  {
+    "id": "emp-004",
+    "tenantId": "demo",
+    "employeeNo": "DML-004",
+    "firstName": "Liam",
+    "lastName": "Sutton",
+    "displayName": "Liam Sutton",
+    "workEmail": "liam.sutton@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-welding-fabrication",
+      "code": "WF",
+      "name": "Welding & Fabrication"
+    },
+    "jobTitle": {
+      "id": "Welding%20%2F%20Fabrication%20Technician",
+      "code": "WELD-FAB",
+      "name": "Welding / Fabrication Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-061",
+      "employeeNo": "DML-061",
+      "firstName": "Tom",
+      "lastName": "Bradley",
+      "displayName": "Tom Bradley"
+    }
+  },
+  {
+    "id": "emp-005",
+    "tenantId": "demo",
+    "employeeNo": "DML-005",
+    "firstName": "Chloe",
+    "lastName": "Barker",
+    "displayName": "Chloe Barker",
+    "workEmail": "chloe.barker@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-welding-fabrication",
+      "code": "WF",
+      "name": "Welding & Fabrication"
+    },
+    "jobTitle": {
+      "id": "Welding%20%2F%20Fabrication%20Technician",
+      "code": "WELD-FAB",
+      "name": "Welding / Fabrication Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-061",
+      "employeeNo": "DML-061",
+      "firstName": "Tom",
+      "lastName": "Bradley",
+      "displayName": "Tom Bradley"
+    }
+  },
+  {
+    "id": "emp-006",
+    "tenantId": "demo",
+    "employeeNo": "DML-006",
+    "firstName": "Daniel",
+    "lastName": "Holt",
+    "displayName": "Daniel Holt",
+    "workEmail": "daniel.holt@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-welding-fabrication",
+      "code": "WF",
+      "name": "Welding & Fabrication"
+    },
+    "jobTitle": {
+      "id": "Welding%20%2F%20Fabrication%20Technician",
+      "code": "WELD-FAB",
+      "name": "Welding / Fabrication Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-061",
+      "employeeNo": "DML-061",
+      "firstName": "Tom",
+      "lastName": "Bradley",
+      "displayName": "Tom Bradley"
+    }
+  },
+  {
+    "id": "emp-007",
+    "tenantId": "demo",
+    "employeeNo": "DML-007",
+    "firstName": "Olivia",
+    "lastName": "Rhodes",
+    "displayName": "Olivia Rhodes",
+    "workEmail": "olivia.rhodes@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-welding-fabrication",
+      "code": "WF",
+      "name": "Welding & Fabrication"
+    },
+    "jobTitle": {
+      "id": "Welding%20%2F%20Fabrication%20Technician",
+      "code": "WELD-FAB",
+      "name": "Welding / Fabrication Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-061",
+      "employeeNo": "DML-061",
+      "firstName": "Tom",
+      "lastName": "Bradley",
+      "displayName": "Tom Bradley"
+    }
+  },
+  {
+    "id": "emp-008",
+    "tenantId": "demo",
+    "employeeNo": "DML-008",
+    "firstName": "Jake",
+    "lastName": "Morrison",
+    "displayName": "Jake Morrison",
+    "workEmail": "jake.morrison@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-welding-fabrication",
+      "code": "WF",
+      "name": "Welding & Fabrication"
+    },
+    "jobTitle": {
+      "id": "Welding%20%2F%20Fabrication%20Technician",
+      "code": "WELD-FAB",
+      "name": "Welding / Fabrication Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-061",
+      "employeeNo": "DML-061",
+      "firstName": "Tom",
+      "lastName": "Bradley",
+      "displayName": "Tom Bradley"
+    }
+  },
+  {
+    "id": "emp-009",
+    "tenantId": "demo",
+    "employeeNo": "DML-009",
+    "firstName": "Abigail",
+    "lastName": "Hart",
+    "displayName": "Abigail Hart",
+    "workEmail": "abigail.hart@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-welding-fabrication",
+      "code": "WF",
+      "name": "Welding & Fabrication"
+    },
+    "jobTitle": {
+      "id": "Welding%20%2F%20Fabrication%20Technician",
+      "code": "WELD-FAB",
+      "name": "Welding / Fabrication Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-061",
+      "employeeNo": "DML-061",
+      "firstName": "Tom",
+      "lastName": "Bradley",
+      "displayName": "Tom Bradley"
+    }
+  },
+  {
+    "id": "emp-010",
+    "tenantId": "demo",
+    "employeeNo": "DML-010",
+    "firstName": "Owen",
+    "lastName": "Palmer",
+    "displayName": "Owen Palmer",
+    "workEmail": "owen.palmer@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-welding-fabrication",
+      "code": "WF",
+      "name": "Welding & Fabrication"
+    },
+    "jobTitle": {
+      "id": "Welding%20%2F%20Fabrication%20Technician",
+      "code": "WELD-FAB",
+      "name": "Welding / Fabrication Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-061",
+      "employeeNo": "DML-061",
+      "firstName": "Tom",
+      "lastName": "Bradley",
+      "displayName": "Tom Bradley"
+    }
+  },
+  {
+    "id": "emp-011",
+    "tenantId": "demo",
+    "employeeNo": "DML-011",
+    "firstName": "Charlotte",
+    "lastName": "Wade",
+    "displayName": "Charlotte Wade",
+    "workEmail": "charlotte.wade@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-welding-fabrication",
+      "code": "WF",
+      "name": "Welding & Fabrication"
+    },
+    "jobTitle": {
+      "id": "Welding%20%2F%20Fabrication%20Technician",
+      "code": "WELD-FAB",
+      "name": "Welding / Fabrication Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-061",
+      "employeeNo": "DML-061",
+      "firstName": "Tom",
+      "lastName": "Bradley",
+      "displayName": "Tom Bradley"
+    }
+  },
+  {
+    "id": "emp-012",
+    "tenantId": "demo",
+    "employeeNo": "DML-012",
+    "firstName": "Matthew",
+    "lastName": "Crane",
+    "displayName": "Matthew Crane",
+    "workEmail": "matthew.crane@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-welding-fabrication",
+      "code": "WF",
+      "name": "Welding & Fabrication"
+    },
+    "jobTitle": {
+      "id": "Welding%20%2F%20Fabrication%20Technician",
+      "code": "WELD-FAB",
+      "name": "Welding / Fabrication Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-061",
+      "employeeNo": "DML-061",
+      "firstName": "Tom",
+      "lastName": "Bradley",
+      "displayName": "Tom Bradley"
+    }
+  },
+  {
+    "id": "emp-013",
+    "tenantId": "demo",
+    "employeeNo": "DML-013",
+    "firstName": "Ella",
+    "lastName": "Spencer",
+    "displayName": "Ella Spencer",
+    "workEmail": "ella.spencer@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-welding-fabrication",
+      "code": "WF",
+      "name": "Welding & Fabrication"
+    },
+    "jobTitle": {
+      "id": "Welding%20%2F%20Fabrication%20Technician",
+      "code": "WELD-FAB",
+      "name": "Welding / Fabrication Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-061",
+      "employeeNo": "DML-061",
+      "firstName": "Tom",
+      "lastName": "Bradley",
+      "displayName": "Tom Bradley"
+    }
+  },
+  {
+    "id": "emp-014",
+    "tenantId": "demo",
+    "employeeNo": "DML-014",
+    "firstName": "Connor",
+    "lastName": "McLeod",
+    "displayName": "Connor McLeod",
+    "workEmail": "connor.mcleod@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-welding-fabrication",
+      "code": "WF",
+      "name": "Welding & Fabrication"
+    },
+    "jobTitle": {
+      "id": "Welding%20%2F%20Fabrication%20Technician",
+      "code": "WELD-FAB",
+      "name": "Welding / Fabrication Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-061",
+      "employeeNo": "DML-061",
+      "firstName": "Tom",
+      "lastName": "Bradley",
+      "displayName": "Tom Bradley"
+    }
+  },
+  {
+    "id": "emp-015",
+    "tenantId": "demo",
+    "employeeNo": "DML-015",
+    "firstName": "Oliver",
+    "lastName": "Hayes",
+    "displayName": "Oliver Hayes",
+    "workEmail": "oliver.hayes@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-additive-manufacturing",
+      "code": "AM",
+      "name": "Additive Manufacturing"
+    },
+    "jobTitle": {
+      "id": "Additive%20Manufacturing%20Technician",
+      "code": "AM-TECH",
+      "name": "Additive Manufacturing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-060",
+      "employeeNo": "DML-060",
+      "firstName": "Charlotte",
+      "lastName": "Reed",
+      "displayName": "Charlotte Reed"
+    }
+  },
+  {
+    "id": "emp-016",
+    "tenantId": "demo",
+    "employeeNo": "DML-016",
+    "firstName": "Amelia",
+    "lastName": "Carter",
+    "displayName": "Amelia Carter",
+    "workEmail": "amelia.carter@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-additive-manufacturing",
+      "code": "AM",
+      "name": "Additive Manufacturing"
+    },
+    "jobTitle": {
+      "id": "Additive%20Manufacturing%20Technician",
+      "code": "AM-TECH",
+      "name": "Additive Manufacturing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-060",
+      "employeeNo": "DML-060",
+      "firstName": "Charlotte",
+      "lastName": "Reed",
+      "displayName": "Charlotte Reed"
+    }
+  },
+  {
+    "id": "emp-017",
+    "tenantId": "demo",
+    "employeeNo": "DML-017",
+    "firstName": "George",
+    "lastName": "Davies",
+    "displayName": "George Davies",
+    "workEmail": "george.davies@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-additive-manufacturing",
+      "code": "AM",
+      "name": "Additive Manufacturing"
+    },
+    "jobTitle": {
+      "id": "Additive%20Manufacturing%20Technician",
+      "code": "AM-TECH",
+      "name": "Additive Manufacturing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-060",
+      "employeeNo": "DML-060",
+      "firstName": "Charlotte",
+      "lastName": "Reed",
+      "displayName": "Charlotte Reed"
+    }
+  },
+  {
+    "id": "emp-018",
+    "tenantId": "demo",
+    "employeeNo": "DML-018",
+    "firstName": "Sophie",
+    "lastName": "Whitmore",
+    "displayName": "Sophie Whitmore",
+    "workEmail": "sophie.whitmore@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-additive-manufacturing",
+      "code": "AM",
+      "name": "Additive Manufacturing"
+    },
+    "jobTitle": {
+      "id": "Additive%20Manufacturing%20Technician",
+      "code": "AM-TECH",
+      "name": "Additive Manufacturing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-060",
+      "employeeNo": "DML-060",
+      "firstName": "Charlotte",
+      "lastName": "Reed",
+      "displayName": "Charlotte Reed"
+    }
+  },
+  {
+    "id": "emp-019",
+    "tenantId": "demo",
+    "employeeNo": "DML-019",
+    "firstName": "Ben",
+    "lastName": "Lawson",
+    "displayName": "Ben Lawson",
+    "workEmail": "ben.lawson@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-additive-manufacturing",
+      "code": "AM",
+      "name": "Additive Manufacturing"
+    },
+    "jobTitle": {
+      "id": "Additive%20Manufacturing%20Technician",
+      "code": "AM-TECH",
+      "name": "Additive Manufacturing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-060",
+      "employeeNo": "DML-060",
+      "firstName": "Charlotte",
+      "lastName": "Reed",
+      "displayName": "Charlotte Reed"
+    }
+  },
+  {
+    "id": "emp-020",
+    "tenantId": "demo",
+    "employeeNo": "DML-020",
+    "firstName": "Lucy",
+    "lastName": "Farrow",
+    "displayName": "Lucy Farrow",
+    "workEmail": "lucy.farrow@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-additive-manufacturing",
+      "code": "AM",
+      "name": "Additive Manufacturing"
+    },
+    "jobTitle": {
+      "id": "Additive%20Manufacturing%20Technician",
+      "code": "AM-TECH",
+      "name": "Additive Manufacturing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-060",
+      "employeeNo": "DML-060",
+      "firstName": "Charlotte",
+      "lastName": "Reed",
+      "displayName": "Charlotte Reed"
+    }
+  },
+  {
+    "id": "emp-021",
+    "tenantId": "demo",
+    "employeeNo": "DML-021",
+    "firstName": "Ethan",
+    "lastName": "Rowe",
+    "displayName": "Ethan Rowe",
+    "workEmail": "ethan.rowe@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-additive-manufacturing",
+      "code": "AM",
+      "name": "Additive Manufacturing"
+    },
+    "jobTitle": {
+      "id": "Additive%20Manufacturing%20Technician",
+      "code": "AM-TECH",
+      "name": "Additive Manufacturing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-060",
+      "employeeNo": "DML-060",
+      "firstName": "Charlotte",
+      "lastName": "Reed",
+      "displayName": "Charlotte Reed"
+    }
+  },
+  {
+    "id": "emp-022",
+    "tenantId": "demo",
+    "employeeNo": "DML-022",
+    "firstName": "Grace",
+    "lastName": "Milton",
+    "displayName": "Grace Milton",
+    "workEmail": "grace.milton@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-additive-manufacturing",
+      "code": "AM",
+      "name": "Additive Manufacturing"
+    },
+    "jobTitle": {
+      "id": "Additive%20Manufacturing%20Technician",
+      "code": "AM-TECH",
+      "name": "Additive Manufacturing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-060",
+      "employeeNo": "DML-060",
+      "firstName": "Charlotte",
+      "lastName": "Reed",
+      "displayName": "Charlotte Reed"
+    }
+  },
+  {
+    "id": "emp-023",
+    "tenantId": "demo",
+    "employeeNo": "DML-023",
+    "firstName": "Jack",
+    "lastName": "Turner",
+    "displayName": "Jack Turner",
+    "workEmail": "jack.turner@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-additive-manufacturing",
+      "code": "AM",
+      "name": "Additive Manufacturing"
+    },
+    "jobTitle": {
+      "id": "Additive%20Manufacturing%20Technician",
+      "code": "AM-TECH",
+      "name": "Additive Manufacturing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-060",
+      "employeeNo": "DML-060",
+      "firstName": "Charlotte",
+      "lastName": "Reed",
+      "displayName": "Charlotte Reed"
+    }
+  },
+  {
+    "id": "emp-024",
+    "tenantId": "demo",
+    "employeeNo": "DML-024",
+    "firstName": "Hannah",
+    "lastName": "Pritchard",
+    "displayName": "Hannah Pritchard",
+    "workEmail": "hannah.pritchard@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-additive-manufacturing",
+      "code": "AM",
+      "name": "Additive Manufacturing"
+    },
+    "jobTitle": {
+      "id": "Additive%20Manufacturing%20Technician",
+      "code": "AM-TECH",
+      "name": "Additive Manufacturing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-060",
+      "employeeNo": "DML-060",
+      "firstName": "Charlotte",
+      "lastName": "Reed",
+      "displayName": "Charlotte Reed"
+    }
+  },
+  {
+    "id": "emp-025",
+    "tenantId": "demo",
+    "employeeNo": "DML-025",
+    "firstName": "Callum",
+    "lastName": "Price",
+    "displayName": "Callum Price",
+    "workEmail": "callum.price@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-additive-manufacturing",
+      "code": "AM",
+      "name": "Additive Manufacturing"
+    },
+    "jobTitle": {
+      "id": "Additive%20Manufacturing%20Technician",
+      "code": "AM-TECH",
+      "name": "Additive Manufacturing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-060",
+      "employeeNo": "DML-060",
+      "firstName": "Charlotte",
+      "lastName": "Reed",
+      "displayName": "Charlotte Reed"
+    }
+  },
+  {
+    "id": "emp-026",
+    "tenantId": "demo",
+    "employeeNo": "DML-026",
+    "firstName": "Megan",
+    "lastName": "Doyle",
+    "displayName": "Megan Doyle",
+    "workEmail": "megan.doyle@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-additive-manufacturing",
+      "code": "AM",
+      "name": "Additive Manufacturing"
+    },
+    "jobTitle": {
+      "id": "Additive%20Manufacturing%20Technician",
+      "code": "AM-TECH",
+      "name": "Additive Manufacturing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-060",
+      "employeeNo": "DML-060",
+      "firstName": "Charlotte",
+      "lastName": "Reed",
+      "displayName": "Charlotte Reed"
+    }
+  },
+  {
+    "id": "emp-027",
+    "tenantId": "demo",
+    "employeeNo": "DML-027",
+    "firstName": "Nathan",
+    "lastName": "Ellis",
+    "displayName": "Nathan Ellis",
+    "workEmail": "nathan.ellis@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-additive-manufacturing",
+      "code": "AM",
+      "name": "Additive Manufacturing"
+    },
+    "jobTitle": {
+      "id": "Additive%20Manufacturing%20Technician",
+      "code": "AM-TECH",
+      "name": "Additive Manufacturing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-060",
+      "employeeNo": "DML-060",
+      "firstName": "Charlotte",
+      "lastName": "Reed",
+      "displayName": "Charlotte Reed"
+    }
+  },
+  {
+    "id": "emp-028",
+    "tenantId": "demo",
+    "employeeNo": "DML-028",
+    "firstName": "Chloe",
+    "lastName": "Summers",
+    "displayName": "Chloe Summers",
+    "workEmail": "chloe.summers@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-additive-manufacturing",
+      "code": "AM",
+      "name": "Additive Manufacturing"
+    },
+    "jobTitle": {
+      "id": "Additive%20Manufacturing%20Technician",
+      "code": "AM-TECH",
+      "name": "Additive Manufacturing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-060",
+      "employeeNo": "DML-060",
+      "firstName": "Charlotte",
+      "lastName": "Reed",
+      "displayName": "Charlotte Reed"
+    }
+  },
+  {
+    "id": "emp-029",
+    "tenantId": "demo",
+    "employeeNo": "DML-029",
+    "firstName": "Lewis",
+    "lastName": "Barrett",
+    "displayName": "Lewis Barrett",
+    "workEmail": "lewis.barrett@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-additive-manufacturing",
+      "code": "AM",
+      "name": "Additive Manufacturing"
+    },
+    "jobTitle": {
+      "id": "Additive%20Manufacturing%20Technician",
+      "code": "AM-TECH",
+      "name": "Additive Manufacturing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-060",
+      "employeeNo": "DML-060",
+      "firstName": "Charlotte",
+      "lastName": "Reed",
+      "displayName": "Charlotte Reed"
+    }
+  },
+  {
+    "id": "emp-030",
+    "tenantId": "demo",
+    "employeeNo": "DML-030",
+    "firstName": "Katie",
+    "lastName": "Foster",
+    "displayName": "Katie Foster",
+    "workEmail": "katie.foster@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-additive-manufacturing",
+      "code": "AM",
+      "name": "Additive Manufacturing"
+    },
+    "jobTitle": {
+      "id": "Additive%20Manufacturing%20Technician",
+      "code": "AM-TECH",
+      "name": "Additive Manufacturing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-060",
+      "employeeNo": "DML-060",
+      "firstName": "Charlotte",
+      "lastName": "Reed",
+      "displayName": "Charlotte Reed"
+    }
+  },
+  {
+    "id": "emp-031",
+    "tenantId": "demo",
+    "employeeNo": "DML-031",
+    "firstName": "Adam",
+    "lastName": "Mercer",
+    "displayName": "Adam Mercer",
+    "workEmail": "adam.mercer@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-additive-manufacturing",
+      "code": "AM",
+      "name": "Additive Manufacturing"
+    },
+    "jobTitle": {
+      "id": "Additive%20Manufacturing%20Technician",
+      "code": "AM-TECH",
+      "name": "Additive Manufacturing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-060",
+      "employeeNo": "DML-060",
+      "firstName": "Charlotte",
+      "lastName": "Reed",
+      "displayName": "Charlotte Reed"
+    }
+  },
+  {
+    "id": "emp-032",
+    "tenantId": "demo",
+    "employeeNo": "DML-032",
+    "firstName": "Rebecca",
+    "lastName": "Nolan",
+    "displayName": "Rebecca Nolan",
+    "workEmail": "rebecca.nolan@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-additive-manufacturing",
+      "code": "AM",
+      "name": "Additive Manufacturing"
+    },
+    "jobTitle": {
+      "id": "Additive%20Manufacturing%20Technician",
+      "code": "AM-TECH",
+      "name": "Additive Manufacturing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-060",
+      "employeeNo": "DML-060",
+      "firstName": "Charlotte",
+      "lastName": "Reed",
+      "displayName": "Charlotte Reed"
+    }
+  },
+  {
+    "id": "emp-033",
+    "tenantId": "demo",
+    "employeeNo": "DML-033",
+    "firstName": "Sean",
+    "lastName": "Wallace",
+    "displayName": "Sean Wallace",
+    "workEmail": "sean.wallace@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-additive-manufacturing",
+      "code": "AM",
+      "name": "Additive Manufacturing"
+    },
+    "jobTitle": {
+      "id": "Additive%20Manufacturing%20Technician",
+      "code": "AM-TECH",
+      "name": "Additive Manufacturing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-060",
+      "employeeNo": "DML-060",
+      "firstName": "Charlotte",
+      "lastName": "Reed",
+      "displayName": "Charlotte Reed"
+    }
+  },
+  {
+    "id": "emp-034",
+    "tenantId": "demo",
+    "employeeNo": "DML-034",
+    "firstName": "Lauren",
+    "lastName": "Bishop",
+    "displayName": "Lauren Bishop",
+    "workEmail": "lauren.bishop@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-additive-manufacturing",
+      "code": "AM",
+      "name": "Additive Manufacturing"
+    },
+    "jobTitle": {
+      "id": "Additive%20Manufacturing%20Technician",
+      "code": "AM-TECH",
+      "name": "Additive Manufacturing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-060",
+      "employeeNo": "DML-060",
+      "firstName": "Charlotte",
+      "lastName": "Reed",
+      "displayName": "Charlotte Reed"
+    }
+  },
+  {
+    "id": "emp-035",
+    "tenantId": "demo",
+    "employeeNo": "DML-035",
+    "firstName": "Daniel",
+    "lastName": "Cooper",
+    "displayName": "Daniel Cooper",
+    "workEmail": "daniel.cooper@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-robotics-automation",
+      "code": "ROB",
+      "name": "Robotics & Automation"
+    },
+    "department": {
+      "id": "dept-robotics",
+      "code": "ROB",
+      "name": "Robotics"
+    },
+    "jobTitle": {
+      "id": "Robotics%20Operator",
+      "code": "ROBOT-OP",
+      "name": "Robotics Operator",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-062",
+      "employeeNo": "DML-062",
+      "firstName": "Priya",
+      "lastName": "Sharma",
+      "displayName": "Priya Sharma"
+    }
+  },
+  {
+    "id": "emp-036",
+    "tenantId": "demo",
+    "employeeNo": "DML-036",
+    "firstName": "Aisha",
+    "lastName": "Khan",
+    "displayName": "Aisha Khan",
+    "workEmail": "aisha.khan@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-robotics-automation",
+      "code": "ROB",
+      "name": "Robotics & Automation"
+    },
+    "department": {
+      "id": "dept-robotics",
+      "code": "ROB",
+      "name": "Robotics"
+    },
+    "jobTitle": {
+      "id": "Robotics%20Operator",
+      "code": "ROBOT-OP",
+      "name": "Robotics Operator",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-062",
+      "employeeNo": "DML-062",
+      "firstName": "Priya",
+      "lastName": "Sharma",
+      "displayName": "Priya Sharma"
+    }
+  },
+  {
+    "id": "emp-037",
+    "tenantId": "demo",
+    "employeeNo": "DML-037",
+    "firstName": "Harry",
+    "lastName": "Coleman",
+    "displayName": "Harry Coleman",
+    "workEmail": "harry.coleman@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-robotics-automation",
+      "code": "ROB",
+      "name": "Robotics & Automation"
+    },
+    "department": {
+      "id": "dept-robotics",
+      "code": "ROB",
+      "name": "Robotics"
+    },
+    "jobTitle": {
+      "id": "Robotics%20Operator",
+      "code": "ROBOT-OP",
+      "name": "Robotics Operator",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-062",
+      "employeeNo": "DML-062",
+      "firstName": "Priya",
+      "lastName": "Sharma",
+      "displayName": "Priya Sharma"
+    }
+  },
+  {
+    "id": "emp-038",
+    "tenantId": "demo",
+    "employeeNo": "DML-038",
+    "firstName": "Zoe",
+    "lastName": "Lambert",
+    "displayName": "Zoe Lambert",
+    "workEmail": "zoe.lambert@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-robotics-automation",
+      "code": "ROB",
+      "name": "Robotics & Automation"
+    },
+    "department": {
+      "id": "dept-robotics",
+      "code": "ROB",
+      "name": "Robotics"
+    },
+    "jobTitle": {
+      "id": "Robotics%20Operator",
+      "code": "ROBOT-OP",
+      "name": "Robotics Operator",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-062",
+      "employeeNo": "DML-062",
+      "firstName": "Priya",
+      "lastName": "Sharma",
+      "displayName": "Priya Sharma"
+    }
+  },
+  {
+    "id": "emp-039",
+    "tenantId": "demo",
+    "employeeNo": "DML-039",
+    "firstName": "Samuel",
+    "lastName": "Briggs",
+    "displayName": "Samuel Briggs",
+    "workEmail": "samuel.briggs@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-robotics-automation",
+      "code": "ROB",
+      "name": "Robotics & Automation"
+    },
+    "department": {
+      "id": "dept-robotics",
+      "code": "ROB",
+      "name": "Robotics"
+    },
+    "jobTitle": {
+      "id": "Robotics%20Operator",
+      "code": "ROBOT-OP",
+      "name": "Robotics Operator",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-062",
+      "employeeNo": "DML-062",
+      "firstName": "Priya",
+      "lastName": "Sharma",
+      "displayName": "Priya Sharma"
+    }
+  },
+  {
+    "id": "emp-040",
+    "tenantId": "demo",
+    "employeeNo": "DML-040",
+    "firstName": "Megan",
+    "lastName": "Hartley",
+    "displayName": "Megan Hartley",
+    "workEmail": "megan.hartley@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-robotics-automation",
+      "code": "ROB",
+      "name": "Robotics & Automation"
+    },
+    "department": {
+      "id": "dept-robotics",
+      "code": "ROB",
+      "name": "Robotics"
+    },
+    "jobTitle": {
+      "id": "Robotics%20Operator",
+      "code": "ROBOT-OP",
+      "name": "Robotics Operator",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-062",
+      "employeeNo": "DML-062",
+      "firstName": "Priya",
+      "lastName": "Sharma",
+      "displayName": "Priya Sharma"
+    }
+  },
+  {
+    "id": "emp-041",
+    "tenantId": "demo",
+    "employeeNo": "DML-041",
+    "firstName": "Luke",
+    "lastName": "Chapman",
+    "displayName": "Luke Chapman",
+    "workEmail": "luke.chapman@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-robotics-automation",
+      "code": "ROB",
+      "name": "Robotics & Automation"
+    },
+    "department": {
+      "id": "dept-robotics",
+      "code": "ROB",
+      "name": "Robotics"
+    },
+    "jobTitle": {
+      "id": "Robotics%20Operator",
+      "code": "ROBOT-OP",
+      "name": "Robotics Operator",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-062",
+      "employeeNo": "DML-062",
+      "firstName": "Priya",
+      "lastName": "Sharma",
+      "displayName": "Priya Sharma"
+    }
+  },
+  {
+    "id": "emp-042",
+    "tenantId": "demo",
+    "employeeNo": "DML-042",
+    "firstName": "Erin",
+    "lastName": "Willis",
+    "displayName": "Erin Willis",
+    "workEmail": "erin.willis@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-robotics-automation",
+      "code": "ROB",
+      "name": "Robotics & Automation"
+    },
+    "department": {
+      "id": "dept-robotics",
+      "code": "ROB",
+      "name": "Robotics"
+    },
+    "jobTitle": {
+      "id": "Robotics%20Operator",
+      "code": "ROBOT-OP",
+      "name": "Robotics Operator",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-062",
+      "employeeNo": "DML-062",
+      "firstName": "Priya",
+      "lastName": "Sharma",
+      "displayName": "Priya Sharma"
+    }
+  },
+  {
+    "id": "emp-043",
+    "tenantId": "demo",
+    "employeeNo": "DML-043",
+    "firstName": "Bradley",
+    "lastName": "Kent",
+    "displayName": "Bradley Kent",
+    "workEmail": "bradley.kent@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-robotics-automation",
+      "code": "ROB",
+      "name": "Robotics & Automation"
+    },
+    "department": {
+      "id": "dept-robotics",
+      "code": "ROB",
+      "name": "Robotics"
+    },
+    "jobTitle": {
+      "id": "Robotics%20Operator",
+      "code": "ROBOT-OP",
+      "name": "Robotics Operator",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-062",
+      "employeeNo": "DML-062",
+      "firstName": "Priya",
+      "lastName": "Sharma",
+      "displayName": "Priya Sharma"
+    }
+  },
+  {
+    "id": "emp-044",
+    "tenantId": "demo",
+    "employeeNo": "DML-044",
+    "firstName": "Freya",
+    "lastName": "Morton",
+    "displayName": "Freya Morton",
+    "workEmail": "freya.morton@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-robotics-automation",
+      "code": "ROB",
+      "name": "Robotics & Automation"
+    },
+    "department": {
+      "id": "dept-robotics",
+      "code": "ROB",
+      "name": "Robotics"
+    },
+    "jobTitle": {
+      "id": "Robotics%20Operator",
+      "code": "ROBOT-OP",
+      "name": "Robotics Operator",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-062",
+      "employeeNo": "DML-062",
+      "firstName": "Priya",
+      "lastName": "Sharma",
+      "displayName": "Priya Sharma"
+    }
+  },
+  {
+    "id": "emp-045",
+    "tenantId": "demo",
+    "employeeNo": "DML-045",
+    "firstName": "Sarah",
+    "lastName": "Norris",
+    "displayName": "Sarah Norris",
+    "workEmail": "sarah.norris@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-quality-readiness",
+      "code": "QR",
+      "name": "Quality & Readiness"
+    },
+    "department": {
+      "id": "dept-materials-testing",
+      "code": "MT",
+      "name": "Materials Testing"
+    },
+    "jobTitle": {
+      "id": "Materials%20Testing%20Technician",
+      "code": "MAT-TEST",
+      "name": "Materials Testing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-059",
+      "employeeNo": "DML-059",
+      "firstName": "Helen",
+      "lastName": "Marsh",
+      "displayName": "Helen Marsh"
+    }
+  },
+  {
+    "id": "emp-046",
+    "tenantId": "demo",
+    "employeeNo": "DML-046",
+    "firstName": "Martin",
+    "lastName": "Huxley",
+    "displayName": "Martin Huxley",
+    "workEmail": "martin.huxley@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-quality-readiness",
+      "code": "QR",
+      "name": "Quality & Readiness"
+    },
+    "department": {
+      "id": "dept-materials-testing",
+      "code": "MT",
+      "name": "Materials Testing"
+    },
+    "jobTitle": {
+      "id": "Materials%20Testing%20Technician",
+      "code": "MAT-TEST",
+      "name": "Materials Testing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-059",
+      "employeeNo": "DML-059",
+      "firstName": "Helen",
+      "lastName": "Marsh",
+      "displayName": "Helen Marsh"
+    }
+  },
+  {
+    "id": "emp-047",
+    "tenantId": "demo",
+    "employeeNo": "DML-047",
+    "firstName": "Emily",
+    "lastName": "Pearson",
+    "displayName": "Emily Pearson",
+    "workEmail": "emily.pearson@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-quality-readiness",
+      "code": "QR",
+      "name": "Quality & Readiness"
+    },
+    "department": {
+      "id": "dept-materials-testing",
+      "code": "MT",
+      "name": "Materials Testing"
+    },
+    "jobTitle": {
+      "id": "Materials%20Testing%20Technician",
+      "code": "MAT-TEST",
+      "name": "Materials Testing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-059",
+      "employeeNo": "DML-059",
+      "firstName": "Helen",
+      "lastName": "Marsh",
+      "displayName": "Helen Marsh"
+    }
+  },
+  {
+    "id": "emp-048",
+    "tenantId": "demo",
+    "employeeNo": "DML-048",
+    "firstName": "Jordan",
+    "lastName": "Reeves",
+    "displayName": "Jordan Reeves",
+    "workEmail": "jordan.reeves@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-quality-readiness",
+      "code": "QR",
+      "name": "Quality & Readiness"
+    },
+    "department": {
+      "id": "dept-materials-testing",
+      "code": "MT",
+      "name": "Materials Testing"
+    },
+    "jobTitle": {
+      "id": "Materials%20Testing%20Technician",
+      "code": "MAT-TEST",
+      "name": "Materials Testing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-059",
+      "employeeNo": "DML-059",
+      "firstName": "Helen",
+      "lastName": "Marsh",
+      "displayName": "Helen Marsh"
+    }
+  },
+  {
+    "id": "emp-049",
+    "tenantId": "demo",
+    "employeeNo": "DML-049",
+    "firstName": "Nicola",
+    "lastName": "Grant",
+    "displayName": "Nicola Grant",
+    "workEmail": "nicola.grant@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-quality-readiness",
+      "code": "QR",
+      "name": "Quality & Readiness"
+    },
+    "department": {
+      "id": "dept-materials-testing",
+      "code": "MT",
+      "name": "Materials Testing"
+    },
+    "jobTitle": {
+      "id": "Materials%20Testing%20Technician",
+      "code": "MAT-TEST",
+      "name": "Materials Testing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-059",
+      "employeeNo": "DML-059",
+      "firstName": "Helen",
+      "lastName": "Marsh",
+      "displayName": "Helen Marsh"
+    }
+  },
+  {
+    "id": "emp-050",
+    "tenantId": "demo",
+    "employeeNo": "DML-050",
+    "firstName": "Peter",
+    "lastName": "Fielding",
+    "displayName": "Peter Fielding",
+    "workEmail": "peter.fielding@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-quality-readiness",
+      "code": "QR",
+      "name": "Quality & Readiness"
+    },
+    "department": {
+      "id": "dept-materials-testing",
+      "code": "MT",
+      "name": "Materials Testing"
+    },
+    "jobTitle": {
+      "id": "Materials%20Testing%20Technician",
+      "code": "MAT-TEST",
+      "name": "Materials Testing Technician",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-059",
+      "employeeNo": "DML-059",
+      "firstName": "Helen",
+      "lastName": "Marsh",
+      "displayName": "Helen Marsh"
+    }
+  },
+  {
+    "id": "emp-051",
+    "tenantId": "demo",
+    "employeeNo": "DML-051",
+    "firstName": "Rachel",
+    "lastName": "Lawson",
+    "displayName": "Rachel Lawson",
+    "workEmail": "rachel.lawson@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-quality-readiness",
+      "code": "QR",
+      "name": "Quality & Readiness"
+    },
+    "department": {
+      "id": "dept-quality-assurance",
+      "code": "QA",
+      "name": "Quality Assurance"
+    },
+    "jobTitle": {
+      "id": "QA%20Inspector",
+      "code": "QA-INSP",
+      "name": "QA Inspector",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-059",
+      "employeeNo": "DML-059",
+      "firstName": "Helen",
+      "lastName": "Marsh",
+      "displayName": "Helen Marsh"
+    }
+  },
+  {
+    "id": "emp-052",
+    "tenantId": "demo",
+    "employeeNo": "DML-052",
+    "firstName": "Andrew",
+    "lastName": "Mills",
+    "displayName": "Andrew Mills",
+    "workEmail": "andrew.mills@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-quality-readiness",
+      "code": "QR",
+      "name": "Quality & Readiness"
+    },
+    "department": {
+      "id": "dept-quality-assurance",
+      "code": "QA",
+      "name": "Quality Assurance"
+    },
+    "jobTitle": {
+      "id": "QA%20Inspector",
+      "code": "QA-INSP",
+      "name": "QA Inspector",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-059",
+      "employeeNo": "DML-059",
+      "firstName": "Helen",
+      "lastName": "Marsh",
+      "displayName": "Helen Marsh"
+    }
+  },
+  {
+    "id": "emp-053",
+    "tenantId": "demo",
+    "employeeNo": "DML-053",
+    "firstName": "Laura",
+    "lastName": "Jennings",
+    "displayName": "Laura Jennings",
+    "workEmail": "laura.jennings@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-quality-readiness",
+      "code": "QR",
+      "name": "Quality & Readiness"
+    },
+    "department": {
+      "id": "dept-quality-assurance",
+      "code": "QA",
+      "name": "Quality Assurance"
+    },
+    "jobTitle": {
+      "id": "QA%20Inspector",
+      "code": "QA-INSP",
+      "name": "QA Inspector",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-059",
+      "employeeNo": "DML-059",
+      "firstName": "Helen",
+      "lastName": "Marsh",
+      "displayName": "Helen Marsh"
+    }
+  },
+  {
+    "id": "emp-054",
+    "tenantId": "demo",
+    "employeeNo": "DML-054",
+    "firstName": "Scott",
+    "lastName": "Barker",
+    "displayName": "Scott Barker",
+    "workEmail": "scott.barker@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-quality-readiness",
+      "code": "QR",
+      "name": "Quality & Readiness"
+    },
+    "department": {
+      "id": "dept-quality-assurance",
+      "code": "QA",
+      "name": "Quality Assurance"
+    },
+    "jobTitle": {
+      "id": "QA%20Inspector",
+      "code": "QA-INSP",
+      "name": "QA Inspector",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-059",
+      "employeeNo": "DML-059",
+      "firstName": "Helen",
+      "lastName": "Marsh",
+      "displayName": "Helen Marsh"
+    }
+  },
+  {
+    "id": "emp-055",
+    "tenantId": "demo",
+    "employeeNo": "DML-055",
+    "firstName": "Naomi",
+    "lastName": "Webster",
+    "displayName": "Naomi Webster",
+    "workEmail": "naomi.webster@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-quality-readiness",
+      "code": "QR",
+      "name": "Quality & Readiness"
+    },
+    "department": {
+      "id": "dept-quality-assurance",
+      "code": "QA",
+      "name": "Quality Assurance"
+    },
+    "jobTitle": {
+      "id": "QA%20Inspector",
+      "code": "QA-INSP",
+      "name": "QA Inspector",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-059",
+      "employeeNo": "DML-059",
+      "firstName": "Helen",
+      "lastName": "Marsh",
+      "displayName": "Helen Marsh"
+    }
+  },
+  {
+    "id": "emp-056",
+    "tenantId": "demo",
+    "employeeNo": "DML-056",
+    "firstName": "Gareth",
+    "lastName": "Powell",
+    "displayName": "Gareth Powell",
+    "workEmail": "gareth.powell@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-quality-readiness",
+      "code": "QR",
+      "name": "Quality & Readiness"
+    },
+    "department": {
+      "id": "dept-quality-assurance",
+      "code": "QA",
+      "name": "Quality Assurance"
+    },
+    "jobTitle": {
+      "id": "QA%20Inspector",
+      "code": "QA-INSP",
+      "name": "QA Inspector",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-059",
+      "employeeNo": "DML-059",
+      "firstName": "Helen",
+      "lastName": "Marsh",
+      "displayName": "Helen Marsh"
+    }
+  },
+  {
+    "id": "emp-057",
+    "tenantId": "demo",
+    "employeeNo": "DML-057",
+    "firstName": "Bethany",
+    "lastName": "Hughes",
+    "displayName": "Bethany Hughes",
+    "workEmail": "bethany.hughes@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-quality-readiness",
+      "code": "QR",
+      "name": "Quality & Readiness"
+    },
+    "department": {
+      "id": "dept-quality-assurance",
+      "code": "QA",
+      "name": "Quality Assurance"
+    },
+    "jobTitle": {
+      "id": "QA%20Inspector",
+      "code": "QA-INSP",
+      "name": "QA Inspector",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-059",
+      "employeeNo": "DML-059",
+      "firstName": "Helen",
+      "lastName": "Marsh",
+      "displayName": "Helen Marsh"
+    }
+  },
+  {
+    "id": "emp-058",
+    "tenantId": "demo",
+    "employeeNo": "DML-058",
+    "firstName": "Sarah",
+    "lastName": "Bennett",
+    "displayName": "Sarah Bennett",
+    "workEmail": "sarah.bennett@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-people-capability",
+      "code": "PC",
+      "name": "People & Capability"
+    },
+    "department": {
+      "id": "dept-people-capability",
+      "code": "PC",
+      "name": "People & Capability"
+    },
+    "jobTitle": {
+      "id": "HR%20%2F%20Training%20Coordinator",
+      "code": "HR-TRAIN",
+      "name": "HR / Training Coordinator",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-064",
+      "employeeNo": "DML-064",
+      "firstName": "Robert",
+      "lastName": "Ashford",
+      "displayName": "Robert Ashford"
+    }
+  },
+  {
+    "id": "emp-059",
+    "tenantId": "demo",
+    "employeeNo": "DML-059",
+    "firstName": "Helen",
+    "lastName": "Marsh",
+    "displayName": "Helen Marsh",
+    "workEmail": "helen.marsh@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-quality-readiness",
+      "code": "QR",
+      "name": "Quality & Readiness"
+    },
+    "department": {
+      "id": "dept-hse",
+      "code": "HSE",
+      "name": "HSE"
+    },
+    "jobTitle": {
+      "id": "QHSE%20Coordinator",
+      "code": "QHSE",
+      "name": "QHSE Coordinator",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-064",
+      "employeeNo": "DML-064",
+      "firstName": "Robert",
+      "lastName": "Ashford",
+      "displayName": "Robert Ashford"
+    }
+  },
+  {
+    "id": "emp-060",
+    "tenantId": "demo",
+    "employeeNo": "DML-060",
+    "firstName": "Charlotte",
+    "lastName": "Reed",
+    "displayName": "Charlotte Reed",
+    "workEmail": "charlotte.reed@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-operations",
+      "code": "OPS",
+      "name": "Operations"
+    },
+    "jobTitle": {
+      "id": "Production%20Supervisor",
+      "code": "PROD-SUP",
+      "name": "Production Supervisor",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-063",
+      "employeeNo": "DML-063",
+      "firstName": "David",
+      "lastName": "Clarke",
+      "displayName": "David Clarke"
+    }
+  },
+  {
+    "id": "emp-061",
+    "tenantId": "demo",
+    "employeeNo": "DML-061",
+    "firstName": "Tom",
+    "lastName": "Bradley",
+    "displayName": "Tom Bradley",
+    "workEmail": "tom.bradley@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-operations",
+      "code": "OPS",
+      "name": "Operations"
+    },
+    "jobTitle": {
+      "id": "Production%20Supervisor",
+      "code": "PROD-SUP",
+      "name": "Production Supervisor",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-063",
+      "employeeNo": "DML-063",
+      "firstName": "David",
+      "lastName": "Clarke",
+      "displayName": "David Clarke"
+    }
+  },
+  {
+    "id": "emp-062",
+    "tenantId": "demo",
+    "employeeNo": "DML-062",
+    "firstName": "Priya",
+    "lastName": "Sharma",
+    "displayName": "Priya Sharma",
+    "workEmail": "priya.sharma@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-robotics-automation",
+      "code": "ROB",
+      "name": "Robotics & Automation"
+    },
+    "department": {
+      "id": "dept-operations",
+      "code": "OPS",
+      "name": "Operations"
+    },
+    "jobTitle": {
+      "id": "Production%20Supervisor",
+      "code": "PROD-SUP",
+      "name": "Production Supervisor",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-063",
+      "employeeNo": "DML-063",
+      "firstName": "David",
+      "lastName": "Clarke",
+      "displayName": "David Clarke"
+    }
+  },
+  {
+    "id": "emp-063",
+    "tenantId": "demo",
+    "employeeNo": "DML-063",
+    "firstName": "David",
+    "lastName": "Clarke",
+    "displayName": "David Clarke",
+    "workEmail": "david.clarke@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-am-operations",
+      "code": "AMO",
+      "name": "AM Operations"
+    },
+    "department": {
+      "id": "dept-operations",
+      "code": "OPS",
+      "name": "Operations"
+    },
+    "jobTitle": {
+      "id": "Production%20Manager",
+      "code": "PROD-MGR",
+      "name": "Production Manager",
+      "grade": null
+    },
+    "manager": {
+      "id": "emp-064",
+      "employeeNo": "DML-064",
+      "firstName": "Robert",
+      "lastName": "Ashford",
+      "displayName": "Robert Ashford"
+    }
+  },
+  {
+    "id": "emp-064",
+    "tenantId": "demo",
+    "employeeNo": "DML-064",
+    "firstName": "Robert",
+    "lastName": "Ashford",
+    "displayName": "Robert Ashford",
+    "workEmail": "robert.ashford@deepmanufacturing.co.uk",
+    "status": "active",
+    "isActive": true,
+    "createdAt": "2026-03-01T00:00:00Z",
+    "updatedAt": "2026-03-01T00:00:00Z",
+    "businessUnit": {
+      "id": "bu-plant-leadership",
+      "code": "PL",
+      "name": "Plant Leadership"
+    },
+    "department": {
+      "id": "dept-operations",
+      "code": "OPS",
+      "name": "Operations"
+    },
+    "jobTitle": {
+      "id": "Technical%20Director",
+      "code": "TECH-DIR",
+      "name": "Technical Director",
+      "grade": null
+    },
+    "manager": null
+  }
+]

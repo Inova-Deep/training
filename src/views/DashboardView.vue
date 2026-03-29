@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useEmployeesStore } from '@/stores/employees'
@@ -16,15 +16,12 @@ import {
   RefreshCw,
   FileText,
   SlidersHorizontal,
-  Users,
   UserCircle2,
 } from 'lucide-vue-next'
 import activityData from '@/data/dashboardActivity.json'
 import awarenessData from '@/data/awarenessTopics.json'
-import { matchRoleName } from '@/lib/demoDomain'
+import { roleAudienceIncludes } from '@/lib/demoDomain'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -56,6 +53,7 @@ interface AwarenessTopicRaw {
   completion: string
   status: string
   targetAudience: string
+  requiredAudience?: string[] | string
 }
 
 const awarenessTopics = awarenessData as AwarenessTopicRaw[]
@@ -64,19 +62,66 @@ const awarenessTopics = awarenessData as AwarenessTopicRaw[]
 
 const filterDepartment = ref('')
 const filterRole = ref('')
-const filterMyTeam = ref(false)
 
 function clearFilters() {
   filterDepartment.value = ''
   filterRole.value = ''
-  filterMyTeam.value = false
 }
 
-// ─── Derived: available filter options ────────────────────────────────────────
+// ─── Scope and filters ────────────────────────────────────────────────────────
+
+const scopedEmployeeIdSet = computed(() => new Set(authStore.scopedEmployeeIds))
+
+const scopedEmployees = computed(() => {
+  const scopedIds = scopedEmployeeIdSet.value
+  return matrixStore.mockEmployeeRows.filter((employee) => scopedIds.has(employee.employeeId))
+})
+
+const showDepartmentFilter = computed(() =>
+  ['MANAGER', 'QHSE', 'HR_ADMIN', 'ADMIN', 'LEADERSHIP_VIEWER'].includes(authStore.userRole),
+)
+
+const showRoleFilter = computed(() =>
+  ['MANAGER', 'QHSE', 'HR_ADMIN', 'ADMIN', 'LEADERSHIP_VIEWER'].includes(authStore.userRole),
+)
+
+const showFilterBar = computed(() => showDepartmentFilter.value || showRoleFilter.value)
+
+const roleFilterEmployees = computed(() => {
+  if (!filterDepartment.value) return scopedEmployees.value
+  return scopedEmployees.value.filter((employee) => employee.department === filterDepartment.value)
+})
+
+const scopeBanner = computed(() => {
+  const scopedCount = scopedEmployees.value.length
+
+  switch (authStore.userRole) {
+    case 'SUPERVISOR':
+      return {
+        title: `${authStore.activePersona.displayName}'s Team`,
+        subtitle: `${scopedCount} direct reports`,
+      }
+    case 'MANAGER':
+      return {
+        title: `${authStore.activePersona.displayName}'s Production Area`,
+        subtitle: `${scopedCount} reports`,
+      }
+    case 'QHSE':
+    case 'HR_ADMIN':
+    case 'ADMIN':
+    case 'LEADERSHIP_VIEWER':
+      return {
+        title: 'Full Organisation',
+        subtitle: `${scopedCount} employees`,
+      }
+    default:
+      return null
+  }
+})
 
 const availableDepartments = computed(() => {
   const depts = new Set<string>()
-  for (const emp of matrixStore.mockEmployeeRows) {
+  for (const emp of scopedEmployees.value) {
     if (emp.department) depts.add(emp.department)
   }
   return Array.from(depts).sort()
@@ -84,16 +129,35 @@ const availableDepartments = computed(() => {
 
 const availableRoles = computed(() => {
   const roles = new Set<string>()
-  for (const emp of matrixStore.mockEmployeeRows) {
+  for (const emp of roleFilterEmployees.value) {
     if (emp.jobTitle) roles.add(emp.jobTitle)
   }
   return Array.from(roles).sort()
 })
 
-// ─── Filtered employees (respects dashboard filter bar) ───────────────────────
+watch(
+  [() => authStore.userRole, availableDepartments, availableRoles],
+  () => {
+    if (!showDepartmentFilter.value) {
+      filterDepartment.value = ''
+    } else if (
+      filterDepartment.value &&
+      !availableDepartments.value.includes(filterDepartment.value)
+    ) {
+      filterDepartment.value = ''
+    }
+
+    if (!showRoleFilter.value) {
+      filterRole.value = ''
+    } else if (filterRole.value && !availableRoles.value.includes(filterRole.value)) {
+      filterRole.value = ''
+    }
+  },
+  { immediate: true },
+)
 
 const filteredEmployees = computed(() => {
-  let result = matrixStore.mockEmployeeRows
+  let result = scopedEmployees.value
 
   if (filterDepartment.value) {
     result = result.filter((e) => e.department === filterDepartment.value)
@@ -101,14 +165,79 @@ const filteredEmployees = computed(() => {
   if (filterRole.value) {
     result = result.filter((e) => e.jobTitle === filterRole.value)
   }
-  // "My Team" toggle: narrow to the manager's direct reports if we have manager info
-  if (filterMyTeam.value) {
-    const myName = authStore.user?.displayName
-    if (myName) {
-      result = result.filter((e) => e.managerName === myName)
-    }
-  }
   return result
+})
+
+const filteredEmployeeIds = computed(() => new Set(filteredEmployees.value.map((employee) => employee.employeeId)))
+
+const scopedTrainingNeeds = computed(() =>
+  trainingStore.trainingNeeds.filter((need) => filteredEmployeeIds.value.has(need.erpEmployeeId)),
+)
+
+const scopedRoleNames = computed(() => {
+  const roleNames = new Set<string>()
+  filteredEmployees.value.forEach((employee) => {
+    if (employee.jobTitle) {
+      roleNames.add(employee.jobTitle)
+    }
+  })
+  return [...roleNames]
+})
+
+const scopedAwarenessTopics = computed(() =>
+  awarenessTopics.filter((topic) => {
+    const completionPercent = parseInt(topic.completion, 10)
+    return (
+      topic.status === 'Active' &&
+      completionPercent < 100 &&
+      scopedRoleNames.value.some((roleName) =>
+        roleAudienceIncludes(topic.requiredAudience ?? topic.targetAudience, roleName),
+      )
+    )
+  }),
+)
+
+const scopedRecentActivity = computed(() => {
+  if (
+    ['QHSE', 'HR_ADMIN', 'ADMIN', 'LEADERSHIP_VIEWER'].includes(authStore.userRole) &&
+    !filterDepartment.value &&
+    !filterRole.value
+  ) {
+    return recentActivity.value
+  }
+
+  const keywords = new Set<string>()
+
+  filteredEmployees.value.forEach((employee) => {
+    keywords.add(employee.displayName)
+
+    switch (employee.department) {
+      case 'Welding & Fabrication':
+        keywords.add('Welding')
+        keywords.add('Abrasive Wheels')
+        keywords.add('Forklift')
+        break
+      case 'Robotics':
+        keywords.add('Robot')
+        keywords.add('Robot cell')
+        break
+      case 'Additive Manufacturing':
+        keywords.add('Additive Manufacturing')
+        break
+      case 'Materials Testing':
+        keywords.add('Materials Testing')
+        break
+      case 'Quality Assurance':
+        keywords.add('QA')
+        break
+      default:
+        break
+    }
+  })
+
+  return recentActivity.value.filter((activity) =>
+    [...keywords].some((keyword) => activity.message.includes(keyword)),
+  )
 })
 
 // ─── KPIs computed from filtered employees ────────────────────────────────────
@@ -124,22 +253,12 @@ const kpis = computed(() => {
   const totalSupervised = employees.filter((e) => e.supervisionStatus === 'SUPERVISED_ONLY').length
   const notAuthorised = employees.filter((e) => !e.isAuthorised).length
 
-  // NCR/CAPA-linked open needs (filter by employee set if possible)
-  const employeeIds = new Set(employees.map((e) => e.employeeId))
-  const filteredNeeds = trainingStore.trainingNeeds.filter(
-    (n) => employeeIds.size === 0 || employeeIds.has(n.erpEmployeeId),
-  )
-  const ncrCapaCount = filteredNeeds.filter(
+  const ncrCapaCount = scopedTrainingNeeds.value.filter(
     (n) => n.sourceType === 'NCR_CAPA' && n.status === 'OPEN',
   ).length
 
-  // Awareness pending: active topics with completion < 100%
-  const awarenessPending = awarenessTopics.filter((t) => {
-    const pct = parseInt(t.completion, 10)
-    return t.status === 'Active' && pct < 100
-  }).length
+  const awarenessPending = scopedAwarenessTopics.value.length
 
-  // Critical roles at risk: roles where >50% employees are not authorised
   const roleMap = new Map<string, { total: number; notAuth: number }>()
   for (const emp of employees) {
     const r = emp.jobTitle || 'Unknown'
@@ -152,8 +271,7 @@ const kpis = computed(() => {
     (v) => v.total > 0 && v.notAuth / v.total > 0.5,
   ).length
 
-  // Overdue reassessments: open needs past due date
-  const overdueReassessments = filteredNeeds.filter(
+  const overdueReassessments = scopedTrainingNeeds.value.filter(
     (n) => n.status === 'OPEN' && n.dueDate != null && n.dueDate < today,
   ).length
 
@@ -222,26 +340,20 @@ const supervisedPeople = computed(() =>
     })),
 )
 
-/** 3.5.3 — Procedure changes awaiting acknowledgement (Active, <100% complete) */
 const pendingAwareness = computed(() =>
-  awarenessTopics
-    .filter((t) => t.status === 'Active' && parseInt(t.completion, 10) < 100)
-    .slice(0, 5)
-    .map((t) => ({
-      id: t.id,
-      title: t.title,
-      completion: parseInt(t.completion, 10),
-      audience: t.targetAudience,
-    })),
+  scopedAwarenessTopics.value.slice(0, 5).map((topic) => ({
+    id: topic.id,
+    title: topic.title,
+    completion: parseInt(topic.completion, 10),
+    audience: topic.targetAudience,
+  })),
 )
 
 /** 3.5.4 — Overdue competence reviews (top 4 training needs past due) */
 const overdueReviews = computed(() => {
-  const employeeIds = new Set(filteredEmployees.value.map((e) => e.employeeId))
-  return trainingStore.trainingNeeds
+  return scopedTrainingNeeds.value
     .filter((n) => {
-      const inScope = employeeIds.size === 0 || employeeIds.has(n.erpEmployeeId)
-      return inScope && n.status === 'OPEN' && n.dueDate != null && n.dueDate < today
+      return n.status === 'OPEN' && n.dueDate != null && n.dueDate < today
     })
     .slice(0, 4)
     .map((n) => {
@@ -263,7 +375,7 @@ const overdueReviews = computed(() => {
 
 onMounted(async () => {
   await employeesStore.fetchEmployees()
-  await matrixStore.fetchAndBuildMatrix(employeesStore.filteredEmployees)
+  await matrixStore.fetchAndBuildMatrix(employeesStore.allEmployees)
   await trainingStore.fetchTrainingNeeds()
 })
 
@@ -278,26 +390,31 @@ function navigate(path: string, query?: Record<string, string>) {
 const isEmployee = computed(() => authStore.userRole === 'EMPLOYEE')
 
 /** Personal gap count for the current employee persona */
+const currentEmployeeRow = computed(() =>
+  authStore.activePersona.employeeId
+    ? matrixStore.getEmployeeById(authStore.activePersona.employeeId)
+    : undefined,
+)
+
 const myGapCount = computed(() => {
-  const linkedTitle = authStore.activePersona?.linkedJobTitle
-  if (!linkedTitle) return 0
-  const myRow = matrixStore.mockEmployeeRows.find((r) => matchRoleName(r.jobTitle, linkedTitle))
-  if (!myRow) return 0
-  return myRow.expiredCount + myRow.requiredCount
+  return (currentEmployeeRow.value?.expiredCount ?? 0) + (currentEmployeeRow.value?.requiredCount ?? 0)
 })
 
 /** Expiring items for current employee persona */
 const myExpiringCount = computed(() => {
-  const linkedTitle = authStore.activePersona?.linkedJobTitle
-  if (!linkedTitle) return 0
-  const myRow = matrixStore.mockEmployeeRows.find((r) => matchRoleName(r.jobTitle, linkedTitle))
-  return myRow?.expiringCount ?? 0
+  return currentEmployeeRow.value?.expiringCount ?? 0
 })
 
 /** Pending awareness topics for current employee */
 const myPendingAwareness = computed(() =>
   awarenessTopics
     .filter((t) => t.status === 'Active' && parseInt(t.completion, 10) < 100)
+    .filter((topic) =>
+      roleAudienceIncludes(
+        topic.requiredAudience ?? topic.targetAudience,
+        authStore.activePersona.linkedJobTitle,
+      ),
+    )
     .slice(0, 3)
     .map((t) => ({ id: t.id, title: t.title, completion: parseInt(t.completion, 10) })),
 )
@@ -408,10 +525,17 @@ const myPendingAwareness = computed(() =>
       </p>
     </div>
 
+    <div v-if="scopeBanner" class="dashboard-scope-banner">
+      <div class="dashboard-scope-banner-content">
+        <span class="dashboard-scope-banner-title">{{ scopeBanner.title }}</span>
+        <span class="dashboard-scope-banner-subtitle">{{ scopeBanner.subtitle }}</span>
+      </div>
+    </div>
+
     <!-- ── Filter Bar ─────────────────────────────────────────────────────────── -->
-    <div class="filter-bar">
+    <div v-if="showFilterBar" class="filter-bar">
       <SlidersHorizontal class="filter-bar-icon" />
-      <Select v-model="filterDepartment">
+      <Select v-if="showDepartmentFilter" v-model="filterDepartment">
         <SelectTrigger class="filter-select" aria-label="Filter by department">
           <SelectValue placeholder="All Departments" />
         </SelectTrigger>
@@ -420,7 +544,7 @@ const myPendingAwareness = computed(() =>
         </SelectContent>
       </Select>
 
-      <Select v-model="filterRole">
+      <Select v-if="showRoleFilter" v-model="filterRole">
         <SelectTrigger class="filter-select" aria-label="Filter by role">
           <SelectValue placeholder="All Roles" />
         </SelectTrigger>
@@ -429,16 +553,8 @@ const myPendingAwareness = computed(() =>
         </SelectContent>
       </Select>
 
-      <div class="filter-toggle">
-        <Checkbox id="myTeamFilter" :checked="filterMyTeam" @update:checked="filterMyTeam = $event" />
-        <Label for="myTeamFilter" class="filter-toggle-label">
-          <Users class="filter-toggle-icon" />
-          <span>My Team</span>
-        </Label>
-      </div>
-
       <Button
-        v-if="filterDepartment || filterRole || filterMyTeam"
+        v-if="filterDepartment || filterRole"
         variant="ghost"
         class="filter-clear-btn"
         @click="clearFilters"
@@ -582,7 +698,7 @@ const myPendingAwareness = computed(() =>
     <div class="charts-grid" style="margin-top: var(--space-xl)">
       <GapByDepartmentChart :employees="filteredEmployees" />
       <GapByCategoryChart :employees="filteredEmployees" />
-      <SourceBreakdownChart :needs="trainingStore.trainingNeeds" />
+      <SourceBreakdownChart :needs="scopedTrainingNeeds" />
       <RoleReadinessChart :employees="filteredEmployees" />
     </div>
 
@@ -695,7 +811,10 @@ const myPendingAwareness = computed(() =>
         <h2 class="dashboard-list-title">Recent Activity</h2>
       </div>
       <div class="activity-feed">
-        <div v-for="activity in recentActivity" :key="activity.id" class="activity-item">
+        <div v-if="scopedRecentActivity.length === 0" class="dashboard-list-empty">
+          No recent activity in the current scope
+        </div>
+        <div v-for="activity in scopedRecentActivity" :key="activity.id" class="activity-item">
           <FileText class="activity-icon" />
           <div class="activity-content">
             <span class="activity-message">{{ activity.message }}</span>
@@ -731,32 +850,6 @@ const myPendingAwareness = computed(() =>
 .filter-select {
   min-width: 160px;
   font-size: 0.875rem;
-}
-
-.filter-toggle {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-xs) var(--space-sm);
-  border: var(--border-subtle);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-}
-
-.filter-toggle-label {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  font-size: 0.875rem;
-  color: var(--text-body);
-  cursor: pointer;
-  user-select: none;
-}
-
-.filter-toggle-icon {
-  width: 14px;
-  height: 14px;
-  color: var(--text-caption);
 }
 
 .filter-clear-btn {
