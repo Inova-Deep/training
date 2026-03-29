@@ -21,6 +21,17 @@ import {
 } from 'lucide-vue-next'
 import activityData from '@/data/dashboardActivity.json'
 import awarenessData from '@/data/awarenessTopics.json'
+import { matchRoleName } from '@/lib/demoDomain'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import GapByDepartmentChart from '@/components/dashboard/GapByDepartmentChart.vue'
 import GapByCategoryChart from '@/components/dashboard/GapByCategoryChart.vue'
 import SourceBreakdownChart from '@/components/dashboard/SourceBreakdownChart.vue'
@@ -270,7 +281,7 @@ const isEmployee = computed(() => authStore.userRole === 'EMPLOYEE')
 const myGapCount = computed(() => {
   const linkedTitle = authStore.activePersona?.linkedJobTitle
   if (!linkedTitle) return 0
-  const myRow = matrixStore.mockEmployeeRows.find((r) => r.jobTitle === linkedTitle)
+  const myRow = matrixStore.mockEmployeeRows.find((r) => matchRoleName(r.jobTitle, linkedTitle))
   if (!myRow) return 0
   return myRow.expiredCount + myRow.requiredCount
 })
@@ -279,7 +290,7 @@ const myGapCount = computed(() => {
 const myExpiringCount = computed(() => {
   const linkedTitle = authStore.activePersona?.linkedJobTitle
   if (!linkedTitle) return 0
-  const myRow = matrixStore.mockEmployeeRows.find((r) => r.jobTitle === linkedTitle)
+  const myRow = matrixStore.mockEmployeeRows.find((r) => matchRoleName(r.jobTitle, linkedTitle))
   return myRow?.expiringCount ?? 0
 })
 
@@ -360,9 +371,9 @@ const myPendingAwareness = computed(() =>
           </p>
         </div>
       </div>
-      <button class="employee-cta-btn" @click="navigate('/my-competencies')">
+      <Button class="employee-cta-btn" @click="navigate('/my-competencies')">
         View My Readiness Profile
-      </button>
+      </Button>
     </div>
 
     <div
@@ -400,29 +411,40 @@ const myPendingAwareness = computed(() =>
     <!-- ── Filter Bar ─────────────────────────────────────────────────────────── -->
     <div class="filter-bar">
       <SlidersHorizontal class="filter-bar-icon" />
-      <select v-model="filterDepartment" class="filter-select">
-        <option value="">All Departments</option>
-        <option v-for="dept in availableDepartments" :key="dept" :value="dept">{{ dept }}</option>
-      </select>
+      <Select v-model="filterDepartment">
+        <SelectTrigger class="filter-select" aria-label="Filter by department">
+          <SelectValue placeholder="All Departments" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem v-for="dept in availableDepartments" :key="dept" :value="dept">{{ dept }}</SelectItem>
+        </SelectContent>
+      </Select>
 
-      <select v-model="filterRole" class="filter-select">
-        <option value="">All Roles</option>
-        <option v-for="role in availableRoles" :key="role" :value="role">{{ role }}</option>
-      </select>
+      <Select v-model="filterRole">
+        <SelectTrigger class="filter-select" aria-label="Filter by role">
+          <SelectValue placeholder="All Roles" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem v-for="role in availableRoles" :key="role" :value="role">{{ role }}</SelectItem>
+        </SelectContent>
+      </Select>
 
-      <label class="filter-toggle">
-        <input type="checkbox" v-model="filterMyTeam" class="filter-toggle-input" />
-        <Users class="filter-toggle-icon" />
-        <span>My Team</span>
-      </label>
+      <div class="filter-toggle">
+        <Checkbox id="myTeamFilter" :checked="filterMyTeam" @update:checked="filterMyTeam = $event" />
+        <Label for="myTeamFilter" class="filter-toggle-label">
+          <Users class="filter-toggle-icon" />
+          <span>My Team</span>
+        </Label>
+      </div>
 
-      <button
+      <Button
         v-if="filterDepartment || filterRole || filterMyTeam"
+        variant="ghost"
         class="filter-clear-btn"
         @click="clearFilters"
       >
         Clear filters
-      </button>
+      </Button>
     </div>
 
     <!-- ── KPI Grid ───────────────────────────────────────────────────────────── -->
@@ -707,35 +729,28 @@ const myPendingAwareness = computed(() =>
 }
 
 .filter-select {
-  padding: 6px 10px;
-  background: var(--bg-page);
-  border: var(--border-subtle);
-  border-radius: var(--radius-md);
-  color: var(--text-body);
-  font-size: 0.875rem;
-  cursor: pointer;
   min-width: 160px;
+  font-size: 0.875rem;
 }
 
 .filter-toggle {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border: var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+}
+
+.filter-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
   font-size: 0.875rem;
   color: var(--text-body);
   cursor: pointer;
-  padding: 6px 10px;
-  border: var(--border-subtle);
-  border-radius: var(--radius-md);
-  background: var(--bg-page);
   user-select: none;
-}
-
-.filter-toggle-input {
-  width: 14px;
-  height: 14px;
-  accent-color: var(--brand-primary);
-  cursor: pointer;
 }
 
 .filter-toggle-icon {
@@ -746,18 +761,8 @@ const myPendingAwareness = computed(() =>
 
 .filter-clear-btn {
   margin-left: auto;
-  padding: 6px 12px;
-  background: transparent;
-  border: var(--border-subtle);
-  border-radius: var(--radius-md);
   color: var(--text-caption);
   font-size: 0.8125rem;
-  cursor: pointer;
-  transition: color 0.15s;
-}
-
-.filter-clear-btn:hover {
-  color: var(--text-body);
 }
 
 /* ── KPI cards ────────────────────────────────────────────────────────────── */
@@ -778,11 +783,11 @@ const myPendingAwareness = computed(() =>
 }
 
 .kpi-icon-danger {
-  color: var(--color-danger, #ef4444);
+  color: var(--brand-critical);
 }
 
 .kpi-icon-warning {
-  color: var(--color-warning, #f59e0b);
+  color: var(--brand-warning);
 }
 
 /* ── Charts grid ──────────────────────────────────────────────────────────── */
@@ -885,11 +890,11 @@ const myPendingAwareness = computed(() =>
   white-space: nowrap;
 }
 
-/* badge-supervised — orange-yellow variant */
+/* badge-supervised — warning variant */
 .badge-supervised {
-  background: rgba(234, 179, 8, 0.15);
-  color: #b45309;
-  border: 1px solid rgba(234, 179, 8, 0.35);
+  background: oklch(from var(--brand-warning) l c h / 0.12);
+  color: var(--brand-warning);
+  border: 1px solid oklch(from var(--brand-warning) l c h / 0.3);
   font-size: 0.7rem;
   font-weight: 600;
   padding: 2px 8px;
@@ -976,20 +981,7 @@ const myPendingAwareness = computed(() =>
 }
 
 .employee-cta-btn {
-  padding: 8px 20px;
-  background-color: var(--brand-primary);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
   white-space: nowrap;
-  transition: opacity 0.15s;
-}
-
-.employee-cta-btn:hover {
-  opacity: 0.88;
 }
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */

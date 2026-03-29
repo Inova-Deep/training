@@ -74,6 +74,7 @@ import {
   DEMO_BUSINESS_UNITS,
   DEMO_DEPARTMENTS,
   DEMO_ROLE_NAMES,
+  getRequirementRoleKey,
   normalizeRoleName,
 } from '@/lib/demoDomain'
 
@@ -366,11 +367,7 @@ function getCellRequirementInfo(
   jobTitle: string,
   compId: string,
 ): { isGating: boolean; mandatory: boolean; sourceSetId: string } | null {
-  const key = Object.keys(requirementsJson).find(
-    (k) =>
-      jobTitle.toLowerCase().includes(k.toLowerCase()) ||
-      k.toLowerCase().includes(jobTitle.toLowerCase()),
-  )
+  const key = getRequirementRoleKey(jobTitle)
   if (!key) return null
   const reqSet = requirementsJson[key]
   if (!reqSet) return null
@@ -588,51 +585,48 @@ onMounted(async () => {
         </div>
 
         <div class="view-mode-toggle">
-          <!-- Employee summary -->
-          <Button
-            :variant="viewMode === 'summary' ? 'default' : 'outline'"
-            size="sm"
-            @click="setViewMode('summary')"
-          >
-            Employee Summary
-          </Button>
-          <!-- 6.1 — 3-mode grid toggle -->
-          <Button
-            :variant="viewMode === 'grid' && matrixMode === 'requirements' ? 'default' : 'outline'"
-            size="sm"
-            @click="
-              () => {
-                setViewMode('grid')
-                matrixMode = 'requirements'
-              }
-            "
-          >
-            Requirements
-          </Button>
-          <Button
-            :variant="viewMode === 'grid' && matrixMode === 'current' ? 'default' : 'outline'"
-            size="sm"
-            @click="
-              () => {
-                setViewMode('grid')
-                matrixMode = 'current'
-              }
-            "
-          >
-            Current
-          </Button>
-          <Button
-            :variant="viewMode === 'grid' && matrixMode === 'gap' ? 'default' : 'outline'"
-            size="sm"
-            @click="
-              () => {
-                setViewMode('grid')
-                matrixMode = 'gap'
-              }
-            "
-          >
-            Gap Analysis
-          </Button>
+          <div class="view-mode-pills" role="group" aria-label="View mode">
+            <Button
+              variant="ghost"
+              size="sm"
+              class="view-mode-pill"
+              :class="{ 'view-mode-pill-active': viewMode === 'summary' }"
+              :aria-pressed="viewMode === 'summary'"
+              @click="setViewMode('summary')"
+            >
+              Employee Summary
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              class="view-mode-pill"
+              :class="{ 'view-mode-pill-active': viewMode === 'grid' && matrixMode === 'requirements' }"
+              :aria-pressed="viewMode === 'grid' && matrixMode === 'requirements'"
+              @click="() => { setViewMode('grid'); matrixMode = 'requirements' }"
+            >
+              Requirements
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              class="view-mode-pill"
+              :class="{ 'view-mode-pill-active': viewMode === 'grid' && matrixMode === 'current' }"
+              :aria-pressed="viewMode === 'grid' && matrixMode === 'current'"
+              @click="() => { setViewMode('grid'); matrixMode = 'current' }"
+            >
+              Current
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              class="view-mode-pill"
+              :class="{ 'view-mode-pill-active': viewMode === 'grid' && matrixMode === 'gap' }"
+              :aria-pressed="viewMode === 'grid' && matrixMode === 'gap'"
+              @click="() => { setViewMode('grid'); matrixMode = 'gap' }"
+            >
+              Gap Analysis
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -832,11 +826,11 @@ onMounted(async () => {
 
       <!-- 6.3 Collapsible Legend bar -->
       <div class="legend-bar">
-        <button class="legend-toggle" @click="showLegend = !showLegend">
+        <Button variant="ghost" size="sm" class="legend-toggle" @click="showLegend = !showLegend" aria-label="Toggle legend">
           <BookOpen class="icon-xs" />
           <span>Legend</span>
           <component :is="showLegend ? ChevronDown : ChevronRight" class="icon-xs" />
-        </button>
+        </Button>
         <div v-if="showLegend" class="legend-items">
           <div class="legend-item">
             <CheckCircle2 class="legend-icon legend-valid" />
@@ -904,11 +898,11 @@ onMounted(async () => {
 
       <!-- 6.7 Team Readiness collapsible section -->
       <div class="readiness-section">
-        <button class="readiness-toggle" @click="showReadiness = !showReadiness">
+        <Button variant="ghost" size="sm" class="readiness-toggle" @click="showReadiness = !showReadiness" aria-label="Toggle team readiness">
           <Users class="icon-xs" />
           <span>Team Readiness</span>
           <component :is="showReadiness ? ChevronDown : ChevronRight" class="icon-xs" />
-        </button>
+        </Button>
         <div v-if="showReadiness" class="readiness-table-wrapper">
           <table class="readiness-table">
             <thead>
@@ -1735,7 +1729,42 @@ onMounted(async () => {
 
 .view-mode-toggle {
   display: flex;
-  gap: var(--space-xs);
+  align-items: center;
+}
+
+.view-mode-pills {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-subtle);
+  border: var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: 2px;
+  gap: 1px;
+}
+
+.view-mode-pill {
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-caption);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  height: auto;
+  min-height: unset;
+}
+
+.view-mode-pill:hover:not(.view-mode-pill-active) {
+  background-color: var(--bg-hover);
+  color: var(--text-body);
+}
+
+.view-mode-pill-active {
+  background-color: var(--bg-surface);
+  color: var(--brand-primary);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .filters-row {
@@ -1815,16 +1844,11 @@ onMounted(async () => {
 }
 
 .legend-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-xs);
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--text-caption);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
+  height: auto;
+  padding: 4px var(--space-sm);
 }
 
 .legend-toggle:hover {
@@ -1857,7 +1881,7 @@ onMounted(async () => {
   color: var(--brand-success);
 }
 .legend-supervised {
-  color: oklch(0.5 0.13 60);
+  color: var(--brand-warning);
 }
 .legend-progress {
   color: var(--brand-primary);
@@ -1912,7 +1936,7 @@ onMounted(async () => {
   color: var(--brand-critical);
 }
 .summary-stat.supervised .stat-value {
-  color: oklch(0.5 0.13 60);
+  color: var(--brand-warning);
 }
 
 .stat-value {
@@ -1937,22 +1961,13 @@ onMounted(async () => {
 }
 
 .readiness-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-xs);
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--text-heading);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: var(--space-sm) var(--space-md);
+  height: auto;
   width: 100%;
-  text-align: left;
-}
-
-.readiness-toggle:hover {
-  background-color: var(--bg-subtle);
+  justify-content: flex-start;
+  padding: var(--space-sm) var(--space-md);
 }
 
 .readiness-table-wrapper {
@@ -1997,7 +2012,7 @@ onMounted(async () => {
   font-weight: 600;
 }
 .readiness-supervised {
-  color: oklch(0.5 0.13 60);
+  color: var(--brand-warning);
   font-weight: 600;
 }
 .readiness-not-auth {
@@ -2121,7 +2136,7 @@ onMounted(async () => {
   font-weight: 600;
 }
 .count-supervised {
-  color: oklch(0.5 0.13 60);
+  color: var(--brand-warning);
   font-weight: 600;
 }
 
@@ -2373,7 +2388,7 @@ onMounted(async () => {
   background-color: var(--text-caption);
 }
 .dot-under-supervision {
-  background-color: oklch(0.5 0.13 60);
+  background-color: var(--brand-warning);
 }
 
 /* 6.1 Requirements / Gap mode cell labels */
@@ -2633,12 +2648,12 @@ onMounted(async () => {
 }
 
 .responsible-manager {
-  background-color: oklch(0.38 0.14 266 / 0.1);
+  background-color: oklch(0 0 0 / 0.08);
   color: var(--brand-primary);
 }
 
 .responsible-employee {
-  background-color: oklch(0.62 0.14 162 / 0.1);
+  background-color: oklch(from var(--brand-success) l c h / 0.08);
   color: var(--brand-success);
 }
 

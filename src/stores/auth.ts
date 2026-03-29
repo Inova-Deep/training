@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { authApi, usersApi, setToken } from '@/api/client'
 import type { AppUser, User, UserRole } from '@/types'
+import { getFirstAccessibleRoute } from '@/lib/navigation'
 
 // ─── Demo persona types ────────────────────────────────────────────────────────
 
@@ -14,6 +15,7 @@ export type DemoPersonaKey =
   | 'qhse'
   | 'hr_admin'
   | 'leadership'
+  | 'system_admin'
 
 export interface DemoPersona {
   key: DemoPersonaKey
@@ -89,6 +91,16 @@ export const DEMO_PERSONAS: Record<DemoPersonaKey, DemoPersona> = {
     linkedJobTitle: null,
     defaultRoute: '/dashboard',
   },
+  system_admin: {
+    key: 'system_admin',
+    displayName: 'Layla Hassan',
+    roleLabel: 'System Admin',
+    role: 'ADMIN',
+    email: 'layla.hassan@demo.com',
+    initials: 'LH',
+    linkedJobTitle: null,
+    defaultRoute: '/admin/reference-lists',
+  },
 }
 
 // ─── Hardcoded demo credentials ────────────────────────────────────────────────
@@ -110,7 +122,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isInitializing = ref(true)
   const isAuthenticated = computed(() => !!token.value && !!user.value)
   const userRole = computed(() => user.value?.role || 'EMPLOYEE')
-  const isAdmin = computed(() => userRole.value === 'HR_ADMIN')
+  const isAdmin = computed(() => ['HR_ADMIN', 'ADMIN'].includes(userRole.value))
   const isManager = computed(() => userRole.value === 'MANAGER' || isAdmin.value)
   const activePersona = computed(() => DEMO_PERSONAS[currentPersonaKey.value])
 
@@ -177,7 +189,7 @@ export const useAuthStore = defineStore('auth', () => {
       updatedAt: new Date().toISOString(),
     }
     toast.success(`Viewing as ${persona.displayName} (${persona.roleLabel})`)
-    router.push(persona.defaultRoute)
+    router.push(getFirstAccessibleRoute(persona.role, persona.defaultRoute))
   }
 
   function logout() {

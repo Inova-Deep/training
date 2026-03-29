@@ -45,7 +45,7 @@ import { useEmployeesStore } from '@/stores/employees'
 import roleRequirementsData from '@/data/roleRequirements.json'
 import {
   DEMO_DEPARTMENTS,
-  DEMO_ROLES,
+  VISIBLE_DEMO_ROLES,
   matchRoleName,
   normalizeRoleName,
 } from '@/lib/demoDomain'
@@ -134,7 +134,7 @@ interface RoleStats {
 }
 
 const roleStats = computed((): RoleStats[] => {
-  return DEMO_ROLES.map((role) => {
+  return VISIBLE_DEMO_ROLES.map((role) => {
       const employees = matrixStore.mockEmployeeRows.filter(
         (e) => matchRoleName(e.jobTitle, role.name),
       )
@@ -226,7 +226,7 @@ function navigateToRole(id: string) {
               v-model="search"
               class="global-search"
               placeholder="Search roles..."
-              style="padding-left: 2.25rem; min-width: 200px"
+              aria-label="Search roles"
             />
           </div>
 

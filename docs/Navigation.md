@@ -1,103 +1,117 @@
-# Sidebar Navigation — Role-Based Groups + Tooltips (Demo v1)
+# Sidebar Navigation
 
-This document defines the role-based sidebar structure for the standalone Competence / Training / Awareness system and provides one-line tooltip/help text per item.
+This document reflects the live sidebar/navigation model.
 
----
+## Source Of Truth
 
-## 1) Employee
+- Route access comes from `router.meta.allowedRoles`.
+- Sidebar visibility is derived from route access.
+- A page link must not appear in the sidebar if the current role cannot open it.
+- The router guard remains a fallback for direct URL access.
 
-### Group: My Workspace
+## Canonical Group Order
 
-* **Dashboard**
+1. `My Work`
+2. `Operations`
+3. `Training & Awareness`
+4. `Admin`
 
-  * Tooltip: Your current competence status, expiring items, training tasks, and awareness items.
+Footer:
 
-* **My Competence**
+- `Guide`
+- account / persona menu
 
-  * Tooltip: View your role requirements, upload evidence, and see your independent-work authorisation status.
+## Canonical Item Order
 
-* **My Training**
+### My Work
 
-  * Tooltip: See training needs assigned to you, update progress, and attach completion evidence.
+- `Dashboard`
+- `My Competence Profile`
 
-* **Awareness**
+### Operations
 
-  * Tooltip: Acknowledge assigned awareness topics and view your acknowledgement history.
+- `Skills Matrix`
+- `People`
+- `Roles`
+- `Competency Library`
 
----
+### Training & Awareness
 
-## 2) Manager
+- `Training & Gap Actions`
+- `Awareness & Communications`
 
-### Group: Team
+### Admin
 
-* **Dashboard**
+- `Reference Lists`
+- `ERP Connection`
 
-  * Tooltip: Team overview of required, expiring, expired, and not-authorised competence items.
+## Role Visibility
 
-* **My Team**
+### Employee
 
-  * Tooltip: View your direct and indirect reports, drill into employee profiles, and spot authorisation risks.
+- `Dashboard`
+- `My Competence Profile`
+- `Awareness & Communications`
 
-* **Skills Matrix**
+### Supervisor
 
-  * Tooltip: Filter and review team competence in a matrix view; export to Excel for reporting.
+- `Dashboard`
+- `My Competence Profile`
+- `Skills Matrix`
+- `Training & Gap Actions`
+- `Awareness & Communications`
 
-### Group: Actions
+### Manager
 
-* **Training Needs**
+- `Dashboard`
+- `My Competence Profile`
+- `Skills Matrix`
+- `People`
+- `Roles`
+- `Training & Gap Actions`
+- `Awareness & Communications`
 
-  * Tooltip: Manage open training needs for your team and track completion until competence is revalidated.
+### QHSE
 
-### Group: Reference (optional)
+- `Dashboard`
+- `Skills Matrix`
+- `Roles`
+- `Competency Library`
+- `Training & Gap Actions`
+- `Awareness & Communications`
 
-* **People**
+### HR Admin
 
-  * Tooltip: Search employees and open profiles for quick competence and evidence review.
+- `Dashboard`
+- `Skills Matrix`
+- `People`
+- `Roles`
+- `Competency Library`
+- `Training & Gap Actions`
+- `Awareness & Communications`
 
----
+### Leadership Viewer
 
-## 3) HR / Admin (combined)
+- `Dashboard`
+- `Skills Matrix`
+- `Roles`
 
-### Group: Operations
+### Admin
 
-* **Dashboard**
+- `Dashboard`
+- `Skills Matrix`
+- `People`
+- `Roles`
+- `Competency Library`
+- `Training & Gap Actions`
+- `Awareness & Communications`
+- `Reference Lists`
+- `ERP Connection`
 
-  * Tooltip: Organisation view of competence compliance, gating risks, and upcoming expiries.
+## Notes
 
-* **Skills Matrix**
-
-  * Tooltip: Org-wide skills matrix with BU/Department/Job Title filters and Excel export.
-
-* **People**
-
-  * Tooltip: Browse/search employees from ERP and view competence records, evidence, and training history.
-
-### Group: Build & Control
-
-* **Roles**
-
-  * Tooltip: Configure Job Title applicability, role requirements, and gating rules for independent work.
-
-* **Competency Library**
-
-  * Tooltip: Maintain the reusable list of competency requirements, categories, risk levels, and default evidence rules.
-
-### Group: Training & Awareness
-
-* **Training Needs**
-
-  * Tooltip: Track and manage training needs across the organisation; ensure gaps are closed and verified.
-
-* **Awareness Topics**
-
-  * Tooltip: Create and target awareness topics to employees (all staff with a manager) and track acknowledgements.
-
-### Group: Admin
-
-* **Reference Lists**
-
-  * Tooltip: Manage controlled values (risk/status/training types/assessment methods) and key thresholds (e.g., Expiring = 30 days).
-
-* **ERP Connection**
-
-  * Tooltip: Test ERP connectivity, validate credentials, and view integration status for demo environment.
+- `My Competence Profile` is intentionally hidden for `QHSE`, `HR Admin`, and `Leadership Viewer` under the current router policy.
+- Admin links are intentionally hidden for every role except `ADMIN`.
+- The demo persona for the `ADMIN` role is `System Admin`, shown last in the persona switcher.
+- Empty sidebar groups must not render.
+- Persona switching should always land on an accessible route, preferring the persona default route when allowed.

@@ -136,7 +136,7 @@
     "title": "New AM Cell Start-up Safety Communication",
     "description": "Formal safety communication and retraining requirement for the new additive manufacturing cell, covering powder handling, inert gas safety, and equipment start-up procedures.",
     "category": "Additive Manufacturing Operations",
-    "targetAudience": "Additive Manufacturing Technician, HSE Coordinator",
+    "targetAudience": "Additive Manufacturing Technician, QHSE Coordinator",
     "dueDate": "2026-05-15",
     "completion": "0%",
     "completionAcknowledged": 0,
@@ -151,6 +151,6 @@
     "acknowledgementRequired": true,
     "briefingRequired": true,
     "verificationRequired": true,
-    "requiredAudience": ["Additive Manufacturing Technician", "HSE Coordinator"]
+    "requiredAudience": ["Additive Manufacturing Technician", "QHSE Coordinator"]
   }
 ]

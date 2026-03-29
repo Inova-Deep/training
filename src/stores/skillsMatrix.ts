@@ -4,7 +4,7 @@ import { toast } from 'vue-sonner'
 import type { Employee } from '@/api/client'
 import competenciesData from '@/data/competencies.json'
 import roleRequirementsData from '@/data/roleRequirements.json'
-import { normalizeBusinessUnitName, normalizeRoleName } from '@/lib/demoDomain'
+import { getRequirementRoleKey, normalizeBusinessUnitName, normalizeRoleName } from '@/lib/demoDomain'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -173,7 +173,7 @@ function seededRand(employeeId: string, competencyId: string): number {
 
 /** Find the gating competency IDs for a job title by name keyword match */
 function getGatingIdsForJobTitle(jobTitleName: string): string[] {
-  const key = normalizeRoleName(jobTitleName)
+  const key = getRequirementRoleKey(jobTitleName)
   return key ? (requirementsJson[key]?.gatingCompetencyIds ?? []) : []
 }
 

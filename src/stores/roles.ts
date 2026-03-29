@@ -5,7 +5,7 @@ import { rolesApi } from '@/api'
 import type { RoleApplicabilityDecision, RoleRequirementSet, RoleRequirement } from '@/types'
 import roleApplicabilityData from '@/data/roleApplicability.json'
 import roleRequirementsData from '@/data/roleRequirements.json'
-import { normalizeRoleName } from '@/lib/demoDomain'
+import { getApplicabilityRoleKey, getRequirementRoleKey } from '@/lib/demoDomain'
 
 type RoleRequirementsJson = Record<
   string,
@@ -82,15 +82,15 @@ export const useRolesStore = defineStore('roles', () => {
     )
   })
 
-  /** Returns the gating competency IDs for a given job title name (substring match) */
+  /** Returns the gating competency IDs for a given job title name. */
   function getGatingIds(jobTitleName: string): string[] {
-    const key = normalizeRoleName(jobTitleName)
+    const key = getRequirementRoleKey(jobTitleName)
     return key ? (requirementsJson[key]?.gatingCompetencyIds ?? []) : []
   }
 
   /** Returns requirements for a given job title name (exact canonical match) */
   function getRequirementsForJobTitle(jobTitleName: string): RoleRequirement[] {
-    const key = normalizeRoleName(jobTitleName)
+    const key = getRequirementRoleKey(jobTitleName)
     if (!key) return []
     const entry = requirementsJson[key]
     return entry ? entry.requirements.map((r) => ({ ...r, roleRequirementSetId: entry.setId })) : []
@@ -112,7 +112,7 @@ export const useRolesStore = defineStore('roles', () => {
   }
 
   async function fetchRole(jobTitleId: string) {
-    const roleName = normalizeRoleName(jobTitleId)
+    const roleName = getApplicabilityRoleKey(jobTitleId)
     currentRole.value = roles.value.find((r) => r.erpJobTitleId === roleName) ?? null
   }
 
@@ -160,10 +160,11 @@ export const useRolesStore = defineStore('roles', () => {
     isSaving.value = true
     error.value = null
     try {
-      const index = roles.value.findIndex((r) => r.erpJobTitleId === jobTitleId)
+      const roleKey = getApplicabilityRoleKey(jobTitleId)
+      const index = roles.value.findIndex((r) => r.erpJobTitleId === roleKey)
       if (index !== -1) {
         roles.value[index] = { ...roles.value[index]!, ...data }
-        if (currentRole.value?.erpJobTitleId === jobTitleId) {
+        if (currentRole.value?.erpJobTitleId === roleKey) {
           currentRole.value = roles.value[index]!
         }
       }

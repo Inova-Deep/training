@@ -300,7 +300,7 @@ watch(
 }
 
 .person-header-section {
-  background: linear-gradient(135deg, rgba(14, 116, 144, 0.08), rgba(255, 255, 255, 0.98));
+  background: var(--bg-subtle);
   border: var(--border-subtle);
   border-radius: var(--radius-xl);
   padding: var(--space-lg);
@@ -318,8 +318,8 @@ watch(
   width: 3.5rem;
   height: 3.5rem;
   border-radius: 9999px;
-  background: linear-gradient(135deg, #0f766e, #155e75);
-  color: white;
+  background: var(--brand-primary);
+  color: var(--primary-foreground);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -366,8 +366,8 @@ watch(
 .restriction-banner {
   display: flex;
   gap: var(--space-sm);
-  background: rgba(220, 38, 38, 0.06);
-  border: 1px solid rgba(220, 38, 38, 0.2);
+  background: oklch(from var(--brand-critical) l c h / 0.06);
+  border: 1px solid oklch(from var(--brand-critical) l c h / 0.2);
   border-radius: var(--radius-lg);
   padding: var(--space-md);
 }
@@ -375,7 +375,7 @@ watch(
 .restriction-icon {
   width: 20px;
   height: 20px;
-  color: #dc2626;
+  color: var(--brand-critical);
   flex-shrink: 0;
   margin-top: 2px;
 }
@@ -384,7 +384,7 @@ watch(
   margin: 0 0 4px;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #dc2626;
+  color: var(--brand-critical);
 }
 
 .restriction-body {
@@ -429,15 +429,15 @@ watch(
 }
 
 .value-red {
-  color: #dc2626;
+  color: var(--brand-critical);
 }
 
 .value-amber {
-  color: #d97706;
+  color: var(--brand-warning);
 }
 
 .value-green {
-  color: #16a34a;
+  color: var(--brand-success);
 }
 
 .person-tabs-list {

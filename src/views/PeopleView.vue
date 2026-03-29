@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { Search, ChevronLeft, ChevronRight, X } from 'lucide-vue-next'
+import { Search, ChevronLeft, ChevronRight, X, MoreHorizontal } from 'lucide-vue-next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,6 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
 import { useEmployeesStore } from '@/stores/employees'
 import { useSkillsMatrixStore, type SupervisionStatus } from '@/stores/skillsMatrix'
 import type { Employee } from '@/api/client'
@@ -246,7 +253,7 @@ onMounted(async () => {
               <TableHead>Open Gaps</TableHead>
               <TableHead>Mandatory Compliance</TableHead>
               <TableHead>Expiring Certs</TableHead>
-              <TableHead class="table-actions-header">Profile</TableHead>
+              <TableHead class="table-actions-header">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -334,15 +341,19 @@ onMounted(async () => {
                 <span v-else class="text-muted">—</span>
               </TableCell>
               <TableCell class="table-actions-cell">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  class="table-open-link"
-                  :aria-label="`Open profile for ${formatName(employee)}`"
-                  @click="openDrawer(employee, 'profile')"
-                >
-                  Open
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger as-child>
+                    <Button variant="ghost" size="icon" class="table-action-btn" :aria-label="`Actions for ${formatName(employee)}`">
+                      <MoreHorizontal class="icon-xs" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem @click="openDrawer(employee, 'profile')">View Profile</DropdownMenuItem>
+                    <DropdownMenuItem @click="openDrawer(employee, 'competencies')">Competencies</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem @click="openDrawer(employee, 'training-history')">Training History</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
           </TableBody>
@@ -530,13 +541,13 @@ onMounted(async () => {
 }
 
 .gap-count-high {
-  background: rgba(var(--color-red-rgb, 220, 38, 38), 0.1);
-  color: var(--color-red, #dc2626);
+  background: oklch(from var(--brand-critical) l c h / 0.1);
+  color: var(--brand-critical);
 }
 
 .gap-count-warn {
-  background: rgba(var(--color-amber-rgb, 245, 158, 11), 0.1);
-  color: var(--color-amber, #d97706);
+  background: oklch(from var(--brand-warning) l c h / 0.1);
+  color: var(--brand-warning);
 }
 
 .table-actions-header,
@@ -544,9 +555,4 @@ onMounted(async () => {
   text-align: right;
 }
 
-.table-open-link {
-  min-width: 4.5rem;
-  justify-content: flex-end;
-  color: var(--brand-primary);
-}
 </style>

@@ -302,7 +302,7 @@ function handleClose() {
 
 .outcome-competent {
   border-color: var(--brand-success);
-  background-color: oklch(0.62 0.14 162 / 0.08);
+  background-color: oklch(from var(--brand-success) l c h / 0.06);
 }
 
 .outcome-not-yet {

@@ -8,6 +8,9 @@ export interface DemoRoleMeta {
   businessUnit: string
   purpose: string
   criticality: RoleCriticality
+  requirementKey: string
+  applicabilityKey: string
+  visibleInCatalog: boolean
 }
 
 export const DEMO_ROLES: DemoRoleMeta[] = [
@@ -18,6 +21,9 @@ export const DEMO_ROLES: DemoRoleMeta[] = [
     purpose:
       'Runs additive manufacturing builds, machine setup, powder changeovers, and in-process quality controls.',
     criticality: 'High',
+    requirementKey: 'Additive Manufacturing Technician',
+    applicabilityKey: 'Additive Manufacturing Technician',
+    visibleInCatalog: true,
   },
   {
     name: 'Welding / Fabrication Technician',
@@ -26,6 +32,9 @@ export const DEMO_ROLES: DemoRoleMeta[] = [
     purpose:
       'Performs welding, fabrication, and post-build finishing work to controlled procedures and quality standards.',
     criticality: 'Critical',
+    requirementKey: 'Welding / Fabrication Technician',
+    applicabilityKey: 'Welding / Fabrication Technician',
+    visibleInCatalog: true,
   },
   {
     name: 'Robotics Operator',
@@ -34,14 +43,9 @@ export const DEMO_ROLES: DemoRoleMeta[] = [
     purpose:
       'Operates robotic cells safely and maintains authorised execution of automated production activities.',
     criticality: 'High',
-  },
-  {
-    name: 'Robot Programmer / Cell Technician',
-    department: 'Robotics',
-    businessUnit: 'Robotics & Automation',
-    purpose:
-      'Programs, proves, and maintains robot cells, tooling logic, and equipment-specific operating envelopes.',
-    criticality: 'Critical',
+    requirementKey: 'Robotics Operator',
+    applicabilityKey: 'Robotics Operator',
+    visibleInCatalog: true,
   },
   {
     name: 'Materials Testing Technician',
@@ -50,6 +54,9 @@ export const DEMO_ROLES: DemoRoleMeta[] = [
     purpose:
       'Performs tensile, hardness, dimensional, and traceability verification activities for AM output.',
     criticality: 'High',
+    requirementKey: 'Materials Testing Technician',
+    applicabilityKey: 'Materials Testing Technician',
+    visibleInCatalog: true,
   },
   {
     name: 'QA Inspector',
@@ -58,6 +65,9 @@ export const DEMO_ROLES: DemoRoleMeta[] = [
     purpose:
       'Controls inspection, release, NCR escalation, and evidence-backed conformity decisions for production work.',
     criticality: 'High',
+    requirementKey: 'QA Inspector',
+    applicabilityKey: 'QA Inspector',
+    visibleInCatalog: true,
   },
   {
     name: 'QHSE Coordinator',
@@ -66,6 +76,9 @@ export const DEMO_ROLES: DemoRoleMeta[] = [
     purpose:
       'Coordinates quality, health, safety, environment, CAPA, and audit readiness for the AM operation.',
     criticality: 'High',
+    requirementKey: 'QHSE Coordinator',
+    applicabilityKey: 'QHSE Coordinator',
+    visibleInCatalog: true,
   },
   {
     name: 'Production Supervisor',
@@ -74,6 +87,9 @@ export const DEMO_ROLES: DemoRoleMeta[] = [
     purpose:
       'Leads daily production readiness, authorisation decisions, shift handover, and supervised-work control.',
     criticality: 'High',
+    requirementKey: 'Production Supervisor',
+    applicabilityKey: 'Production Supervisor',
+    visibleInCatalog: true,
   },
   {
     name: 'Technical Director',
@@ -82,6 +98,9 @@ export const DEMO_ROLES: DemoRoleMeta[] = [
     purpose:
       'Owns technical readiness, process capability, and risk visibility across additive manufacturing operations.',
     criticality: 'Standard',
+    requirementKey: 'Technical Director',
+    applicabilityKey: 'Technical Director',
+    visibleInCatalog: false,
   },
   {
     name: 'HR / Training Coordinator',
@@ -90,21 +109,26 @@ export const DEMO_ROLES: DemoRoleMeta[] = [
     purpose:
       'Coordinates onboarding, training records, expiry tracking, and competence administration for the plant.',
     criticality: 'Standard',
+    requirementKey: 'HR / Training Coordinator',
+    applicabilityKey: 'HR / Training Coordinator',
+    visibleInCatalog: false,
   },
 ]
 
-export const DEMO_ROLE_NAMES = DEMO_ROLES.map((role) => role.name)
-export const DEMO_DEPARTMENTS = ['All', ...new Set(DEMO_ROLES.map((role) => role.department))]
+export const VISIBLE_DEMO_ROLES = DEMO_ROLES.filter((role) => role.visibleInCatalog)
+export const DEMO_ROLE_NAMES = VISIBLE_DEMO_ROLES.map((role) => role.name)
+export const DEMO_DEPARTMENTS = ['All', ...new Set(VISIBLE_DEMO_ROLES.map((role) => role.department))]
 export const DEMO_BUSINESS_UNITS = [
   'All',
-  ...new Set(DEMO_ROLES.map((role) => role.businessUnit)),
+  ...new Set(VISIBLE_DEMO_ROLES.map((role) => role.businessUnit)),
 ]
 
 const ROLE_ALIASES: Record<string, string> = {
   'AM Technician': 'Additive Manufacturing Technician',
   'Welding Technician': 'Welding / Fabrication Technician',
   'Coded Welder': 'Welding / Fabrication Technician',
-  'Robotics Programmer': 'Robot Programmer / Cell Technician',
+  'Robotics Programmer': 'Robotics Operator',
+  'Robot Programmer / Cell Technician': 'Robotics Operator',
   'Shift Lead': 'Production Supervisor',
   'Operations Manager': 'Technical Director',
   'HSE Coordinator': 'QHSE Coordinator',
@@ -136,12 +160,50 @@ export function getRoleMeta(value: string | null | undefined): DemoRoleMeta | nu
   return DEMO_ROLES.find((role) => role.name === normalized) ?? null
 }
 
+export function getVisibleDemoRoles(): DemoRoleMeta[] {
+  return VISIBLE_DEMO_ROLES
+}
+
 export function isTrackedDemoRole(value: string | null | undefined): boolean {
   return getRoleMeta(value) !== null
 }
 
+export function isVisibleDemoRole(value: string | null | undefined): boolean {
+  return getRoleMeta(value)?.visibleInCatalog ?? false
+}
+
 export function matchRoleName(candidate: string | null | undefined, target: string): boolean {
   return normalizeRoleName(candidate) === normalizeRoleName(target)
+}
+
+export function getRequirementRoleKey(value: string | null | undefined): string {
+  const normalized = normalizeRoleName(value)
+  return getRoleMeta(normalized)?.requirementKey ?? normalized
+}
+
+export function getApplicabilityRoleKey(value: string | null | undefined): string {
+  const normalized = normalizeRoleName(value)
+  return getRoleMeta(normalized)?.applicabilityKey ?? normalized
+}
+
+export function roleAudienceIncludes(
+  audience: string[] | string | null | undefined,
+  roleName: string | null | undefined,
+): boolean {
+  if (!roleName || !audience) return false
+  const values = Array.isArray(audience)
+    ? audience
+    : audience
+        .split(/[,/]/)
+        .map((value) => value.trim())
+        .filter(Boolean)
+  return values.some((value) => value === 'All Employees' || matchRoleName(value, roleName))
+}
+
+export function resolveDemoJobTitleFromRoute(jobId: string): JobTitle | null {
+  const decoded = decodeURIComponent(jobId)
+  const role = getRoleMeta(decoded)
+  return role ? createDemoJobTitle(role.name) : null
 }
 
 export function createDemoJobTitle(name: string): JobTitle {

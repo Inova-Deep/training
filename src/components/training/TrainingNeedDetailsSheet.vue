@@ -550,7 +550,7 @@ const handleSubmit = async () => {
   width: 48px;
   height: 48px;
   border-radius: var(--radius-md);
-  background-color: oklch(0.38 0.14 266 / 0.1);
+  background-color: oklch(0 0 0 / 0.06);
   color: var(--brand-primary);
   display: flex;
   align-items: center;
@@ -646,12 +646,12 @@ const handleSubmit = async () => {
 
 .path-container:hover {
   border-color: var(--brand-primary);
-  background-color: oklch(0.38 0.14 266 / 0.05);
+  background-color: oklch(0 0 0 / 0.03);
 }
 
 .path-container.active {
   border-color: var(--brand-primary);
-  background-color: oklch(0.38 0.14 266 / 0.08);
+  background-color: oklch(0 0 0 / 0.05);
   box-shadow: 0 0 0 1px var(--brand-primary);
 }
 

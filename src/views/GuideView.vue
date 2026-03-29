@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { Button } from '@/components/ui/button'
@@ -39,8 +40,11 @@ import {
   Info,
   Layers,
 } from 'lucide-vue-next'
+import { useAuthStore } from '@/stores/auth'
+import { canRoleAccessPath } from '@/lib/navigation'
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 const challenges = [
   {
@@ -161,10 +165,10 @@ const personas = [
     quote:
       'Everything is in one place — onboarding, training records, expiry tracking, and audit-ready documentation.',
     features: [
-      'Full access to all platform features',
+      'Broad access to operational platform features',
       'People — manage employee records and ERP integration',
       'Competency Library — configure competency catalogue',
-      'Admin — Reference Lists and ERP Connection',
+      'No admin-only pages under current routing policy',
       'Person switcher to demo any role perspective',
     ],
     defaultRoute: '/dashboard',
@@ -182,6 +186,20 @@ const personas = [
       'Filter by department, role, or business unit',
     ],
     defaultRoute: '/dashboard',
+  },
+  {
+    title: 'System Admin',
+    subtitle: 'Layla Hassan — Platform Administrator',
+    quote:
+      'I can reach every route, manage admin-only configuration, and validate the full demo without role-based blind spots.',
+    features: [
+      'Full platform access across all sidebar groups',
+      'Reference Lists — manage controlled values and configuration lists',
+      'ERP Connection — validate connectivity and demo integration status',
+      'Can open the same operational views as managers, QHSE, and HR Admin',
+      'Best persona for showing the complete navigation model end-to-end',
+    ],
+    defaultRoute: '/admin/reference-lists',
   },
 ]
 
@@ -289,12 +307,12 @@ const interactiveCapabilities = [
         text: 'Competency Library — configure full catalogue with filters and AM-specific fields',
       },
       {
-        icon: Database,
-        text: 'Admin — Reference Lists (risk levels, statuses, training types) and ERP Connection',
+        icon: Megaphone,
+        text: 'Awareness Topics — manage controlled communications, audience targeting, and acknowledgements',
       },
       {
         icon: SwitchCamera,
-        text: 'Persona Switcher — demo the platform from any of the 6 role perspectives',
+        text: 'Persona Switcher — demo the platform from any of the 7 role perspectives',
       },
     ],
   },
@@ -313,6 +331,29 @@ const interactiveCapabilities = [
       },
       { icon: Briefcase, text: 'Roles — view role requirements and team readiness scores' },
       { icon: BarChart3, text: 'No edit access — pure visibility for governance and oversight' },
+    ],
+  },
+  {
+    role: 'System Admin',
+    icon: Lock,
+    color: 'cap-admin',
+    items: [
+      {
+        icon: ListChecks,
+        text: 'Reference Lists — manage controlled values, assessment methods, evidence types, and status options',
+      },
+      {
+        icon: Database,
+        text: 'ERP Connection — test integration health, validate credentials, and review sync status',
+      },
+      {
+        icon: SwitchCamera,
+        text: 'Full demo access — every sidebar link is available from this persona',
+      },
+      {
+        icon: LayoutDashboard,
+        text: 'Operational oversight — retains access to dashboard, matrix, people, roles, library, training, and awareness views',
+      },
     ],
   },
 ]
@@ -442,7 +483,7 @@ const platformPages = [
     name: 'My Competence Profile',
     path: '/my-competencies',
     icon: Award,
-    roles: ['Employee', 'Supervisor', 'Manager', 'QHSE', 'HR Admin'],
+    roles: ['Employee', 'Supervisor', 'Manager'],
     desc: 'Personal readiness profile with 5 tabs: My Role Requirements, My Open Gaps, My Evidence, My Authorisations, and My Awareness Actions. Shows IWA badge status.',
     features: [
       'Role requirements with status indicators',
@@ -465,36 +506,6 @@ const platformPages = [
       'Supervised count per person',
       'Vacancy rows for unfilled positions',
       'CSV export for offline analysis',
-    ],
-  },
-  {
-    name: 'Training & Gap Actions',
-    path: '/training-needs',
-    icon: GraduationCap,
-    roles: ['Supervisor', 'Manager', 'QHSE', 'HR Admin'],
-    desc: 'Source-tracked training needs with 9 source types and a 7-stage workflow (Identified, Approved, Scheduled, In Progress, Evidence Submitted, Effectiveness Review, Closed). Supports NCR/CAPA demo stories.',
-    features: [
-      '9 source types with reference linking',
-      '7-stage workflow stepper',
-      '7 intervention types',
-      'Effectiveness check section',
-      'Priority levels (Critical, High, Medium, Low)',
-      'Source-to-close traceability',
-    ],
-  },
-  {
-    name: 'Awareness & Communications',
-    path: '/awareness-topics',
-    icon: Megaphone,
-    roles: ['All Roles'],
-    desc: 'Controlled awareness communications with 8 topic types and 6-stage workflow. Employees acknowledge assigned topics; admins manage audience targeting and delivery methods.',
-    features: [
-      '8 topic types (safety, quality, procedure, etc.)',
-      '6-stage workflow (Drafted → Closed)',
-      '5 delivery methods',
-      'Required audience targeting by role/department',
-      'Acknowledgement tracking and verification',
-      'Topic creation form sheet',
     ],
   },
   {
@@ -541,10 +552,40 @@ const platformPages = [
     ],
   },
   {
+    name: 'Training & Gap Actions',
+    path: '/training-needs',
+    icon: GraduationCap,
+    roles: ['Supervisor', 'Manager', 'QHSE', 'HR Admin'],
+    desc: 'Source-tracked training needs with 9 source types and a 7-stage workflow (Identified, Approved, Scheduled, In Progress, Evidence Submitted, Effectiveness Review, Closed). Supports NCR/CAPA demo stories.',
+    features: [
+      '9 source types with reference linking',
+      '7-stage workflow stepper',
+      '7 intervention types',
+      'Effectiveness check section',
+      'Priority levels (Critical, High, Medium, Low)',
+      'Source-to-close traceability',
+    ],
+  },
+  {
+    name: 'Awareness & Communications',
+    path: '/awareness-topics',
+    icon: Megaphone,
+    roles: ['All Roles'],
+    desc: 'Controlled awareness communications with 8 topic types and 6-stage workflow. Employees acknowledge assigned topics; admins manage audience targeting and delivery methods.',
+    features: [
+      '8 topic types (safety, quality, procedure, etc.)',
+      '6-stage workflow (Drafted → Closed)',
+      '5 delivery methods',
+      'Required audience targeting by role/department',
+      'Acknowledgement tracking and verification',
+      'Topic creation form sheet',
+    ],
+  },
+  {
     name: 'Reference Lists',
     path: '/admin/reference-lists',
     icon: ListChecks,
-    roles: ['All Roles'],
+    roles: ['Admin'],
     desc: 'Manage controlled value lists: risk levels, status codes, training types, assessment methods, evidence types, and responsible parties. Key system configuration point.',
     features: [
       'Risk level management',
@@ -558,7 +599,7 @@ const platformPages = [
     name: 'ERP Connection',
     path: '/admin/erp-connection',
     icon: Database,
-    roles: ['HR Admin'],
+    roles: ['Admin'],
     desc: 'Test ERP connectivity, validate credentials, and view integration status. Manages the connection to the external HR/ERP system for employee data synchronisation.',
     features: [
       'Connection health check',
@@ -589,18 +630,6 @@ const demoFeatures = [
     icon: Table2,
   },
   {
-    name: 'Training & Gap Actions',
-    desc: 'Source-tracked needs with 7-stage workflow',
-    path: '/training-needs',
-    icon: GraduationCap,
-  },
-  {
-    name: 'Awareness & Communications',
-    desc: 'Controlled comms with acknowledgement tracking',
-    path: '/awareness-topics',
-    icon: Megaphone,
-  },
-  {
     name: 'People',
     desc: 'Employee records with 8-section detail drawer',
     path: '/people',
@@ -619,6 +648,18 @@ const demoFeatures = [
     icon: Library,
   },
   {
+    name: 'Training & Gap Actions',
+    desc: 'Source-tracked needs with 7-stage workflow',
+    path: '/training-needs',
+    icon: GraduationCap,
+  },
+  {
+    name: 'Awareness & Communications',
+    desc: 'Controlled comms with acknowledgement tracking',
+    path: '/awareness-topics',
+    icon: Megaphone,
+  },
+  {
     name: 'Reference Lists',
     desc: 'System configuration for risk levels, statuses, and types',
     path: '/admin/reference-lists',
@@ -631,6 +672,14 @@ const demoFeatures = [
     icon: Database,
   },
 ]
+
+const visiblePlatformPages = computed(() =>
+  platformPages.filter((page) => canRoleAccessPath(authStore.userRole, page.path)),
+)
+
+const visibleDemoFeatures = computed(() =>
+  demoFeatures.filter((feature) => canRoleAccessPath(authStore.userRole, feature.path)),
+)
 
 const handleExplore = (path: string) => {
   router.push(path)
@@ -770,7 +819,7 @@ const handleStartDemo = () => {
                 with acknowledgement tracking
               </li>
               <li>
-                <Check class="icon-xs" aria-hidden="true" /> Role-based access for 6 distinct user
+                <Check class="icon-xs" aria-hidden="true" /> Role-based access for 7 distinct user
                 personas
               </li>
             </ul>
@@ -865,9 +914,9 @@ const handleStartDemo = () => {
     <section class="guide-section">
       <div class="guide-panel">
         <div class="guide-section-label">Who It's For</div>
-        <h2 class="guide-section-title">6 Role-Based Perspectives</h2>
+        <h2 class="guide-section-title">7 Role-Based Perspectives</h2>
         <p class="guide-section-intro">
-          The platform adapts to 6 distinct user roles. Use the persona switcher in the top bar to
+          The platform adapts to 7 distinct user roles. Use the persona switcher in the top bar to
           explore each perspective.
         </p>
 
@@ -935,7 +984,7 @@ const handleStartDemo = () => {
 
       <div class="guide-pages-grid">
         <Card
-          v-for="page in platformPages"
+          v-for="page in visiblePlatformPages"
           :key="page.path"
           class="guide-page-card"
           role="button"
@@ -1009,7 +1058,7 @@ const handleStartDemo = () => {
 
       <div class="guide-demo-grid">
         <Card
-          v-for="feature in demoFeatures"
+          v-for="feature in visibleDemoFeatures"
           :key="feature.path"
           class="guide-demo-card"
           role="button"
@@ -1033,7 +1082,7 @@ const handleStartDemo = () => {
       </div>
 
       <div class="guide-cta">
-        <Button size="lg" @click="handleStartDemo" aria-label="Start with Dashboard">
+        <Button @click="handleStartDemo" aria-label="Start with Dashboard">
           Start with Dashboard
           <ArrowRight class="icon-sm" aria-hidden="true" />
         </Button>
@@ -1121,7 +1170,7 @@ const handleStartDemo = () => {
 }
 
 .guide-callout-warning {
-  background: oklch(0.62 0.2 25 / 0.05);
+  background: oklch(from var(--brand-critical) l c h / 0.05);
   border-left-color: var(--brand-critical);
   color: var(--brand-critical);
 }
@@ -1131,7 +1180,7 @@ const handleStartDemo = () => {
 }
 
 .guide-callout-success {
-  background: oklch(0.62 0.14 162 / 0.07);
+  background: oklch(from var(--brand-success) l c h / 0.07);
   border-left-color: var(--brand-success);
   color: var(--brand-success);
 }
@@ -1161,7 +1210,7 @@ const handleStartDemo = () => {
   width: 34px;
   height: 34px;
   border-radius: var(--radius-md);
-  background: oklch(0.62 0.2 25 / 0.08);
+  background: oklch(from var(--brand-critical) l c h / 0.08);
   color: var(--brand-critical);
   display: flex;
   align-items: center;
@@ -1488,33 +1537,33 @@ const handleStartDemo = () => {
 }
 
 .cap-employee {
-  background: oklch(0.62 0.14 162 / 0.06);
-  border-color: oklch(0.62 0.14 162 / 0.2);
+  background: var(--bg-subtle);
+  border-color: var(--border);
 }
 
 .cap-supervisor {
-  background: oklch(0.55 0.15 200 / 0.06);
-  border-color: oklch(0.55 0.15 200 / 0.2);
+  background: var(--bg-subtle);
+  border-color: var(--border);
 }
 
 .cap-manager {
-  background: oklch(0.38 0.14 266 / 0.06);
-  border-color: oklch(0.38 0.14 266 / 0.2);
+  background: oklch(0 0 0 / 0.04);
+  border-color: oklch(0 0 0 / 0.15);
 }
 
 .cap-qhse {
-  background: oklch(0.62 0.18 30 / 0.06);
-  border-color: oklch(0.62 0.18 30 / 0.2);
+  background: var(--bg-subtle);
+  border-color: var(--border);
 }
 
 .cap-admin {
-  background: oklch(0.72 0.15 58 / 0.06);
-  border-color: oklch(0.72 0.15 58 / 0.2);
+  background: var(--bg-subtle);
+  border-color: var(--border);
 }
 
 .cap-leadership {
-  background: oklch(0.55 0.12 290 / 0.06);
-  border-color: oklch(0.55 0.12 290 / 0.2);
+  background: var(--bg-subtle);
+  border-color: var(--border);
 }
 
 .guide-cap-header {
@@ -1637,7 +1686,7 @@ const handleStartDemo = () => {
   width: 36px;
   height: 36px;
   border-radius: var(--radius-md);
-  background: oklch(0.38 0.14 266 / 0.08);
+  background: oklch(0 0 0 / 0.06);
   color: var(--brand-primary);
   display: flex;
   align-items: center;
@@ -1733,7 +1782,7 @@ const handleStartDemo = () => {
   width: 36px;
   height: 36px;
   border-radius: var(--radius-md);
-  background: oklch(0.38 0.14 266 / 0.08);
+  background: oklch(0 0 0 / 0.06);
   color: var(--brand-primary);
   display: flex;
   align-items: center;

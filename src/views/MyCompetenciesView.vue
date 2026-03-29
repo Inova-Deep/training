@@ -35,6 +35,7 @@ import {
 import AssessmentRecordSheet from '@/components/competency/AssessmentRecordSheet.vue'
 import evidenceData from '@/data/employeeEvidence.json'
 import awarenessTopicsData from '@/data/awarenessTopics.json'
+import { matchRoleName, roleAudienceIncludes } from '@/lib/demoDomain'
 
 // ─── Stores ───────────────────────────────────────────────────────────────────
 
@@ -77,8 +78,7 @@ const linkedJobTitle = computed(() => authStore.activePersona.linkedJobTitle)
 
 const myRow = computed(() => {
   if (!linkedJobTitle.value) return null
-  const needle = linkedJobTitle.value.toLowerCase()
-  return matrixStore.mockEmployeeRows.find((r) => r.jobTitle.toLowerCase().includes(needle)) ?? null
+  return matrixStore.mockEmployeeRows.find((r) => matchRoleName(r.jobTitle, linkedJobTitle.value!)) ?? null
 })
 
 const alertItems = computed(() => {
@@ -293,14 +293,7 @@ const myAwarenessTopics = computed(() => {
   const jt = authStore.activePersona.linkedJobTitle ?? ''
   return awarenessTopicsData.filter((topic) => {
     if (!Array.isArray(topic.requiredAudience)) return false
-    return (
-      topic.requiredAudience.includes('All Employees') ||
-      topic.requiredAudience.some(
-        (aud: string) =>
-          jt.toLowerCase().includes(aud.toLowerCase()) ||
-          aud.toLowerCase().includes(jt.toLowerCase()),
-      )
-    )
+    return roleAudienceIncludes(topic.requiredAudience, jt)
   })
 })
 
@@ -372,7 +365,7 @@ const MOCK_HISTORY_POOL: AssessmentHistoryEntry[][] = [
       date: '2025-06-01',
       method: 'Practical Observation',
       outcome: 'Competent',
-      assessor: 'HSE Coordinator',
+      assessor: 'QHSE Coordinator',
     },
     {
       date: '2024-06-05',
@@ -1197,7 +1190,7 @@ const activeTab = ref('requirements')
   background-color: oklch(0.7 0.18 50 / 0.04);
 }
 .row-supervised {
-  background-color: oklch(0.85 0.1 70 / 0.08);
+  background-color: oklch(from var(--brand-warning) l c h / 0.06);
 }
 .row-acknowledged td {
   opacity: 0.65;
@@ -1330,7 +1323,7 @@ const activeTab = ref('requirements')
 }
 
 .severity-low {
-  background-color: oklch(0.62 0.14 200 / 0.15);
+  background-color: oklch(0 0 0 / 0.05);
   color: var(--brand-primary);
 }
 
@@ -1409,7 +1402,7 @@ const activeTab = ref('requirements')
 }
 
 .ev-status-accepted {
-  background-color: oklch(0.62 0.14 162 / 0.12);
+  background-color: oklch(from var(--brand-success) l c h / 0.1);
   color: var(--brand-success);
 }
 
@@ -1430,18 +1423,18 @@ const activeTab = ref('requirements')
 }
 
 .iwa-card-authorised {
-  background-color: oklch(0.62 0.14 162 / 0.08);
-  border-color: oklch(0.62 0.14 162 / 0.3);
+  background-color: oklch(from var(--brand-success) l c h / 0.06);
+  border-color: oklch(from var(--brand-success) l c h / 0.25);
 }
 
 .iwa-card-under-supervision {
-  background-color: oklch(0.5 0.13 60 / 0.08);
-  border-color: oklch(0.5 0.13 60 / 0.3);
+  background-color: oklch(from var(--brand-warning) l c h / 0.06);
+  border-color: oklch(from var(--brand-warning) l c h / 0.25);
 }
 
 .iwa-card-not-authorised {
-  background-color: oklch(0.55 0.18 30 / 0.08);
-  border-color: oklch(0.55 0.18 30 / 0.3);
+  background-color: oklch(from var(--brand-critical) l c h / 0.06);
+  border-color: oklch(from var(--brand-critical) l c h / 0.25);
 }
 
 .iwa-card-icon-wrap {
@@ -1560,7 +1553,7 @@ const activeTab = ref('requirements')
 }
 
 .ack-badge-done {
-  background-color: oklch(0.62 0.14 162 / 0.12);
+  background-color: oklch(from var(--brand-success) l c h / 0.1);
   color: var(--brand-success);
 }
 
@@ -1592,7 +1585,7 @@ const activeTab = ref('requirements')
 }
 
 .outcome-competent {
-  background-color: oklch(0.62 0.14 162 / 0.12);
+  background-color: oklch(from var(--brand-success) l c h / 0.1);
   color: var(--brand-success);
 }
 

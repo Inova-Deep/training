@@ -68,7 +68,16 @@ import type { RoleRequirement } from '@/types'
 import roleRequirementsData from '@/data/roleRequirements.json'
 import competenciesData from '@/data/competencies.json'
 import awarenessTopicsData from '@/data/awarenessTopics.json'
-import { createDemoJobTitle, DEMO_ROLES, getRoleMeta, matchRoleName, normalizeRoleName } from '@/lib/demoDomain'
+import {
+  createDemoJobTitle,
+  getApplicabilityRoleKey,
+  getRequirementRoleKey,
+  getRoleMeta,
+  matchRoleName,
+  normalizeRoleName,
+  resolveDemoJobTitleFromRoute,
+  roleAudienceIncludes,
+} from '@/lib/demoDomain'
 
 // ── Types ───────────────────────────────────────────────────────
 type RoleReqJson = Record<
@@ -139,6 +148,8 @@ const jobId = route.params.id as string
 const jobTitle = ref<JobTitle | null>(null)
 const activeTab = ref('applicability')
 const roleMeta = computed(() => getRoleMeta(jobTitle.value?.name ?? decodeURIComponent(jobId)))
+const requirementRoleKey = computed(() => getRequirementRoleKey(jobTitle.value?.name))
+const applicabilityRoleKey = computed(() => getApplicabilityRoleKey(jobTitle.value?.name))
 
 // ── Applicability form ────────────────────────────────────────────
 const applicabilityForm = reactive({
@@ -210,16 +221,31 @@ function formatDate(date: string | null | undefined) {
 // ── Data load ─────────────────────────────────────────────────────
 onMounted(async () => {
   try {
-    const response = await organizationApi.getJobTitles({ size: 1000 })
-    jobTitle.value = response.data.find((t) => t.id === jobId) || null
+    jobTitle.value = resolveDemoJobTitleFromRoute(jobId)
+
+    if (!jobTitle.value) {
+      const response = await organizationApi.getJobTitles({ size: 1000 })
+      const resolved = response.data.find((t) => {
+        return (
+          t.id === jobId ||
+          matchRoleName(t.name, decodeURIComponent(jobId)) ||
+          encodeURIComponent(normalizeRoleName(t.name)) === jobId
+        )
+      })
+
+      if (resolved) {
+        const normalizedName = normalizeRoleName(resolved.name)
+        jobTitle.value = normalizedName
+          ? { ...resolved, name: normalizedName }
+          : createDemoJobTitle(decodeURIComponent(jobId))
+      }
+    }
 
     if (jobTitle.value) {
-      await store.fetchRole(jobTitle.value.name)
+      await store.fetchRole(applicabilityRoleKey.value)
       await libraryStore.fetchCompetencies()
       await store.fetchRequirementSets()
-      const jobSet = store.requirementSets.find((s) =>
-        jobTitle.value?.name.toLowerCase().includes(s.erpJobTitleId.toLowerCase()),
-      )
+      const jobSet = store.requirementSets.find((s) => s.erpJobTitleId === requirementRoleKey.value)
       if (jobSet) {
         await store.fetchRoleRequirements(jobSet.id)
       }
@@ -242,7 +268,7 @@ onMounted(async () => {
 async function handleSaveApplicability() {
   if (!jobTitle.value) return
   try {
-    await store.updateRole(jobTitle.value.name, {
+    await store.updateRole(applicabilityRoleKey.value, {
       ...applicabilityForm,
       result: computedResult.value,
     })
@@ -288,13 +314,16 @@ function goBack() {
 }
 
 // ── Role summary computed ─────────────────────────────────────────
-const roleName = computed(() => jobTitle.value?.name ?? '')
+const roleName = computed(() => jobTitle.value?.name ?? normalizeRoleName(decodeURIComponent(jobId)))
+
+const currentRequirementSet = computed(() => {
+  const key = requirementRoleKey.value
+  return key ? requirementsJson[key] ?? null : null
+})
 
 const assignedEmployees = computed(() => {
   if (!roleName.value) return []
-  return matrixStore.mockEmployeeRows.filter(
-    (e) => e.jobTitle.toLowerCase() === roleName.value.toLowerCase(),
-  )
+  return matrixStore.mockEmployeeRows.filter((e) => matchRoleName(e.jobTitle, roleName.value))
 })
 
 const roleSummary = computed(() => {
@@ -303,11 +332,10 @@ const roleSummary = computed(() => {
   const fullyReady = employees.filter((e) => e.isAuthorised).length
   const underSupervision = employees.filter((e) => e.supervisionStatus === 'SUPERVISED_ONLY').length
   const readinessScore = assigned > 0 ? Math.round((fullyReady / assigned) * 100) : 0
-  const roleMeta = DEMO_ROLES.find((r) => r.name === roleName.value)
-  const department = roleMeta?.department ?? 'Operations'
+  const department = roleMeta.value?.department ?? 'Operations'
   const purpose =
-    roleMeta?.purpose ?? 'Performs specialist work requiring verified competence.'
-  const criticality = roleMeta?.criticality ?? 'Standard'
+    roleMeta.value?.purpose ?? 'Performs specialist work requiring verified competence.'
+  const criticality = roleMeta.value?.criticality ?? 'Standard'
   return {
     assigned,
     fullyReady,
@@ -332,8 +360,7 @@ function criticalityClass(c: string) {
 
 // ── Enriched requirements table ───────────────────────────────────
 const enrichedRequirements = computed(() => {
-  const rn = roleName.value
-  const reqSet = requirementsJson[rn]
+  const reqSet = currentRequirementSet.value
   if (!reqSet) return []
 
   const employees = assignedEmployees.value
@@ -419,7 +446,7 @@ interface AssignedPersonRow {
 }
 
 const assignedPeopleRows = computed((): AssignedPersonRow[] => {
-  const reqSet = requirementsJson[roleName.value]
+  const reqSet = currentRequirementSet.value
   if (!reqSet)
     return assignedEmployees.value.map((e) => {
       const reqIds =
@@ -505,7 +532,7 @@ interface RiskCompItem {
 }
 
 const riskCompetencies = computed((): RiskCompItem[] => {
-  const reqSet = requirementsJson[roleName.value]
+  const reqSet = currentRequirementSet.value
   if (!reqSet) return []
 
   const employees = assignedEmployees.value
@@ -565,7 +592,7 @@ const linkedAwareness = computed(() => {
   const rn = roleName.value
   if (!rn) return []
   return allTopics.filter((t) =>
-    t.requiredAudience.some((a) => a === 'All Employees' || a.toLowerCase() === rn.toLowerCase()),
+    roleAudienceIncludes(t.requiredAudience, rn),
   )
 })
 
@@ -645,7 +672,7 @@ function deliveryLabel(d: string) {
       </Button>
       <div class="role-header-text">
         <h1 class="page-title">{{ jobTitle.name }}</h1>
-        <p class="page-subtitle">{{ jobTitle.code || 'No code' }} · Job Title Workspace</p>
+        <p class="page-subtitle">{{ jobTitle.code || 'No code' }} · Role Profile</p>
       </div>
       <div v-if="store.currentRole" class="role-header-badge">
         <span class="badge" :class="getStatusClass(store.currentRole.result)">
@@ -788,11 +815,11 @@ function deliveryLabel(d: string) {
                     <div class="question-text">
                       <p class="question-label">Hands-On Operational Work</p>
                       <p class="question-desc">
-                        Does this role perform hands-on operational work — production, fabrication,
-                        maintenance, or inspection?
+                        Does this role perform hands-on operational work such as production,
+                        fabrication, robot operation, materials testing, or inspection?
                       </p>
                       <p class="question-examples">
-                        e.g. Operator, Welder, Inspector, Maintenance Technician
+                        e.g. AM technician, welding technician, robotics operator, QA inspector
                       </p>
                       <div class="question-flow" aria-hidden="true">
                         <span class="flow-yes">YES → continue</span>
@@ -1826,7 +1853,7 @@ function deliveryLabel(d: string) {
   align-items: flex-start;
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space-md);
-  background: oklch(0.72 0.15 58 / 0.08);
+  background: oklch(from var(--brand-warning) l c h / 0.08);
   border-left: 3px solid var(--brand-warning);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   margin-top: var(--space-xs);
@@ -1866,11 +1893,11 @@ function deliveryLabel(d: string) {
 }
 
 .result-outcome-included {
-  background: oklch(0.62 0.14 162 / 0.1);
+  background: oklch(from var(--brand-success) l c h / 0.08);
   color: var(--brand-success);
 }
 .result-outcome-awareness-only {
-  background: oklch(0.72 0.15 58 / 0.1);
+  background: oklch(from var(--brand-warning) l c h / 0.08);
   color: var(--brand-warning);
 }
 .result-outcome-out-of-scope {
@@ -2180,7 +2207,7 @@ function deliveryLabel(d: string) {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-full);
-  background: oklch(0.38 0.14 266 / 0.1);
+  background: oklch(0 0 0 / 0.06);
   color: var(--brand-primary);
   display: flex;
   align-items: center;

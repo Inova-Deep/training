@@ -28,6 +28,7 @@ const personas: { key: DemoPersonaKey; label: string }[] = [
   { key: 'qhse', label: 'QHSE' },
   { key: 'hr_admin', label: 'HR Admin' },
   { key: 'leadership', label: 'Leadership' },
+  { key: 'system_admin', label: 'System Admin' },
 ]
 
 const userInitials = computed(() => authStore.activePersona.initials)

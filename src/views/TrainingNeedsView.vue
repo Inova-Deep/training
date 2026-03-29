@@ -223,6 +223,7 @@ const newHireCount = computed(() => {
           <Input
             placeholder="Search source or reference..."
             class="filter-input-search"
+            aria-label="Search training needs"
             v-model="trainingStore.filters.search"
           />
         </div>
@@ -483,8 +484,8 @@ const newHireCount = computed(() => {
 
 /* Banner */
 .onboarding-banner {
-  background-color: oklch(0.38 0.14 266 / 0.08);
-  border: 1px solid oklch(0.38 0.14 266 / 0.2);
+  background-color: oklch(0 0 0 / 0.04);
+  border: 1px solid oklch(0 0 0 / 0.12);
   border-radius: var(--radius-lg);
   padding: var(--space-md) var(--space-lg);
   display: flex;
@@ -642,7 +643,7 @@ const newHireCount = computed(() => {
 
 /* User Cell */
 .table-avatar-primary {
-  background-color: oklch(0.38 0.14 266 / 0.1);
+  background-color: oklch(0 0 0 / 0.08);
   color: var(--brand-primary);
   font-weight: 500;
 }

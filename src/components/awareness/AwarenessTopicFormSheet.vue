@@ -356,12 +356,12 @@ function handleSave() {
 
 .audience-option:hover {
   border-color: var(--brand-primary);
-  background-color: oklch(0.38 0.14 266 / 0.04);
+  background-color: oklch(0 0 0 / 0.03);
 }
 
 .audience-option.selected {
   border-color: var(--brand-primary);
-  background-color: oklch(0.38 0.14 266 / 0.08);
+  background-color: oklch(0 0 0 / 0.05);
 }
 
 .audience-checkbox {

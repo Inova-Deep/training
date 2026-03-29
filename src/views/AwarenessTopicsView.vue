@@ -21,6 +21,7 @@ import {
 import { useAuthStore } from '@/stores/auth'
 import { toast } from 'vue-sonner'
 import topicsData from '@/data/awarenessTopics.json'
+import { roleAudienceIncludes } from '@/lib/demoDomain'
 import AwarenessTopicFormSheet from '@/components/awareness/AwarenessTopicFormSheet.vue'
 import type { AwarenessTopic } from '@/components/awareness/AwarenessTopicFormSheet.vue'
 
@@ -48,14 +49,14 @@ const TOPIC_TYPE_LABELS: Record<string, string> = {
 }
 
 const TOPIC_TYPE_BADGE: Record<string, string> = {
-  PROCEDURE_REVISION: 'type-badge-blue',
-  SAFETY_BRIEFING: 'type-badge-red',
-  QUALITY_ALERT: 'type-badge-orange',
-  CUSTOMER_REQUIREMENT: 'type-badge-purple',
-  MANAGEMENT_SYSTEM_UPDATE: 'type-badge-grey',
-  TOOLBOX_TALK: 'type-badge-green',
-  NEW_EQUIPMENT_INTRODUCTION: 'type-badge-blue',
-  INCIDENT_LEARNING: 'type-badge-red',
+  PROCEDURE_REVISION: 'badge-primary',
+  SAFETY_BRIEFING: 'badge-critical',
+  QUALITY_ALERT: 'badge-warning',
+  CUSTOMER_REQUIREMENT: 'badge-neutral',
+  MANAGEMENT_SYSTEM_UPDATE: 'badge-neutral',
+  TOOLBOX_TALK: 'badge-success',
+  NEW_EQUIPMENT_INTRODUCTION: 'badge-primary',
+  INCIDENT_LEARNING: 'badge-critical',
 }
 
 const WORKFLOW_LABELS: Record<string, string> = {
@@ -158,10 +159,7 @@ const linkedJobTitle = computed(() => authStore.activePersona?.linkedJobTitle ??
 const assignedTopics = computed(() => {
   return topics.value.filter((t) => {
     if (t.workflowStatus === 'DRAFTED' || t.workflowStatus === 'CLOSED') return false
-    return (
-      t.requiredAudience.includes('All Employees') ||
-      (linkedJobTitle.value !== null && t.requiredAudience.includes(linkedJobTitle.value))
-    )
+    return linkedJobTitle.value !== null && roleAudienceIncludes(t.requiredAudience, linkedJobTitle.value)
   })
 })
 
@@ -638,8 +636,8 @@ const briefingCount = computed(
 }
 
 .all-done-banner {
-  background-color: oklch(0.62 0.14 162 / 0.1);
-  border: 1px solid oklch(0.62 0.14 162 / 0.25);
+  background-color: oklch(from var(--brand-success) l c h / 0.08);
+  border: 1px solid oklch(from var(--brand-success) l c h / 0.25);
   color: var(--brand-success);
 }
 
@@ -655,36 +653,7 @@ const briefingCount = computed(
   opacity: 0.6;
 }
 
-/* ── Topic type badges ───────────────────────────────────── */
-.type-badge-blue {
-  background-color: oklch(0.45 0.12 265 / 0.12);
-  color: var(--brand-primary);
-}
-
-.type-badge-red {
-  background-color: oklch(0.62 0.2 25 / 0.12);
-  color: var(--brand-critical);
-}
-
-.type-badge-orange {
-  background-color: oklch(0.72 0.18 38 / 0.14);
-  color: oklch(0.52 0.18 38);
-}
-
-.type-badge-purple {
-  background-color: oklch(0.5 0.16 310 / 0.12);
-  color: oklch(0.4 0.16 310);
-}
-
-.type-badge-grey {
-  background-color: var(--bg-subtle);
-  color: var(--text-body);
-}
-
-.type-badge-green {
-  background-color: oklch(0.62 0.14 162 / 0.12);
-  color: var(--brand-success);
-}
+/* type-badge-* removed — now using global .badge-* semantic classes */
 
 /* ── Trigger cell ────────────────────────────────────────── */
 .trigger-cell {
@@ -714,7 +683,7 @@ const briefingCount = computed(
 }
 
 .audience-tag-more {
-  background-color: oklch(0.45 0.12 265 / 0.1);
+  background-color: oklch(0 0 0 / 0.06);
   color: var(--brand-primary);
 }
 
@@ -766,7 +735,7 @@ const briefingCount = computed(
 }
 
 .action-issue:hover {
-  background-color: oklch(0.45 0.12 265 / 0.1);
+  background-color: oklch(0 0 0 / 0.06);
 }
 
 .action-close {
@@ -774,7 +743,7 @@ const briefingCount = computed(
 }
 
 .action-close:hover {
-  background-color: oklch(0.62 0.2 25 / 0.1);
+  background-color: oklch(from var(--brand-critical) l c h / 0.08);
 }
 
 /* ── Date cell ───────────────────────────────────────────── */
